@@ -1,0 +1,17 @@
+# 배포용 (Render + Neon PostgreSQL). SPRING_PROFILES_ACTIVE=prod 일 때 application.yml 위에 덮어쓴다.
+spring:
+  datasource:
+    # 예: jdbc:postgresql://ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+    # Neon의 pooled 주소(-pooler)가 아니라 direct 주소를 쓴다. FOR UPDATE와 준비된 문장이 트랜잭션 풀링과 맞지 않는다.
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 5
+  thymeleaf:
+    cache: true
+
+server:
+  port: ${PORT:8080}
+  # Render는 HTTPS를 앞단 프록시에서 끝낸다. X-Forwarded-* 를 믿어야 링크가 https로 만들어지고 쿠키에 Secure가 붙는다.
+  forward-headers-strategy: framework

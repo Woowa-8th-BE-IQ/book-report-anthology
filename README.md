@@ -23,7 +23,8 @@ Java 21이 필요합니다. 데이터는 `./data/anthology.mv.db`(H2 파일)에 
 
 - [설계](docs/design.md) — 도메인 규칙, 스키마, 라우트, 동시성
 - [디자인 언어](docs/design-language.md) — 토큰과 효과
+- [배포](docs/deploy.md) — Render + Neon, 무료
 
 ## 스택
 
-Java 21 · Spring Boot 3.4 · Spring JDBC · Thymeleaf · H2 · Vanilla JS
+Java 21 · Spring Boot 3.4 · Spring JDBC · Thymeleaf · H2(로컬) · PostgreSQL(배포) · Vanilla JS
