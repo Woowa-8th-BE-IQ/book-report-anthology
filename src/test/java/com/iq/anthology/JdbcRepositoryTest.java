@@ -98,7 +98,7 @@ class JdbcRepositoryTest {
 
         Essay found = essays.findByAnthologyIdAndContributorId(anthology.id(), anthology.editor().id()).orElseThrow();
 
-        assertThat(found.body()).isEqualTo(longBody);
+        assertThat(found.body()).isEqualTo(longBody.strip()); // 저장할 때 앞뒤 공백을 다듬는다
         assertThat(found.isSubmitted()).isTrue();
         assertThat(found.submittedAt()).isEqualTo(NOW.plusHours(1));
     }

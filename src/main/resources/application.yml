@@ -18,7 +18,9 @@ server:
   servlet:
     encoding:
       charset: UTF-8
-      force: true
+      # 요청만 UTF-8로 강제한다. 응답까지 강제하면 EPUB 같은 바이너리에도 ;charset=UTF-8이 붙는다.
+      # HTML 응답의 문자셋은 Thymeleaf가 붙인다.
+      force-request: true
   error:
     whitelabel:
       enabled: false
