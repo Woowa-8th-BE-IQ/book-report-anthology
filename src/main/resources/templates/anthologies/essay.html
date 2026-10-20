@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${essay.title()} ?: '독후감')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<section class="page-hero narrow" style="padding-bottom:0">
+  <a class="kicker" th:href="@{${'/anthologies/' + anthology.code() + '#shelf'}}" th:text="'← ' + ${anthology.title()}">← 문집</a>
+  <span class="kicker" style="float:right" th:if="${position > 0}" th:text="${position} + ' / ' + ${total}">1 / 5</span>
+</section>
+
+<div th:replace="~{fragments/layout :: flash}"></div>
+
+<main class="section" style="padding-top:28px">
+  <div class="narrow">
+    <article class="paper tape reading">
+      <p class="byline" th:text="${writer.byline()}">감자(김주하)</p>
+      <h1 th:text="${essay.title() != null} ? ${essay.title()} : '제목 없는 초안'">제목</h1>
+      <figure class="quote" th:if="${essay.quote() != null}">
+        <blockquote style="margin:0" th:text="${essay.quote()}">밑줄</blockquote>
+        <figcaption th:text="'— ' + ${anthology.citation()}">출처</figcaption>
+      </figure>
+      <div class="body" th:text="${essay.body()}">본문</div>
+
+      <section class="replies" id="replies" th:if="${!replies.isEmpty() or canReply}" style="font-family:var(--sans)">
+        <div class="reply" th:each="reply : ${replies}">
+          <span class="who" th:text="${reply.byline()}">구름</span>
+          <p th:text="${reply.body()}">답글</p>
+        </div>
+        <form class="reply-form" th:if="${canReply}" method="post"
+              th:action="@{/anthologies/{code}/essays/{id}/replies(code=${anthology.code()}, id=${essay.id()})}" data-once>
+          <label class="visually-hidden" for="reply">답글</label>
+          <textarea id="reply" name="body" rows="2" maxlength="1000" required
+                    th:placeholder="${writer.nickname()} + '님 글에 한마디'"></textarea>
+          <button class="btn small" type="submit">남기기</button>
+        </form>
+        <p class="hand" style="font-size:18px;margin:0;color:var(--muted)">답글은 문집 안에서만 보이고 책에는 실리지 않아요.</p>
+      </section>
+    </article>
+
+    <nav class="pager" aria-label="다른 독후감">
+      <a th:if="${previous != null}" th:href="@{/anthologies/{code}/essays/{id}(code=${anthology.code()}, id=${previous.id()})}">
+        <small>← 앞 글</small><span th:text="${previous.title()}">앞 글</span>
+      </a>
+      <span th:unless="${previous != null}"></span>
+      <a th:if="${next != null}" style="text-align:right"
+         th:href="@{/anthologies/{code}/essays/{id}(code=${anthology.code()}, id=${next.id()})}">
+        <small>다음 글 →</small><span th:text="${next.title()}">다음 글</span>
+      </a>
+    </nav>
+  </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

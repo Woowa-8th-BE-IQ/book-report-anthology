@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${anthology.title()})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="section" style="padding-top:56px">
+  <div class="narrow book-spread">
+    <div class="book-page title fade-up">
+      <span class="kicker">독후감 문집</span>
+      <h1 data-reveal th:text="${anthology.title()}">제목</h1>
+      <p th:text="${anthology.readLine()}">원서</p>
+      <p class="hand" style="font-size:26px;margin-top:40px" th:if="${manuscript != null}"
+         th:text="${manuscript.pieces().size()} + '명이 쓴 독후감'">N명</p>
+    </div>
+
+    <div class="book-page fade-up" th:if="${anthology.introduction() != null}">
+      <span class="kicker">도서 소개</span>
+      <p style="white-space:pre-line;margin-top:18px" th:text="${anthology.introduction()}">소개</p>
+    </div>
+
+    <div class="book-page fade-up" th:if="${manuscript != null}">
+      <span class="kicker">차례</span>
+      <ol class="toc">
+        <li th:each="piece : ${manuscript.pieces()}">
+          <span class="toc-byline" th:text="${piece.byline()}">감자(김주하)</span>
+          <span class="toc-dots"></span>
+          <span class="toc-title" th:text="${piece.title()}">제목</span>
+        </li>
+      </ol>
+    </div>
+
+    <div class="paper tape empty-state">
+      <span class="hand">본문은 책 안에 있어요</span>
+      <p>같은 책을 읽은 사람들이 무슨 생각을 했는지, 함께 쓴 사람들만 펼쳐 볼 수 있어요.</p>
+      <a class="btn" th:href="@{/anthologies/new}">우리도 문집 열기</a>
+    </div>
+  </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

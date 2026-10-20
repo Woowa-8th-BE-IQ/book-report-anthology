@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('잠깐만요')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="error-page narrow">
+  <div class="code" th:text="${status != null} ? ${status} : '앗'">404</div>
+  <h1 style="font-size:24px;letter-spacing:-.03em" th:text="${message != null} ? ${message} : '문제가 생겼어요.'">메시지</h1>
+  <p style="color:var(--ink-soft)">초대 링크나 개인 링크를 다시 확인해 주세요.</p>
+  <a class="btn ghost" th:href="@{/}">처음으로</a>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

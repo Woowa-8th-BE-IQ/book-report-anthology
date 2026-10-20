@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('독후감 쓰기')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<section class="page-hero narrow" style="padding-bottom:0">
+  <a class="kicker" th:href="@{/anthologies/{code}(code=${anthology.code()})}" th:text="'← ' + ${anthology.title()}">← 문집</a>
+  <div class="book" style="margin-top:10px" th:text="${anthology.readLine()}">『책』을 읽고</div>
+</section>
+
+<div th:replace="~{fragments/layout :: flash}"></div>
+
+<main class="section" style="padding-top:28px">
+  <div class="narrow">
+    <form class="paper tape editor" method="post" th:action="@{/anthologies/{code}/essay(code=${anthology.code()})}"
+          th:object="${essayForm}" data-once data-guard>
+      <p class="card-byline" style="margin:0 0 6px;font-size:13px;color:var(--muted)" th:text="${me.byline()}">닉네임(실명)</p>
+
+      <div class="field">
+        <label for="title" class="visually-hidden">제목</label>
+        <input id="title" class="title-input" type="text" th:field="*{title}" th:attr="maxlength=${limits.titleMax()}"
+               placeholder="제목" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="quote">마음에 남은 문장 <span class="hint">· 선택, 하나만</span></label>
+        <textarea id="quote" class="quote-input" th:field="*{quote}" rows="2"
+                  data-count="quote-count" th:attr="data-max=${limits.quoteMax()}"
+                  placeholder="책에서 옮겨 온 한두 문장"></textarea>
+        <span class="counter" id="quote-count"></span>
+        <span class="hint">원서 보호를 위해 150자까지만 옮길 수 있어요. 출처는 자동으로 붙어요.</span>
+      </div>
+
+      <div class="field" style="margin-bottom:0">
+        <label for="body" class="visually-hidden">본문</label>
+        <textarea id="body" class="body-input" th:field="*{body}"
+                  data-count="body-count" th:attr="data-min=${limits.bodyMin()}, data-max=${limits.bodyMax()}"
+                  placeholder="읽으며 떠오른 것, 내 이야기, 책이 나에게 남긴 것. 빈 줄로 문단을 나눠요."></textarea>
+      </div>
+
+      <div class="save-bar">
+        <span class="counter" id="body-count"></span>
+        <span class="status" th:if="${essay != null}"
+              th:text="(${essay.isSubmitted()} ? '제출함 · ' : '초안 · ') + ${#temporals.format(essay.updatedAt(), 'M월 d일 HH:mm')} + ' 저장'">초안</span>
+        <span class="spacer"></span>
+        <button class="btn ghost" type="submit" name="action" value="save"
+                th:text="${essay != null and essay.isSubmitted()} ? '고친 내용 저장' : '초안 저장'">초안 저장</button>
+        <button class="btn" type="submit" name="action" value="submit"
+                th:if="${essay == null or !essay.isSubmitted()}">제출하고 남의 글 열기</button>
+      </div>
+    </form>
+    <p style="font-size:13px;color:var(--muted);margin-top:16px">
+      본문은 200자 이상이면 제출할 수 있어요. 제출한 뒤에도 마감 전까지는 고칠 수 있어요.
+    </p>
+  </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

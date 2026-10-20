@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+  <meta charset="UTF-8">
+  <script>document.documentElement.classList.add('js')</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="same-origin">
+  <meta name="theme-color" content="#F6F1E9">
+  <title th:text="${title} + ' · 남의 독후감'">남의 독후감</title>
+  <link rel="icon" type="image/svg+xml" th:href="@{/img/mark.svg}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Noto+Serif+KR:wght@400;600;900&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sun-typeface/suit@2/fonts/variable/woff2/SUIT-Variable.css">
+  <link rel="stylesheet" th:href="@{/css/app.css}">
+  <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body>
+
+<header class="site-header" th:fragment="header">
+  <div class="wrap">
+    <a class="brand" th:href="@{/}" aria-label="남의 독후감 처음으로">
+      <span class="brand-mark" th:insert="~{fragments/layout :: mark}"></span>
+      남의 독후감
+    </a>
+    <nav class="site-nav" aria-label="주요 메뉴">
+      <a th:href="@{/#how}">하는 법</a>
+      <a th:href="@{/#shelf}">책장</a>
+      <a th:href="@{/#book}">책이 되면</a>
+      <a th:href="@{/#faq}">자주 묻는 질문</a>
+    </nav>
+    <span class="spacer"></span>
+    <a class="header-cta" th:href="@{/anthologies/new}">문집 열기</a>
+  </div>
+</header>
+
+<svg th:fragment="mark" viewBox="0 0 40 40" aria-hidden="true">
+  <circle cx="20" cy="20" r="19" fill="#1A1208"/>
+  <path d="M10 13.5c3.4-2 6.8-2 10 .4v14.6c-3.2-2.4-6.6-2.4-10-.4z" fill="#FFFDF8"/>
+  <path d="M30 13.5c-3.4-2-6.8-2-10 .4v14.6c3.2-2.4 6.6-2.4 10-.4z" fill="#D2691E"/>
+</svg>
+
+<!-- 손으로 그린 동그라미. d는 그려지는 순서(지연) -->
+<svg th:fragment="scribble(d)" class="scribble" th:style="'--d:' + ${d}" viewBox="0 0 100 70" preserveAspectRatio="none" aria-hidden="true">
+  <path pathLength="1" d="M14 38 C 10 18, 44 8, 70 13 C 92 17, 94 46, 68 56 C 44 64, 10 58, 13 36 C 15 26, 30 19, 44 18"/>
+</svg>
+
+<!-- 손으로 그은 밑줄 -->
+<svg th:fragment="underline" class="scribble underline" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true">
+  <path pathLength="1" d="M2 8 C 22 3, 46 11, 70 6 S 92 4, 98 7"/>
+</svg>
+
+<div th:fragment="flash" class="narrow">
+  <div class="flash notice" th:if="${notice}" role="status">
+    <span class="hand">좋아요</span><span th:text="${notice}">알림</span>
+  </div>
+  <div class="flash error" th:if="${error}" role="alert">
+    <span class="hand">잠깐만요</span><span th:text="${error}">오류</span>
+  </div>
+</div>
+
+<footer class="site-footer" th:fragment="footer">
+  <div class="wrap">
+    <span>남의 독후감 — 같은 책을 읽은 사람들의 독후감을 한 권으로.</span>
+    <span>인용의 저작권은 원서에, 독후감의 저작권은 쓴 사람에게 있습니다.</span>
+  </div>
+</footer>
+
+</body>
+</html>

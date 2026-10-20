@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${view.anthology().title()})}"></head>
+<body class="has-cta" th:with="a=${view.anthology()}, closed=${view.anthology().isClosed()}">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<section class="page-hero wrap">
+  <div class="kicker">독후감 문집 · <span th:text="${a.code()}">code</span></div>
+  <h1 data-reveal th:text="${a.title()}">문집 제목</h1>
+  <div class="book" th:text="${a.readLine()}">『책』을 읽고</div>
+
+  <div class="status-line">
+    <span class="status-pill" th:classappend="${a.status().name()}" th:text="${closed} ? '마감' : '모으는 중'">상태</span>
+    <span class="big" th:text="${a.contributors().size()} + '명 중 ' + ${view.submittedCount()} + '명 제출'">5명 중 2명 제출</span>
+    <span class="hand" th:if="${!closed and view.daysUntilDue() != null}"
+          th:text="${view.daysUntilDue() == 0} ? '오늘 마감이에요' : '마감까지 ' + ${view.daysUntilDue()} + '일'">마감까지 12일</span>
+    <span class="hand" th:if="${closed}">한 권으로 엮었어요</span>
+  </div>
+  <div class="progress-line" th:style="'--p:' + ${view.progressPercent() / 100.0}"><span></span></div>
+</section>
+
+<div th:replace="~{fragments/layout :: flash}"></div>
+
+<main class="section" style="padding-top:44px">
+  <div class="wrap layout-2">
+    <div>
+      <!-- 참여 폼 -->
+      <form id="join" class="paper tape" th:if="${view.canJoin()}" method="post"
+            th:action="@{/anthologies/{code}/contributors(code=${a.code()})}" th:object="${joinForm}" data-once
+            style="margin-bottom:56px">
+        <h2 style="margin:0 0 6px;font-size:22px;letter-spacing:-.03em">이 문집에 독후감을 써 볼까요?</h2>
+        <p style="color:var(--ink-soft);margin:0 0 22px">
+          <b th:text="${a.editor().nickname()}">엮은이</b>님이 『<span th:text="${a.bookTitle()}">책</span>』 독후감 문집에 초대했어요.
+          들어와서 내 독후감을 제출하면, 다른 사람들이 쓴 글이 열려요.
+        </p>
+        <div class="field-row">
+          <div class="field">
+            <label for="nickname">닉네임</label>
+            <input id="nickname" type="text" th:field="*{nickname}" maxlength="12" required placeholder="감자">
+          </div>
+          <div class="field">
+            <label for="realName">실명 <span class="hint">· 선택</span></label>
+            <input id="realName" type="text" th:field="*{realName}" maxlength="20" placeholder="김주하">
+          </div>
+        </div>
+        <button class="btn" type="submit">들어가기</button>
+      </form>
+
+      <div class="paper empty-state" th:if="${!view.isContributor() and !view.canJoin()}" style="margin-bottom:56px">
+        <span class="hand" th:text="${closed} ? '마감한 문집이에요' : '자리가 다 찼어요'">마감</span>
+        <p th:if="${closed}">공개 소개 페이지에서 목차를 볼 수 있어요. 함께 쓴 사람이라면 '내 개인 링크'로 들어와 주세요.</p>
+        <a class="btn ghost" th:if="${closed}" th:href="@{/anthologies/{code}/about(code=${a.code()})}">소개 페이지 보기</a>
+      </div>
+
+      <!-- 내 글 -->
+      <div class="paper tape my-essay" th:if="${view.isContributor() and !closed}">
+        <div class="what">
+          <th:block th:if="${view.myEssay() == null}">
+            <span class="hand">아직 한 줄도 안 썼어요</span>
+            <h2>내 독후감 쓰기</h2>
+            <p>초안으로 저장해 두고 천천히 써도 돼요. 제출하면 다른 사람의 글이 열려요.</p>
+          </th:block>
+          <th:block th:if="${view.hasDraft()}">
+            <span class="hand">쓰는 중</span>
+            <h2 th:text="${view.myEssay().title() != null} ? ${view.myEssay().title()} : '제목 없는 초안'">초안</h2>
+            <p th:text="${view.myEssay().bodyLength()} + '자 · 제출하면 남의 독후감이 열려요'">0자</p>
+          </th:block>
+          <th:block th:if="${view.hasSubmitted()}">
+            <span class="hand" style="color:var(--good)">제출했어요</span>
+            <h2 th:text="${view.myEssay().title()}">제목</h2>
+            <p th:text="${view.myEssay().bodyLength()} + '자 · 마감 전까지 고칠 수 있어요'">자</p>
+          </th:block>
+        </div>
+        <a class="btn" th:href="@{/anthologies/{code}/write(code=${a.code()})}"
+           th:text="${view.myEssay() == null} ? '쓰기 시작' : (${view.hasDraft()} ? '이어 쓰기' : '고치기')">쓰기</a>
+      </div>
+
+      <!-- 책장 -->
+      <section id="shelf" th:if="${view.isContributor() or closed}">
+        <div class="shelf-head">
+          <h2>책장</h2>
+          <span th:text="${view.unlocked()} ? '닉네임 가나다순' : '내 글을 제출하면 열려요'">안내</span>
+        </div>
+        <div class="paper empty-state" th:if="${view.cards().isEmpty()}">
+          <span class="hand">아직 제출된 독후감이 없어요</span>
+          <p>첫 번째로 내 볼까요?</p>
+        </div>
+        <div class="shelf" th:unless="${view.cards().isEmpty()}">
+          <th:block th:each="card, stat : ${view.cards()}">
+            <a class="paper tape essay-card fade-up" th:if="${card.readable()}"
+               th:href="@{/anthologies/{code}/essays/{id}(code=${a.code()}, id=${card.essayId()})}"
+               th:classappend="${(stat.even ? 'tilt-l ' : 'tilt-r ') + (card.mine() ? 'mine' : '')}">
+              <span class="badge hand" th:if="${card.mine()}">내 글</span>
+              <p class="card-byline" th:text="${card.byline()}">감자(김주하)</p>
+              <h3 th:text="${card.title()}">제목</h3>
+              <p class="excerpt" th:text="${card.excerpt()}">발췌</p>
+              <div class="card-foot">
+                <span th:text="${#numbers.formatInteger(card.length(), 1, 'COMMA')} + '자'">1,200자</span>
+                <span th:if="${card.replyCount() > 0}" th:text="'답글 ' + ${card.replyCount()}">답글 2</span>
+              </div>
+            </a>
+            <article class="paper tape essay-card locked fade-up" th:unless="${card.readable()}"
+                     th:classappend="${stat.even} ? 'tilt-l' : 'tilt-r'">
+              <p class="card-byline" th:text="${card.byline()}">구름</p>
+              <h3 th:text="${card.title()}">제목</h3>
+              <div class="lock-lines" aria-hidden="true"><span></span><span></span><span></span></div>
+              <p class="lock-note hand">제출하면 열려요</p>
+            </article>
+          </th:block>
+        </div>
+      </section>
+
+      <!-- 마감 -->
+      <div class="paper tape my-essay" th:if="${closed and view.isContributor()}" style="margin-top:56px">
+        <div class="what">
+          <span class="hand">마감했어요</span>
+          <h2>한 권으로 엮었어요</h2>
+          <p>원고를 미리 보고, 빼고 싶은 내 글을 고른 뒤 EPUB으로 내려받으세요.</p>
+        </div>
+        <a class="btn" th:href="@{/anthologies/{code}/book(code=${a.code()})}">책 미리보기</a>
+      </div>
+    </div>
+
+    <!-- 옆 칸 -->
+    <aside class="side">
+      <div class="paper" th:if="${view.isContributor() and !closed}">
+        <h3>초대 링크</h3>
+        <p>함께 쓸 사람에게 보내 주세요. 최대 100명.</p>
+        <div class="copy-line">
+          <input id="invite-url" type="text" th:value="${inviteUrl}" readonly aria-label="초대 링크">
+          <button class="btn small ghost" type="button" data-copy="invite-url">복사</button>
+        </div>
+      </div>
+
+      <div class="paper" id="introduction" th:if="${view.isContributor() or a.introduction() != null}">
+        <h3>도서 소개</h3>
+        <p th:if="${a.introduction() != null and !(view.isEditor() and !closed)}" th:text="${a.introduction()}" style="white-space:pre-line">소개</p>
+        <p th:if="${a.introduction() == null and !view.isEditor()}">엮은이가 아직 쓰지 않았어요.</p>
+        <form th:if="${view.isEditor() and !closed}" method="post"
+              th:action="@{/anthologies/{code}/introduction(code=${a.code()})}" data-once>
+          <textarea name="introduction" rows="6" th:text="${a.introduction()}" th:attr="maxlength=${introductionMax}"
+                    placeholder="이 책을 왜 함께 읽었는지, 어떤 글들이 실렸는지. 책 맨 앞에 들어가요."></textarea>
+          <button class="btn small ghost" type="submit" style="margin-top:10px">소개 저장</button>
+        </form>
+      </div>
+
+      <div class="paper" th:if="${view.isContributor()}">
+        <h3>함께 쓰는 사람</h3>
+        <ol class="seats">
+          <li class="seat" th:each="seat : ${view.seats()}"
+              th:classappend="${seat.state() + (seat.me() ? ' me' : '')}">
+            <span th:text="${seat.byline()}">감자</span>
+            <span class="host" th:if="${seat.editor()}">엮은이</span>
+          </li>
+        </ol>
+        <div class="seat-legend">
+          <span><i></i>아직</span><span><i class="DRAFT"></i>쓰는 중</span><span><i class="SUBMITTED"></i>제출</span>
+        </div>
+        <form th:if="${view.isEditor() and !closed}" method="post"
+              th:action="@{/anthologies/{code}/close(code=${a.code()})}" style="margin-top:20px" data-once
+              onsubmit="return confirm('마감하면 더 쓰거나 고칠 수 없어요. 제출하지 않은 초안은 책에 들어가지 않아요. 마감할까요?')">
+          <button class="btn" type="submit" style="width:100%" th:disabled="${!view.canClose()}">마감하고 엮기</button>
+          <p style="font-size:12px;margin:8px 0 0" th:unless="${view.canClose()}">제출된 독후감이 2편 이상이면 마감할 수 있어요.</p>
+        </form>
+      </div>
+
+      <div class="paper" th:if="${view.isContributor()}">
+        <h3>내 개인 링크</h3>
+        <p>다른 기기에서 이어 쓸 때 열어요. <b>나만 갖고 있어야 해요.</b></p>
+        <div class="copy-line">
+          <input id="personal-url" type="text" th:value="${personalUrl}" readonly aria-label="내 개인 링크">
+          <button class="btn small ghost" type="button" data-copy="personal-url">복사</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<div class="cta-bar">
+  <a class="btn" th:if="${view.canJoin()}" href="#join">이 문집에 들어가기</a>
+  <a class="btn" th:if="${view.isContributor() and !closed and !view.hasSubmitted()}"
+     th:href="@{/anthologies/{code}/write(code=${a.code()})}"
+     th:text="${view.myEssay() == null} ? '내 독후감 쓰기' : '이어 쓰기'">쓰기</a>
+  <a class="btn" th:if="${closed and view.isContributor()}" th:href="@{/anthologies/{code}/book(code=${a.code()})}">책 미리보기</a>
+</div>
+</body>
+</html>
