@@ -1,0 +1,133 @@
+# 남의 독후감 (가칭) 설계
+
+같은 책 한 권을 읽은 사람들이 각자 독후감을 한 편씩 쓰고, 그 글을 한 권의 전자책(EPUB) 문집으로 엮는다.
+
+영감은 『일단 나부터 리팩터링 합니다 1』(우아한테크코스 6기 크루 45명, 부크크)에서 왔다. 목차가 곧 지은이 목록이고(`감자(김주하) … 5`), 엮은이가 소개와 정렬을 맡는 구조를 그대로 가져왔다.
+
+핵심 경험은 "남의 독후감이 궁금해서 산다"이다.
+
+## 1. 흐름
+
+```
+엮은이가 문집을 연다 (책, 마감일) → 초대 링크로 참여 (최대 100명)
+  → 각자 독후감을 쓴다 (초안 저장 ↔ 제출)
+  → 내 글을 제출하면 남의 제출된 글이 열린다 → 읽고 답글
+  → 엮은이가 마감 (제출 2편 이상)
+  → 원고 미리보기 · 각자 책에서 뺄지 결정 → EPUB 다운로드
+  → 공개 소개 페이지: 도서 소개 + 목차만 (본문 없음)
+```
+
+## 2. 도메인 규칙
+
+| 규칙 | 내용 | 위반 시 |
+| --- | --- | --- |
+| 참여 | 모으는 중일 때만, 최대 100명, 닉네임 유일 | 422 / 409 |
+| 지은이 표기 | `닉네임(실명)`, 실명은 선택 | — |
+| 독후감 | 문집당 한 사람 한 편 | 409 |
+| 초안 | 비어 있어도 저장. 최대 길이만 검사 | 422 |
+| 제출 | 제목 1~60자, 본문 200~30,000자 | 422 |
+| 제출 후 수정 | 마감 전까지 가능. 단 제출 기준을 계속 지켜야 한다 | 422 |
+| 밑줄(원문 인용) | 한 편에 하나, 최대 150자 | 422 |
+| 읽기 | 내 글은 언제나. 남의 글은 제출된 것만, 내가 제출했거나 마감된 뒤에 | 403 |
+| 답글 | 읽을 수 있는 남의 제출된 글에만. 책에는 안 실린다 | 403 / 422 |
+| 도서 소개 | 엮은이만, 마감 전까지, 최대 2,000자 | 403 / 422 |
+| 마감 | 엮은이만, 제출 2편 이상. 되돌릴 수 없다 | 403 / 422 |
+| 책 포함 여부 | 마감 뒤 본인 글만 | 403 / 422 |
+| 책 순서 | 닉네임 가나다순(한국어 Collator), 같으면 먼저 낸 순 | — |
+| 책 생성 | 마감 후, 실릴 글이 한 편 이상 | 422 |
+
+밑줄 150자 상한은 저작권법 제28조(정당한 범위의 인용)를 지키기 위한 제품 규칙이다. 모든 밑줄에는 원서 출처가 자동으로 붙는다. 수치는 법률 자문 후 조정한다.
+
+### 상태
+
+```
+문집:   COLLECTING ──마감──▶ CLOSED        (역방향 없음)
+독후감: DRAFT ──제출──▶ SUBMITTED          (역방향 없음)
+```
+
+## 3. 신원
+
+계정이 없다. 참여할 때 비밀 토큰(UUID)을 발급한다.
+
+- 문집별 쿠키 `ab_{code}`에 180일. HttpOnly, SameSite=Lax(다른 사이트 POST엔 안 실림).
+- 다른 기기에서는 개인 링크 `/me/{token}`으로 이어 쓴다.
+- 페이지에 `referrer: same-origin`을 걸어 토큰 URL이 밖으로 새지 않게 한다.
+
+## 4. 스키마 (H2 / PostgreSQL 호환)
+
+```sql
+anthology(id, code UNIQUE, title, book_title, book_author, introduction, due_date,
+          status, created_at, closed_at)
+contributor(id, anthology_id, nickname, real_name, token UNIQUE, join_order, joined_at,
+            UNIQUE(anthology_id, join_order), UNIQUE(anthology_id, nickname))
+essay(id, anthology_id, contributor_id, title, quote, body TEXT, status, included_in_book,
+      created_at, updated_at, submitted_at, UNIQUE(anthology_id, contributor_id))
+reply(id, essay_id, contributor_id, body, created_at)
+```
+
+동시성은 DB가 막는다.
+
+| 경쟁 | 방어 |
+| --- | --- |
+| 두 사람이 동시에 참여 | `UNIQUE(anthology_id, join_order)` → 409 |
+| 한 사람이 두 탭에서 첫 저장 | `UNIQUE(anthology_id, contributor_id)` → 409 |
+| 마감과 제출이 동시에 | 둘 다 `SELECT … FOR UPDATE`로 문집 행을 잠그고 상태를 다시 읽는다 |
+| 마감 두 번 | `UPDATE … WHERE status = 'COLLECTING'` 0행이면 409 |
+
+## 5. 라우트
+
+| 메서드 | 경로 | 설명 |
+| --- | --- | --- |
+| GET | `/` | 랜딩 |
+| GET | `/anthologies/new` | 문집 열기 폼 |
+| POST | `/anthologies` | 문집 열기 |
+| GET | `/anthologies/{code}` | 문집 화면 (비참여자면 참여 폼) |
+| POST | `/anthologies/{code}/contributors` | 참여 |
+| POST | `/anthologies/{code}/introduction` | 도서 소개 저장 (엮은이) |
+| GET | `/anthologies/{code}/write` | 내 독후감 쓰기 |
+| POST | `/anthologies/{code}/essay` | 저장(`action=save`) / 제출(`action=submit`) |
+| GET | `/anthologies/{code}/essays/{id}` | 독후감 읽기 |
+| POST | `/anthologies/{code}/essays/{id}/replies` | 답글 |
+| POST | `/anthologies/{code}/close` | 마감 (엮은이) |
+| GET | `/anthologies/{code}/book` | 원고 미리보기 |
+| POST | `/anthologies/{code}/essays/{id}/inclusion` | 책 포함 여부 |
+| GET | `/anthologies/{code}/book.epub` | EPUB 다운로드 (참여자만) |
+| GET | `/anthologies/{code}/about` | 공개 소개 페이지 (마감 후, 목차만) |
+| GET | `/me/{token}` | 개인 링크로 이어 쓰기 |
+
+폼은 PRG. 규칙 위반(422)·충돌(409)은 입력값을 들고 폼으로 돌아가고, 권한(403)·없음(404)은 오류 화면으로 간다.
+
+## 6. EPUB
+
+EPUB 3, `java.util.zip`만 쓴다. epubcheck 통과.
+
+```
+mimetype                  무압축, 첫 항목
+META-INF/container.xml
+OEBPS/content.opf         dc:creator = 각 지은이
+OEBPS/title.xhtml         표제지: 제목 · "~을 읽고" · N명이 쓴 독후감
+OEBPS/introduction.xhtml  도서 소개 (있을 때만)
+OEBPS/nav.xhtml           차례: 지은이 · 제목
+OEBPS/essay-{n}.xhtml     독후감 (밑줄 + 출처, 본문)
+OEBPS/colophon.xhtml      지은이 목록, 마감일, 저작권 안내
+```
+
+## 7. 패키지
+
+```
+com.iq.anthology
+├── anthology  Anthology, Contributor, AnthologyService, AnthologyRepository(+Jdbc)
+├── essay      Essay, Reply, Shelf(읽기 규칙·책 순서), EssayService, 저장소(+Jdbc)
+├── book       Manuscript, ManuscriptFactory, EpubWriter, BookService
+├── support    DomainException, ErrorType, Texts(글자 수·조사), IdentifierGenerator
+└── web        AnthologyController, ShelfView, ContributorCookies, ErrorPages
+```
+
+도메인 모델은 Spring에 의존하지 않는다.
+
+## 8. 다음 단계 (이번 범위 밖)
+
+- 부크크·교보 퍼플 POD용 PDF 내보내기 (종이책)
+- 공개 소개 페이지에서 구매 연결
+- 마감일 알림 (메일)
+- 엮은이의 순서 조정, 부록(용어사전 등)
