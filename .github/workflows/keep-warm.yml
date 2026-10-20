@@ -1,0 +1,19 @@
+# Render 무료 인스턴스는 15분 동안 요청이 없으면 잠들고, 깨어나는 데 70초쯤 걸린다.
+# 10분마다 한 번 깨워 둔다. 한 서비스를 한 달 내내 켜도 무료 시간(월 750시간) 안이다.
+# 참고: 저장소에 60일 동안 커밋이 없으면 GitHub가 예약 실행을 멈춘다.
+name: keep-warm
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: 사이트 깨우기
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 150 https://book-report-anthology.onrender.com/ || true)
+          echo "응답 코드: $code"
