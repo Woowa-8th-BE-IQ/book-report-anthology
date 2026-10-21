@@ -13,7 +13,7 @@ public class Contributor {
     private Long id;
     private final String nickname;
     private final String realName;
-    private final String token;
+    private String token;
     private final int joinOrder;
     private final LocalDateTime joinedAt;
 
@@ -46,6 +46,11 @@ public class Contributor {
 
     public boolean hasToken(String candidate) {
         return token.equals(candidate);
+    }
+
+    /** 새 개인 링크를 발급한다. 이전 토큰은 더 이상 통하지 않는다. */
+    void reissue(String newToken) {
+        this.token = Objects.requireNonNull(newToken);
     }
 
     public void assignId(Long id) {

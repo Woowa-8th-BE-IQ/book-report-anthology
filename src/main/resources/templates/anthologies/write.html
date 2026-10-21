@@ -13,8 +13,33 @@
 
 <main class="section" style="padding-top:28px">
   <div class="narrow">
-    <form class="paper tape editor" method="post" th:action="@{/anthologies/{code}/essay(code=${anthology.code()})}"
-          th:object="${essayForm}" data-once data-guard>
+    <!-- 엮은이의 글감 질문 -->
+    <aside class="paper prompts-card" th:if="${!anthology.prompts().isEmpty()}">
+      <span class="hand">엮은이가 던진 질문</span>
+      <ol class="prompt-list"><li th:each="prompt : ${anthology.prompts()}" th:text="${prompt}">질문</li></ol>
+      <p class="tool-note">꼭 답하지 않아도 돼요. 시작이 막힐 때 붙잡아 보세요.</p>
+    </aside>
+
+    <!-- 이 기기에만 남은 글이 있을 때 -->
+    <div class="paper restore-banner" id="restore" hidden role="alert">
+      <span class="hand">이 기기에 저장 안 된 글이 있어요</span>
+      <p>서버에 저장되기 전에 창이 닫혔던 것 같아요. 그때 쓰던 글을 불러올까요?</p>
+      <div class="row">
+        <button class="btn small" type="button" data-restore="apply">불러오기</button>
+        <button class="btn small ghost" type="button" data-restore="discard">버리기</button>
+      </div>
+    </div>
+
+    <form class="paper tape editor" id="essay-form" method="post"
+          th:action="@{/anthologies/{code}/essay(code=${anthology.code()})}"
+          th:object="${essayForm}" data-once data-guard
+          th:attr="data-autosave=@{/anthologies/{code}/essay/autosave(code=${anthology.code()})},
+                   data-draft-key='ab-draft-' + ${anthology.code()},
+                   data-saved-at=${savedAtMillis},
+                   data-submitted=${essay != null and essay.isSubmitted()},
+                   data-byline=${me.byline()},
+                   data-citation=${anthology.citation()},
+                   data-body-min=${limits.bodyMin()}">
       <p class="card-byline" style="margin:0 0 6px;font-size:13px;color:var(--muted)" th:text="${me.byline()}">닉네임(실명)</p>
 
       <div class="field">
@@ -34,19 +59,23 @@
 
       <div class="field" style="margin-bottom:0">
         <label for="body" class="visually-hidden">본문</label>
-        <textarea id="body" class="body-input" th:field="*{body}"
-                  data-count="body-count" th:attr="data-min=${limits.bodyMin()}, data-max=${limits.bodyMax()}"
+        <textarea id="body" class="body-input" th:field="*{body}" th:attr="maxlength=${limits.bodyMax()}"
                   placeholder="읽으며 떠오른 것, 내 이야기, 책이 나에게 남긴 것. 빈 줄로 문단을 나눠요."></textarea>
       </div>
 
+      <!-- 200자 문턱 -->
+      <div class="threshold" aria-live="polite">
+        <div class="threshold-line"><span id="threshold-fill"></span></div>
+        <span id="threshold-text" class="hand">제출까지 200자</span>
+      </div>
+
       <div class="save-bar">
-        <span class="counter" id="body-count"></span>
-        <span class="status" th:if="${essay != null}"
-              th:text="(${essay.isSubmitted()} ? '제출함 · ' : '초안 · ') + ${#temporals.format(essay.updatedAt(), 'M월 d일 HH:mm')} + ' 저장'">초안</span>
+        <span class="status" id="save-status" aria-live="polite"
+              th:text="${essay == null} ? '쓰는 동안 자동으로 저장돼요' : (${essay.isSubmitted()} ? '제출함 · ' : '초안 · ') + ${#temporals.format(essay.updatedAt(), 'M월 d일 HH:mm')} + ' 저장'">초안</span>
         <span class="spacer"></span>
         <button class="btn ghost" type="submit" name="action" value="save"
-                th:text="${essay != null and essay.isSubmitted()} ? '고친 내용 저장' : '초안 저장'">초안 저장</button>
-        <button class="btn" type="submit" name="action" value="submit"
+                th:text="${essay != null and essay.isSubmitted()} ? '고친 내용 저장' : '지금 저장'">지금 저장</button>
+        <button class="btn" type="submit" name="action" value="submit" id="submit-button"
                 th:if="${essay == null or !essay.isSubmitted()}">제출하고 남의 글 열기</button>
       </div>
     </form>
@@ -55,6 +84,24 @@
     </p>
   </div>
 </main>
+
+<!-- 제출 전 미리보기: 책 한 쪽에 실린 모습 -->
+<dialog class="preview-dialog" id="preview" aria-labelledby="preview-title">
+  <div class="book-page preview-page">
+    <span class="kicker" id="preview-byline"></span>
+    <h2 id="preview-title"></h2>
+    <figure class="quote" id="preview-quote" hidden>
+      <blockquote style="margin:0" id="preview-quote-text"></blockquote>
+      <figcaption id="preview-citation"></figcaption>
+    </figure>
+    <div id="preview-body"></div>
+  </div>
+  <div class="preview-actions">
+    <p class="hand">책에는 이렇게 실려요</p>
+    <button class="btn ghost" type="button" data-preview="close">조금 더 고칠게요</button>
+    <button class="btn" type="button" data-preview="submit">이대로 제출하기</button>
+  </div>
+</dialog>
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>
 </body>

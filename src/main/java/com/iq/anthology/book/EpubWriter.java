@@ -31,13 +31,18 @@ public final class EpubWriter {
             put(zip, "META-INF/container.xml", containerXml());
             put(zip, "OEBPS/content.opf", contentOpf(manuscript));
             put(zip, "OEBPS/style.css", STYLE);
+            put(zip, "OEBPS/cover.svg", CoverArt.svg(manuscript));
+            put(zip, "OEBPS/cover.xhtml", coverXhtml(manuscript));
             put(zip, "OEBPS/title.xhtml", titleXhtml(manuscript));
-            if (manuscript.hasIntroduction()) {
+            if (manuscript.hasFrontMatter()) {
                 put(zip, "OEBPS/introduction.xhtml", introductionXhtml(manuscript));
             }
             put(zip, "OEBPS/nav.xhtml", navXhtml(manuscript));
             for (Manuscript.Piece piece : manuscript.pieces()) {
                 put(zip, "OEBPS/" + pieceFile(piece), pieceXhtml(manuscript, piece));
+            }
+            if (manuscript.hasAppendix()) {
+                put(zip, "OEBPS/appendix.xhtml", appendixXhtml(manuscript));
             }
             put(zip, "OEBPS/colophon.xhtml", colophonXhtml(manuscript));
         } catch (IOException e) {
@@ -75,13 +80,18 @@ public final class EpubWriter {
         StringBuilder manifest = new StringBuilder();
         StringBuilder spine = new StringBuilder();
         item(manifest, "style", "style.css", "text/css", null);
+        item(manifest, "cover-image", "cover.svg", "image/svg+xml", "cover-image");
+        page(manifest, spine, "cover", "cover.xhtml", null);
         page(manifest, spine, "title", "title.xhtml", null);
-        if (manuscript.hasIntroduction()) {
+        if (manuscript.hasFrontMatter()) {
             page(manifest, spine, "introduction", "introduction.xhtml", null);
         }
         page(manifest, spine, "nav", "nav.xhtml", "nav");
         for (Manuscript.Piece piece : manuscript.pieces()) {
             page(manifest, spine, "essay-" + piece.number(), pieceFile(piece), null);
+        }
+        if (manuscript.hasAppendix()) {
+            page(manifest, spine, "appendix", "appendix.xhtml", null);
         }
         page(manifest, spine, "colophon", "colophon.xhtml", null);
 
@@ -95,6 +105,7 @@ public final class EpubWriter {
                 %s    <dc:date>%s</dc:date>
                     <dc:description>%s</dc:description>
                     <meta property="dcterms:modified">%sT00:00:00Z</meta>
+                    <meta name="cover" content="cover-image"/>
                   </metadata>
                   <manifest>
                 %s  </manifest>
@@ -139,15 +150,44 @@ public final class EpubWriter {
                 manuscript.pieces().size()));
     }
 
+    private static String coverXhtml(Manuscript manuscript) {
+        return xhtml(manuscript.title(), """
+                  <section class="cover" epub:type="cover">
+                    <img src="cover.svg" alt="%s 표지"/>
+                  </section>
+                """.formatted(escape(manuscript.title())));
+    }
+
     private static String introductionXhtml(Manuscript manuscript) {
         StringBuilder body = new StringBuilder();
         body.append("  <section class=\"introduction\" epub:type=\"preface\">\n");
-        body.append("    <h1>도서 소개</h1>\n");
-        for (String paragraph : paragraphs(manuscript.introduction())) {
-            body.append("    <p>").append(escape(paragraph)).append("</p>\n");
+        if (manuscript.hasIntroduction()) {
+            body.append("    <h1>도서 소개</h1>\n");
+            for (String paragraph : paragraphs(manuscript.introduction())) {
+                body.append("    <p>").append(escape(paragraph)).append("</p>\n");
+            }
+        }
+        if (manuscript.hasPrompts()) {
+            body.append("    <h2 class=\"prompts-title\">이 문집이 함께 붙든 질문</h2>\n");
+            body.append("    <ol class=\"prompts\">\n");
+            for (String prompt : manuscript.prompts()) {
+                body.append("      <li>").append(escape(prompt)).append("</li>\n");
+            }
+            body.append("    </ol>\n");
         }
         body.append("  </section>\n");
         return xhtml("도서 소개", body.toString());
+    }
+
+    private static String appendixXhtml(Manuscript manuscript) {
+        StringBuilder body = new StringBuilder();
+        body.append("  <section class=\"appendix\" epub:type=\"appendix\">\n");
+        body.append("    <h1>부록</h1>\n");
+        for (String paragraph : paragraphs(manuscript.appendix())) {
+            body.append("    <p>").append(escape(paragraph)).append("</p>\n");
+        }
+        body.append("  </section>\n");
+        return xhtml("부록", body.toString());
     }
 
     /** 레퍼런스 문집처럼 차례가 곧 지은이 목록이다: "감자(김주하) · 제목" */
@@ -158,6 +198,9 @@ public final class EpubWriter {
                     .append("<span class=\"toc-byline\">").append(escape(piece.byline())).append("</span> ")
                     .append("<span class=\"toc-title\">").append(escape(piece.title())).append("</span>")
                     .append("</a></li>\n");
+        }
+        if (manuscript.hasAppendix()) {
+            items.append("        <li><a href=\"appendix.xhtml\">부록</a></li>\n");
         }
         items.append("        <li><a href=\"colophon.xhtml\">지은이</a></li>\n");
         return xhtml("차례", """
@@ -299,6 +342,10 @@ public final class EpubWriter {
             .toc-byline { display: block; font-family: sans-serif; font-size: 0.8em; color: #8a7660; }
             .toc-title { font-weight: bold; }
             .colophon { margin-top: 12%; }
+            .cover { margin: 0; padding: 0; text-align: center; }
+            .cover img { max-width: 100%; max-height: 100%; }
+            .prompts-title { margin-top: 2.4em; font-size: 1em; color: #b8571a; }
+            .prompts li { margin: 0 0 0.6em; }
             .authors { list-style: none; padding: 0; columns: 2; }
             .note { font-size: 0.8em; color: #8a7660; margin-top: 2em; }
             """;

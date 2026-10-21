@@ -13,4 +13,6 @@ public interface EssayRepository {
     Optional<Essay> findByAnthologyIdAndContributorId(Long anthologyId, Long contributorId);
 
     List<Essay> findByAnthologyId(Long anthologyId);
+
+    void deleteByContributor(Long contributorId);
 }

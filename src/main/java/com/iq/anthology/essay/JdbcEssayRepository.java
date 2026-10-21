@@ -55,7 +55,7 @@ public class JdbcEssayRepository implements EssayRepository {
                         UPDATE essay
                            SET title = :title, quote = :quote, body = :body, status = :status,
                                included_in_book = :includedInBook, updated_at = :updatedAt,
-                               submitted_at = :submittedAt
+                               submitted_at = :submittedAt, book_order = :bookOrder, public_sample = :publicSample
                          WHERE id = :id
                         """)
                 .param("title", essay.title())
@@ -65,6 +65,8 @@ public class JdbcEssayRepository implements EssayRepository {
                 .param("includedInBook", essay.includedInBook())
                 .param("updatedAt", essay.updatedAt())
                 .param("submittedAt", essay.submittedAt())
+                .param("bookOrder", essay.bookOrder())
+                .param("publicSample", essay.publicSample())
                 .param("id", essay.id())
                 .update();
     }
@@ -86,6 +88,13 @@ public class JdbcEssayRepository implements EssayRepository {
                 .list();
     }
 
+    @Override
+    public void deleteByContributor(Long contributorId) {
+        jdbc.sql("DELETE FROM essay WHERE contributor_id = :contributorId")
+                .param("contributorId", contributorId)
+                .update();
+    }
+
     private Essay row(ResultSet rs, int rowNum) throws SQLException {
         return new Essay(
                 rs.getLong("id"),
@@ -98,6 +107,8 @@ public class JdbcEssayRepository implements EssayRepository {
                 rs.getBoolean("included_in_book"),
                 rs.getObject("created_at", LocalDateTime.class),
                 rs.getObject("updated_at", LocalDateTime.class),
-                rs.getObject("submitted_at", LocalDateTime.class));
+                rs.getObject("submitted_at", LocalDateTime.class),
+                rs.getObject("book_order", Integer.class),
+                rs.getBoolean("public_sample"));
     }
 }

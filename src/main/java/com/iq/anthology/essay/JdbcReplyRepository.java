@@ -48,4 +48,15 @@ public class JdbcReplyRepository implements ReplyRepository {
                         rs.getObject("created_at", LocalDateTime.class)))
                 .list();
     }
+
+    @Override
+    public void deleteAllAround(Long contributorId) {
+        jdbc.sql("""
+                        DELETE FROM reply
+                         WHERE contributor_id = :contributorId
+                            OR essay_id IN (SELECT id FROM essay WHERE contributor_id = :contributorId)
+                        """)
+                .param("contributorId", contributorId)
+                .update();
+    }
 }

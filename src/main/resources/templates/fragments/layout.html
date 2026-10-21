@@ -7,6 +7,17 @@
   <meta name="referrer" content="same-origin">
   <meta name="theme-color" content="#F6F1E9">
   <title th:text="${title} + ' · 남의 독후감'">남의 독후감</title>
+  <meta name="description" th:content="${ogDescription} ?: '같은 책을 읽은 사람들의 독후감을 한 권으로. 내 글을 내면 남의 글이 열려요.'">
+  <!-- 카톡·슬랙 공유 미리보기 -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="남의 독후감">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:title" th:content="${ogTitle} ?: ${title} + ' · 남의 독후감'">
+  <meta property="og:description" th:content="${ogDescription} ?: '같은 책을 읽은 사람들의 독후감을 한 권으로. 내 글을 내면 남의 글이 열려요.'">
+  <meta property="og:image" th:content="${baseUrl != null} ? ${baseUrl} + '/img/og.png' : '/img/og.png'">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/svg+xml" th:href="@{/img/mark.svg}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

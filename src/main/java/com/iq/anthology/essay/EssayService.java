@@ -1,5 +1,8 @@
 package com.iq.anthology.essay;
 
+import com.iq.anthology.activity.ActivityLog;
+import com.iq.anthology.activity.ActivityType;
+import com.iq.anthology.activity.Funnel;
 import com.iq.anthology.anthology.Anthology;
 import com.iq.anthology.anthology.AnthologyRepository;
 import com.iq.anthology.anthology.AnthologyService;
@@ -20,32 +23,55 @@ public class EssayService {
     private final AnthologyRepository anthologyRepository;
     private final EssayRepository essayRepository;
     private final ReplyRepository replyRepository;
+    private final ActivityLog activityLog;
     private final Clock clock;
 
     public EssayService(AnthologyService anthologyService, AnthologyRepository anthologyRepository,
-                        EssayRepository essayRepository, ReplyRepository replyRepository, Clock clock) {
+                        EssayRepository essayRepository, ReplyRepository replyRepository, ActivityLog activityLog,
+                        Clock clock) {
         this.anthologyService = anthologyService;
         this.anthologyRepository = anthologyRepository;
         this.essayRepository = essayRepository;
         this.replyRepository = replyRepository;
+        this.activityLog = activityLog;
         this.clock = clock;
     }
 
-    /** 내 독후감을 저장한다. submit이면 제출까지 한다. 첫 저장이면 새로 만든다. */
+    /** 내 독후감을 저장한다. submit이면 제출까지 한다. 첫 저장이면 새로 만든다. 자동 저장도 이 길로 온다. */
     @Transactional
     public Essay save(String code, String token, String title, String quote, String body, boolean submit) {
         Anthology anthology = locked(code);
         anthology.requireCollecting("마감한 문집이라 더 쓰거나 고칠 수 없어요.");
         Contributor writer = AnthologyService.requireContributor(anthology, token);
 
-        Essay essay = essayRepository.findByAnthologyIdAndContributorId(anthology.id(), writer.id())
-                .orElseGet(() -> essayRepository.save(Essay.start(anthology.id(), writer.id(), now())));
+        Essay essay = essayRepository.findByAnthologyIdAndContributorId(anthology.id(), writer.id()).orElse(null);
+        if (essay == null) {
+            essay = essayRepository.save(Essay.start(anthology.id(), writer.id(), now()));
+            activityLog.record(anthology.id(), writer.id(), ActivityType.FIRST_SAVED, essay.id());
+        }
+        boolean wasSubmitted = essay.isSubmitted();
         essay.revise(title, quote, body, now());
         if (submit) {
             essay.submit(now());
         }
         essayRepository.update(essay);
+        if (!wasSubmitted && essay.isSubmitted()) {
+            activityLog.record(anthology.id(), writer.id(), ActivityType.SUBMITTED, essay.id());
+        }
         return essay;
+    }
+
+    /** 독후감 한 편을 읽는다. 남의 글이면 "읽음"을 기록한다. */
+    @Transactional
+    public Reading read(String code, String token, Long essayId) {
+        Anthology anthology = anthologyService.get(code);
+        Contributor viewer = AnthologyService.requireContributor(anthology, token);
+        Shelf shelf = shelf(anthology);
+        Essay essay = readable(shelf, viewer, essayId);
+        if (!essay.isWrittenBy(viewer.id())) {
+            activityLog.record(anthology.id(), viewer.id(), ActivityType.READ_OTHERS, essay.id());
+        }
+        return new Reading(shelf, viewer, essay);
     }
 
     @Transactional
@@ -73,10 +99,40 @@ public class EssayService {
             throw DomainException.rule("책에 넣을 글은 마감한 뒤에 고를 수 있어요.");
         }
         Contributor requester = AnthologyService.requireContributor(anthology, token);
-        Essay essay = shelf(anthology).findById(essayId)
-                .orElseThrow(() -> DomainException.notFound("독후감을 찾을 수 없어요."));
+        Essay essay = essayOf(anthology, essayId);
         essay.changeInclusion(requester.id(), included);
         essayRepository.update(essay);
+    }
+
+    @Transactional
+    public void allowPublicSample(String code, String token, Long essayId, boolean allowed) {
+        Anthology anthology = anthologyService.get(code);
+        Contributor requester = AnthologyService.requireContributor(anthology, token);
+        Essay essay = essayOf(anthology, essayId);
+        essay.allowPublicSample(requester.id(), allowed);
+        essayRepository.update(essay);
+    }
+
+    /** 엮은이가 책 속 순서를 한 칸 옮긴다. */
+    @Transactional
+    public void move(String code, String token, Long essayId, int delta) {
+        Anthology anthology = locked(code);
+        Contributor requester = AnthologyService.requireContributor(anthology, token);
+        for (Essay changed : shelf(anthology).move(requester, essayId, delta)) {
+            essayRepository.update(changed);
+        }
+    }
+
+    /** 엮은이가 참여자를 내보낸다. 그 사람의 글·답글·기록도 함께 지운다. */
+    @Transactional
+    public String remove(String code, String token, Long contributorId) {
+        Anthology anthology = locked(code);
+        Contributor removed = anthology.remove(AnthologyService.requireContributor(anthology, token), contributorId);
+        replyRepository.deleteAllAround(removed.id());
+        essayRepository.deleteByContributor(removed.id());
+        activityLog.forgetContributor(removed.id());
+        anthologyRepository.deleteContributor(removed.id());
+        return removed.nickname();
     }
 
     @Transactional(readOnly = true)
@@ -86,6 +142,14 @@ public class EssayService {
         Map<Long, List<Reply>> replies = replyRepository.findByEssayIds(essayIds).stream()
                 .collect(Collectors.groupingBy(Reply::essayId));
         return new Shelf(anthology, essays, replies);
+    }
+
+    /** 참여 → 써 봄 → 제출 → 남의 글 읽음 → 내려받음. 엮은이 화면에 보여 준다. */
+    @Transactional(readOnly = true)
+    public Funnel funnel(Shelf shelf) {
+        Anthology anthology = shelf.anthology();
+        return new Funnel(anthology.contributors().size(), shelf.essays().size(), shelf.submittedCount(),
+                activityLog.engagement(anthology.id()));
     }
 
     /** 읽을 수 있는 독후감을 꺼낸다. 없으면 404, 아직 못 읽으면 403. */
@@ -98,6 +162,11 @@ public class EssayService {
         return essay;
     }
 
+    private Essay essayOf(Anthology anthology, Long essayId) {
+        return shelf(anthology).findById(essayId)
+                .orElseThrow(() -> DomainException.notFound("독후감을 찾을 수 없어요."));
+    }
+
     private Anthology locked(String code) {
         return anthologyRepository.lockByCode(code)
                 .orElseThrow(() -> DomainException.notFound("문집을 찾을 수 없어요."));
@@ -105,5 +174,9 @@ public class EssayService {
 
     private LocalDateTime now() {
         return LocalDateTime.now(clock);
+    }
+
+    /** 읽기 화면에 필요한 것: 책장(앞뒤 글), 읽는 사람, 글. */
+    public record Reading(Shelf shelf, Contributor viewer, Essay essay) {
     }
 }

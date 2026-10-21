@@ -4,10 +4,25 @@
 <body class="has-cta" th:with="a=${view.anthology()}">
 <header th:replace="~{fragments/layout :: header}"></header>
 
+<!-- 책이 되는 순간: 마감 직후 한 번만. 종이가 한 장씩 쌓이고 표지가 덮인다. 누르면 넘어간다. -->
+<div class="bind-scene" th:if="${justClosed != null}" role="presentation" aria-hidden="true">
+  <div class="bind-stack">
+    <span class="sheet" th:each="card, stat : ${view.cards()}" th:if="${stat.index < 12}"
+          th:style="'--i:' + ${stat.index} + ';--r:' + ${(stat.index % 5) - 2} + 'deg'"></span>
+    <div class="bind-cover" th:style="'--n:' + ${view.cards().size() < 12 ? view.cards().size() : 12}">
+      <span class="kicker">독후감 문집</span>
+      <strong th:text="${a.title()}">제목</strong>
+      <span th:text="${view.cards().size()} + '명이 쓴 독후감'">N명</span>
+    </div>
+  </div>
+  <p class="hand bind-caption">한 권이 됐어요</p>
+</div>
+
 <section class="page-hero narrow">
   <a class="kicker" th:href="@{/anthologies/{code}(code=${a.code()})}" th:text="'← ' + ${a.title()}">← 문집</a>
   <h1 data-reveal>원고 미리보기</h1>
-  <p class="lead">이 순서로 책에 실려요. 내 글 중 빼고 싶은 게 있으면 지금 고르세요. 다른 사람의 글은 그 사람만 뺄 수 있어요.</p>
+  <p class="lead">이 순서로 책에 실려요. 내 글 중 빼고 싶은 게 있으면 지금 고르세요.
+    <th:block th:if="${view.isEditor()}">엮은이는 차례의 순서를 바꾸고 부록을 붙일 수 있어요.</th:block></p>
 </section>
 
 <div th:replace="~{fragments/layout :: flash}"></div>
@@ -25,29 +40,54 @@
          th:text="${manuscript != null} ? ${manuscript.pieces().size()} + '명이 쓴 독후감' : ''">N명</p>
     </div>
 
-    <div class="book-page fade-up" th:if="${a.introduction() != null}">
-      <span class="kicker">도서 소개</span>
-      <p style="white-space:pre-line;margin-top:18px" th:text="${a.introduction()}">소개</p>
+    <div class="book-page fade-up" th:if="${a.introduction() != null or !a.prompts().isEmpty()}">
+      <th:block th:if="${a.introduction() != null}">
+        <span class="kicker">도서 소개</span>
+        <p style="white-space:pre-line;margin-top:18px" th:text="${a.introduction()}">소개</p>
+      </th:block>
+      <th:block th:if="${!a.prompts().isEmpty()}">
+        <span class="kicker" style="display:block;margin-top:22px">이 문집이 함께 붙든 질문</span>
+        <ol class="prompt-list"><li th:each="prompt : ${a.prompts()}" th:text="${prompt}">질문</li></ol>
+      </th:block>
     </div>
 
     <div class="book-page fade-up" id="toc">
       <span class="kicker">차례</span>
       <ol class="toc">
-        <li th:each="card : ${view.cards()}" th:classappend="${card.included()} ? '' : 'excluded'">
+        <li th:each="card, stat : ${view.cards()}" th:id="'toc-' + ${card.essayId()}"
+            th:classappend="${card.included()} ? '' : 'excluded'">
           <span class="toc-byline" th:text="${card.byline()}">감자(김주하)</span>
           <span class="toc-dots"></span>
           <a class="toc-title" th:href="@{/anthologies/{code}/essays/{id}(code=${a.code()}, id=${card.essayId()})}"
              th:text="${card.title()}" style="color:inherit;text-decoration:none">제목</a>
+          <span class="toc-move" th:if="${view.isEditor()}">
+            <form method="post" th:action="@{/anthologies/{code}/essays/{id}/move(code=${a.code()}, id=${card.essayId()})}">
+              <input type="hidden" name="delta" value="-1">
+              <button type="submit" class="move" th:disabled="${stat.first}" th:attr="aria-label=${card.title()} + ' 앞으로'">↑</button>
+            </form>
+            <form method="post" th:action="@{/anthologies/{code}/essays/{id}/move(code=${a.code()}, id=${card.essayId()})}">
+              <input type="hidden" name="delta" value="1">
+              <button type="submit" class="move" th:disabled="${stat.last}" th:attr="aria-label=${card.title()} + ' 뒤로'">↓</button>
+            </form>
+          </span>
         </li>
       </ol>
       <p class="toc-foot">흐린 글은 쓴 사람이 책에서 뺀 글이에요.</p>
     </div>
 
+    <!-- 내 글: 책에 넣기·빼기, 공개 맛보기 -->
+    <div id="mine"></div>
     <div class="paper tape my-essay" th:each="card : ${view.cards()}" th:if="${card.mine()}">
       <div class="what">
         <span class="hand" th:text="${card.included()} ? '책에 들어가요' : '책에서 뺐어요'">상태</span>
         <h2 th:text="${card.title()}">내 글</h2>
         <p>마음이 바뀌면 언제든 다시 바꿀 수 있어요.</p>
+        <form class="sample-toggle" method="post" th:if="${card.included()}"
+              th:action="@{/anthologies/{code}/essays/{id}/sample(code=${a.code()}, id=${card.essayId()})}">
+          <input type="hidden" name="allowed" th:value="${!card.publicSample()}">
+          <button class="link-button" type="submit"
+                  th:text="${card.publicSample()} ? '✓ 공개 소개 페이지에 맛보기로 보여 주는 중 · 거두기' : '공개 소개 페이지에 맛보기로 보여 줘도 좋아요'">맛보기</button>
+        </form>
       </div>
       <form method="post" th:action="@{/anthologies/{code}/essays/{id}/inclusion(code=${a.code()}, id=${card.essayId()})}">
         <input type="hidden" name="included" th:value="${!card.included()}">
@@ -55,9 +95,40 @@
       </form>
     </div>
 
+    <!-- 부록 -->
+    <div class="book-page" id="appendix" th:if="${view.isEditor() or a.appendix() != null}">
+      <span class="kicker">부록</span>
+      <p th:if="${!view.isEditor()}" style="white-space:pre-line;margin-top:18px" th:text="${a.appendix()}">부록</p>
+      <form th:if="${view.isEditor()}" method="post" th:action="@{/anthologies/{code}/appendix(code=${a.code()})}" data-once
+            style="font-family:var(--sans);margin-top:14px">
+        <p class="tool-note">용어사전, 엮은이의 말, 함께 읽은 기록 같은 걸 책 끝에 붙여요. 비우면 부록이 빠져요.</p>
+        <textarea name="appendix" rows="8" th:text="${a.appendix()}" th:attr="maxlength=${limits.appendixMax()}"
+                  placeholder="용어사전&#10;&#10;리팩터링: 겉보기 동작은 그대로 두고 안의 구조를 바꾸는 일."></textarea>
+        <button class="btn small ghost" type="submit" style="margin-top:8px">부록 저장</button>
+      </form>
+    </div>
+
+    <div class="paper downloads" th:if="${manuscript != null}">
+      <h3>내려받기</h3>
+      <div class="download-row">
+        <div>
+          <b>EPUB 전자책</b>
+          <p>리디, 교보eBook, Apple 도서에서 열려요. 표지와 차례가 들어 있어요.</p>
+        </div>
+        <a class="btn ghost small" th:href="@{/anthologies/{code}/book.epub(code=${a.code()})}">EPUB</a>
+      </div>
+      <div class="download-row">
+        <div>
+          <b>인쇄용 PDF · A5</b>
+          <p>부크크·교보 퍼플에 그대로 올려 종이책(POD)으로 낼 수 있어요. 나눔명조, 쪽번호 차례.</p>
+        </div>
+        <a class="btn ghost small" th:href="@{/anthologies/{code}/book.pdf(code=${a.code()})}">PDF</a>
+      </div>
+    </div>
+
     <div class="paper" style="padding:24px">
       <h3 style="margin:0 0 6px;font-size:15px">공개 소개 페이지</h3>
-      <p style="margin:0 0 12px;font-size:14px;color:var(--ink-soft)">도서 소개와 차례만 보이는 페이지예요. 본문은 보이지 않아요. "남이 뭐라고 썼는지" 궁금하게 만드는 입구예요.</p>
+      <p style="margin:0 0 12px;font-size:14px;color:var(--ink-soft)">도서 소개와 차례, 쓴 사람이 허락한 맛보기 한 편만 보이는 페이지예요. 나머지 본문은 보이지 않아요.</p>
       <div class="copy-line">
         <input id="about-url" type="text" th:value="${aboutUrl}" readonly aria-label="공개 소개 페이지 링크">
         <button class="btn small ghost" type="button" data-copy="about-url">복사</button>

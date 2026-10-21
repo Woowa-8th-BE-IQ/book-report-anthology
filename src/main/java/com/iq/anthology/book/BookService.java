@@ -1,8 +1,13 @@
 package com.iq.anthology.book;
 
+import com.iq.anthology.activity.ActivityLog;
+import com.iq.anthology.activity.ActivityType;
 import com.iq.anthology.anthology.Anthology;
 import com.iq.anthology.anthology.AnthologyService;
+import com.iq.anthology.anthology.Contributor;
+import com.iq.anthology.essay.Essay;
 import com.iq.anthology.essay.EssayService;
+import com.iq.anthology.essay.Shelf;
 import com.iq.anthology.support.DomainException;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -13,13 +18,15 @@ public class BookService {
 
     private final AnthologyService anthologyService;
     private final EssayService essayService;
+    private final ActivityLog activityLog;
 
-    public BookService(AnthologyService anthologyService, EssayService essayService) {
+    public BookService(AnthologyService anthologyService, EssayService essayService, ActivityLog activityLog) {
         this.anthologyService = anthologyService;
         this.essayService = essayService;
+        this.activityLog = activityLog;
     }
 
-    /** 원고 전문은 참여자만 본다. 밖에는 공개 소개 페이지(목차)만 보인다. */
+    /** 원고 전문은 참여자만 본다. 밖에는 공개 소개 페이지(목차와 동의한 맛보기 한 편)만 보인다. */
     @Transactional(readOnly = true)
     public Manuscript manuscript(String code, String token) {
         Anthology anthology = anthologyService.get(code);
@@ -27,22 +34,58 @@ public class BookService {
         return ManuscriptFactory.compose(essayService.shelf(anthology));
     }
 
-    /** 공개 소개 페이지용. 목차를 그리는 데만 쓴다. 실린 글이 없으면 비어 있다. */
-    @Transactional(readOnly = true)
-    public Optional<Manuscript> publicContents(Anthology anthology) {
-        try {
-            return Optional.of(ManuscriptFactory.compose(essayService.shelf(anthology)));
-        } catch (DomainException e) {
-            return Optional.empty();
+    /** 공개 소개 페이지. 목차와, 쓴 사람이 동의한 맛보기 한 편. 방문을 기록한다. */
+    @Transactional
+    public Showcase showcase(String code) {
+        Anthology anthology = anthologyService.get(code);
+        if (!anthology.isClosed()) {
+            throw DomainException.notFound("아직 공개되지 않은 문집이에요.");
         }
+        Shelf shelf = essayService.shelf(anthology);
+        Manuscript manuscript = null;
+        try {
+            manuscript = ManuscriptFactory.compose(shelf);
+        } catch (DomainException e) {
+            // 모두 책에서 뺐다. 목차 없이 소개만 보여 준다.
+        }
+        Optional<Essay> sample = shelf.publicSample();
+        activityLog.record(anthology.id(), null, ActivityType.ABOUT_VIEWED, null);
+        return new Showcase(anthology, manuscript,
+                sample.map(essay -> new Sample(shelf.writerOf(essay).byline(), essay)).orElse(null));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Book epub(String code, String token) {
-        Manuscript manuscript = manuscript(code, token);
-        return new Book(EpubWriter.fileName(manuscript), EpubWriter.write(manuscript));
+        Download download = download(code, token, ActivityType.EPUB_DOWNLOADED);
+        return new Book(EpubWriter.fileName(download.manuscript()), EpubWriter.write(download.manuscript()),
+                "application/epub+zip");
     }
 
-    public record Book(String fileName, byte[] content) {
+    @Transactional
+    public Book pdf(String code, String token) {
+        Download download = download(code, token, ActivityType.PDF_DOWNLOADED);
+        return new Book(PdfBook.fileName(download.manuscript()), PdfBook.write(download.manuscript()),
+                "application/pdf");
+    }
+
+    private Download download(String code, String token, ActivityType type) {
+        Anthology anthology = anthologyService.get(code);
+        Contributor reader = AnthologyService.requireContributor(anthology, token);
+        Manuscript manuscript = ManuscriptFactory.compose(essayService.shelf(anthology));
+        activityLog.record(anthology.id(), reader.id(), type, null);
+        return new Download(manuscript);
+    }
+
+    private record Download(Manuscript manuscript) {
+    }
+
+    public record Book(String fileName, byte[] content, String mediaType) {
+    }
+
+    /** 공개 소개 페이지에 그릴 것. manuscript와 sample은 없을 수 있다. */
+    public record Showcase(Anthology anthology, Manuscript manuscript, Sample sample) {
+    }
+
+    public record Sample(String byline, Essay essay) {
     }
 }

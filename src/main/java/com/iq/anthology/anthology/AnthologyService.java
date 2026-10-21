@@ -1,5 +1,7 @@
 package com.iq.anthology.anthology;
 
+import com.iq.anthology.activity.ActivityLog;
+import com.iq.anthology.activity.ActivityType;
 import com.iq.anthology.support.DomainException;
 import com.iq.anthology.support.IdentifierGenerator;
 import java.time.Clock;
@@ -15,11 +17,14 @@ public class AnthologyService {
 
     private final AnthologyRepository anthologyRepository;
     private final IdentifierGenerator identifiers;
+    private final ActivityLog activityLog;
     private final Clock clock;
 
-    public AnthologyService(AnthologyRepository anthologyRepository, IdentifierGenerator identifiers, Clock clock) {
+    public AnthologyService(AnthologyRepository anthologyRepository, IdentifierGenerator identifiers,
+                            ActivityLog activityLog, Clock clock) {
         this.anthologyRepository = anthologyRepository;
         this.identifiers = identifiers;
+        this.activityLog = activityLog;
         this.clock = clock;
     }
 
@@ -30,6 +35,7 @@ public class AnthologyService {
         Anthology anthology = Anthology.open(uniqueCode(), title, bookTitle, bookAuthor, dueDate,
                 editorNickname, editorRealName, token, now());
         anthologyRepository.save(anthology);
+        activityLog.record(anthology.id(), anthology.editor().id(), ActivityType.JOINED, null);
         return new Admission(anthology.code(), token);
     }
 
@@ -39,6 +45,7 @@ public class AnthologyService {
         String token = identifiers.participantToken();
         Contributor newcomer = anthology.join(nickname, realName, token, now());
         anthologyRepository.addContributor(anthology.id(), newcomer);
+        activityLog.record(anthology.id(), newcomer.id(), ActivityType.JOINED, null);
         return new Admission(anthology.code(), token);
     }
 
@@ -46,7 +53,31 @@ public class AnthologyService {
     public void introduce(String code, String token, String introduction) {
         Anthology anthology = get(code);
         anthology.introduce(requireContributor(anthology, token), introduction);
-        anthologyRepository.updateIntroduction(anthology);
+        anthologyRepository.updateTexts(anthology);
+    }
+
+    @Transactional
+    public void ask(String code, String token, String prompts) {
+        Anthology anthology = get(code);
+        anthology.ask(requireContributor(anthology, token), prompts);
+        anthologyRepository.updateTexts(anthology);
+    }
+
+    @Transactional
+    public void attachAppendix(String code, String token, String appendix) {
+        Anthology anthology = get(code);
+        anthology.attachAppendix(requireContributor(anthology, token), appendix);
+        anthologyRepository.updateTexts(anthology);
+    }
+
+    /** 참여자의 개인 링크를 새로 만든다. 돌려받은 토큰으로 엮은이가 새 링크를 전해 준다. */
+    @Transactional
+    public Reissued reissueLink(String code, String token, Long contributorId) {
+        Anthology anthology = get(code);
+        Contributor target = anthology.reissueLink(requireContributor(anthology, token), contributorId,
+                identifiers.participantToken());
+        anthologyRepository.updateToken(target);
+        return new Reissued(target.nickname(), target.token());
     }
 
     @Transactional(readOnly = true)
@@ -86,5 +117,9 @@ public class AnthologyService {
 
     /** 문집에 들어온 결과: 어느 문집에, 어떤 토큰으로. */
     public record Admission(String code, String token) {
+    }
+
+    /** 새로 만든 개인 링크: 누구의, 어떤 토큰. */
+    public record Reissued(String nickname, String token) {
     }
 }

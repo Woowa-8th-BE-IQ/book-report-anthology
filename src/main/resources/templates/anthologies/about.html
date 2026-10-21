@@ -30,8 +30,20 @@
       </ol>
     </div>
 
+    <!-- 쓴 사람이 허락한 맛보기 한 편 -->
+    <article class="book-page sample fade-up" th:if="${sample != null}">
+      <span class="kicker">맛보기 한 편</span>
+      <p class="byline" th:text="${sample.byline()}" style="font-family:var(--sans);font-size:13px;color:var(--accent);margin:14px 0 0">감자</p>
+      <h2 th:text="${sample.essay().title()}">제목</h2>
+      <figure class="quote" th:if="${sample.essay().quote() != null}">
+        <blockquote style="margin:0" th:text="${sample.essay().quote()}">밑줄</blockquote>
+        <figcaption th:text="'— ' + ${anthology.citation()}">출처</figcaption>
+      </figure>
+      <div class="body" style="white-space:pre-line" th:text="${sample.essay().body()}">본문</div>
+    </article>
+
     <div class="paper tape empty-state">
-      <span class="hand">본문은 책 안에 있어요</span>
+      <span class="hand" th:text="${sample != null} ? '나머지는 책 안에 있어요' : '본문은 책 안에 있어요'">본문은 책 안에</span>
       <p>같은 책을 읽은 사람들이 무슨 생각을 했는지, 함께 쓴 사람들만 펼쳐 볼 수 있어요.</p>
       <a class="btn" th:href="@{/anthologies/new}">우리도 문집 열기</a>
     </div>

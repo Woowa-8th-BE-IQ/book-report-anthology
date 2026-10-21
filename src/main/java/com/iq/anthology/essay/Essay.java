@@ -29,10 +29,23 @@ public class Essay {
     private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime submittedAt;
+    /** 엮은이가 정한 책 속 순서. 비어 있으면 닉네임 가나다순. */
+    private Integer bookOrder;
+    /** 공개 소개 페이지에 맛보기로 보여도 된다는 쓴 사람의 동의. */
+    private boolean publicSample;
 
     public Essay(Long id, Long anthologyId, Long contributorId, String title, String quote, String body,
                  EssayStatus status, boolean includedInBook, LocalDateTime createdAt, LocalDateTime updatedAt,
                  LocalDateTime submittedAt) {
+        this(id, anthologyId, contributorId, title, quote, body, status, includedInBook, createdAt, updatedAt,
+                submittedAt, null, false);
+    }
+
+    public Essay(Long id, Long anthologyId, Long contributorId, String title, String quote, String body,
+                 EssayStatus status, boolean includedInBook, LocalDateTime createdAt, LocalDateTime updatedAt,
+                 LocalDateTime submittedAt, Integer bookOrder, boolean publicSample) {
+        this.bookOrder = bookOrder;
+        this.publicSample = publicSample;
         this.id = id;
         this.anthologyId = Objects.requireNonNull(anthologyId);
         this.contributorId = Objects.requireNonNull(contributorId);
@@ -85,6 +98,27 @@ public class Essay {
             throw DomainException.forbidden("본인 글만 책에서 빼거나 넣을 수 있어요.");
         }
         this.includedInBook = included;
+    }
+
+    /** 공개 소개 페이지에 이 글을 맛보기로 보여도 되는지. 쓴 사람만, 제출한 글만. */
+    public void allowPublicSample(Long requesterId, boolean allowed) {
+        if (!isWrittenBy(requesterId)) {
+            throw DomainException.forbidden("본인 글만 공개 여부를 정할 수 있어요.");
+        }
+        if (!isSubmitted()) {
+            throw DomainException.rule("제출한 글만 공개할 수 있어요.");
+        }
+        this.publicSample = allowed;
+    }
+
+    /** 책 속 순서를 정한다. 엮은이의 순서 조정({@link Shelf#move})에서만 쓴다. */
+    void placeAt(int order) {
+        this.bookOrder = order;
+    }
+
+    /** 읽는 데 걸리는 대략의 분. 한국어 산문 기준 1분에 500자. */
+    public int readingMinutes() {
+        return Math.max(1, Math.round(bodyLength() / 500f));
     }
 
     public boolean isWrittenBy(Long candidateId) {
@@ -149,5 +183,13 @@ public class Essay {
 
     public LocalDateTime submittedAt() {
         return submittedAt;
+    }
+
+    public Integer bookOrder() {
+        return bookOrder;
+    }
+
+    public boolean publicSample() {
+        return publicSample;
     }
 }

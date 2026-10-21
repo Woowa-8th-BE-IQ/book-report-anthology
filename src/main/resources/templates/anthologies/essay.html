@@ -13,12 +13,17 @@
 
 <main class="section" style="padding-top:28px">
   <div class="narrow">
-    <article class="paper tape reading">
-      <p class="byline" th:text="${writer.byline()}">감자(김주하)</p>
+    <article class="paper tape reading" th:style="'view-transition-name:essay-' + ${essay.id()}"
+             th:attr="data-read-key='ab-read-' + ${anthology.code()}, data-essay-id=${essay.id()}, data-mine=${mine}">
+      <p class="byline">
+        <span th:text="${writer.byline()}">감자(김주하)</span>
+        <span class="meta" th:text="'· 약 ' + ${essay.readingMinutes()} + '분'">· 약 3분</span>
+      </p>
       <h1 th:text="${essay.title() != null} ? ${essay.title()} : '제목 없는 초안'">제목</h1>
-      <figure class="quote" th:if="${essay.quote() != null}">
+      <figure class="quote reveal-on-view" th:if="${essay.quote() != null}">
         <blockquote style="margin:0" th:text="${essay.quote()}">밑줄</blockquote>
         <figcaption th:text="'— ' + ${anthology.citation()}">출처</figcaption>
+        <svg th:replace="~{fragments/layout :: underline}"></svg>
       </figure>
       <div class="body" th:text="${essay.body()}">본문</div>
 

@@ -2,7 +2,10 @@ package com.iq.anthology.essay;
 
 import com.iq.anthology.anthology.Anthology;
 import com.iq.anthology.anthology.Contributor;
+import com.iq.anthology.support.DomainException;
 import java.text.Collator;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -68,11 +71,77 @@ public record Shelf(Anthology anthology, List<Essay> essays, Map<Long, List<Repl
         return anthology.contributorById(essay.contributorId());
     }
 
-    /** 레퍼런스 문집처럼 닉네임 가나다순. 같으면 먼저 낸 순서. */
+    /**
+     * 책 순서. 엮은이가 정한 순서가 있으면 그것이 먼저이고, 없으면 레퍼런스 문집처럼 닉네임 가나다순.
+     * 같으면 먼저 낸 순서.
+     */
     private Comparator<Essay> bookOrder() {
-        return Comparator.<Essay, String>comparing(essay -> writerOf(essay).nickname(), KOREAN)
+        return Comparator.<Essay, Integer>comparing(Essay::bookOrder, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(essay -> writerOf(essay).nickname(), KOREAN)
                 .thenComparing(Essay::submittedAt, Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparing(Essay::id, Comparator.nullsLast(Comparator.naturalOrder()));
+    }
+
+    /**
+     * 엮은이가 한 편을 앞(-1)이나 뒤(+1)로 옮긴다. 마감 뒤에만. 옮긴 결과대로 모든 글에 1부터 순서를 매기고,
+     * 순서가 바뀐 글들을 돌려준다(저장 대상).
+     */
+    public List<Essay> move(Contributor requester, Long essayId, int delta) {
+        if (!requester.isEditor()) {
+            throw DomainException.forbidden("순서는 엮은이만 바꿀 수 있어요.");
+        }
+        if (!anthology.isClosed()) {
+            throw DomainException.rule("순서는 마감한 뒤에 정할 수 있어요.");
+        }
+        if (delta != -1 && delta != 1) {
+            throw DomainException.rule("한 칸씩만 옮길 수 있어요.");
+        }
+        List<Essay> order = new ArrayList<>(submitted());
+        int from = indexOf(order, essayId);
+        int to = from + delta;
+        if (to < 0 || to >= order.size()) {
+            return List.of();
+        }
+        Collections.swap(order, from, to);
+        List<Essay> changed = new ArrayList<>();
+        for (int position = 0; position < order.size(); position++) {
+            Essay essay = order.get(position);
+            if (!Objects.equals(essay.bookOrder(), position + 1)) {
+                essay.placeAt(position + 1);
+                changed.add(essay);
+            }
+        }
+        return changed;
+    }
+
+    private static int indexOf(List<Essay> order, Long essayId) {
+        for (int i = 0; i < order.size(); i++) {
+            if (Objects.equals(order.get(i).id(), essayId)) {
+                return i;
+            }
+        }
+        throw DomainException.notFound("책에 실린 독후감이 아니에요.");
+    }
+
+    /** 공개 소개 페이지의 맛보기 한 편. 쓴 사람이 동의했고 책에 실리는 글 중 책 순서로 첫 번째. */
+    public Optional<Essay> publicSample() {
+        if (!anthology.isClosed()) {
+            return Optional.empty();
+        }
+        return submitted().stream()
+                .filter(essay -> essay.includedInBook() && essay.publicSample())
+                .findFirst();
+    }
+
+    /** 마감 전 모으는 중에 아직 제출하지 않은 사람들. 엮은이의 재촉 문구에 쓴다. */
+    public List<Contributor> notSubmitted() {
+        return anthology.contributors().stream()
+                .filter(contributor -> !hasSubmitted(contributor))
+                .toList();
+    }
+
+    public int replyCountOf(Essay essay) {
+        return repliesByEssay.getOrDefault(essay.id(), List.of()).size();
     }
 
     public boolean isEmpty() {

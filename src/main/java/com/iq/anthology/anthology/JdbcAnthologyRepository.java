@@ -71,10 +71,27 @@ public class JdbcAnthologyRepository implements AnthologyRepository {
     }
 
     @Override
-    public void updateIntroduction(Anthology anthology) {
-        jdbc.sql("UPDATE anthology SET introduction = :introduction WHERE id = :id")
+    public void updateTexts(Anthology anthology) {
+        jdbc.sql("UPDATE anthology SET introduction = :introduction, prompts = :prompts, appendix = :appendix WHERE id = :id")
                 .param("introduction", anthology.introduction())
+                .param("prompts", anthology.promptsText())
+                .param("appendix", anthology.appendix())
                 .param("id", anthology.id())
+                .update();
+    }
+
+    @Override
+    public void updateToken(Contributor contributor) {
+        jdbc.sql("UPDATE contributor SET token = :token WHERE id = :id")
+                .param("token", contributor.token())
+                .param("id", contributor.id())
+                .update();
+    }
+
+    @Override
+    public void deleteContributor(Long contributorId) {
+        jdbc.sql("DELETE FROM contributor WHERE id = :id")
+                .param("id", contributorId)
                 .update();
     }
 
@@ -146,7 +163,8 @@ public class JdbcAnthologyRepository implements AnthologyRepository {
                         rs.getObject("joined_at", LocalDateTime.class)))
                 .list();
         return new Anthology(row.id(), row.code(), row.title(), row.bookTitle(), row.bookAuthor(),
-                row.introduction(), row.dueDate(), row.status(), row.createdAt(), row.closedAt(), contributors);
+                row.introduction(), row.prompts(), row.appendix(), row.dueDate(), row.status(), row.createdAt(),
+                row.closedAt(), contributors);
     }
 
     private Row row(ResultSet rs, int rowNum) throws SQLException {
@@ -157,6 +175,8 @@ public class JdbcAnthologyRepository implements AnthologyRepository {
                 rs.getString("book_title"),
                 rs.getString("book_author"),
                 rs.getString("introduction"),
+                rs.getString("prompts"),
+                rs.getString("appendix"),
                 rs.getObject("due_date", LocalDate.class),
                 AnthologyStatus.valueOf(rs.getString("status")),
                 rs.getObject("created_at", LocalDateTime.class),
@@ -164,7 +184,7 @@ public class JdbcAnthologyRepository implements AnthologyRepository {
     }
 
     private record Row(Long id, String code, String title, String bookTitle, String bookAuthor,
-                       String introduction, LocalDate dueDate, AnthologyStatus status,
+                       String introduction, String prompts, String appendix, LocalDate dueDate, AnthologyStatus status,
                        LocalDateTime createdAt, LocalDateTime closedAt) {
     }
 }

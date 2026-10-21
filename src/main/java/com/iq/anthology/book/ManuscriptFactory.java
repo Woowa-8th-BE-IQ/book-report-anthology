@@ -31,7 +31,8 @@ public final class ManuscriptFactory {
             throw DomainException.rule("책에 넣을 독후감이 하나도 없어요. 최소 한 편은 넣어 주세요.");
         }
         return new Manuscript(identifierOf(anthology), anthology.title(), anthology.citation(),
-                anthology.readLine(), anthology.introduction(), anthology.closedAt().toLocalDate(), pieces);
+                anthology.readLine(), anthology.introduction(), anthology.closedAt().toLocalDate(), pieces,
+                anthology.prompts(), anthology.appendix());
     }
 
     /** 같은 문집은 다시 내려받아도 같은 식별자를 갖는다. */

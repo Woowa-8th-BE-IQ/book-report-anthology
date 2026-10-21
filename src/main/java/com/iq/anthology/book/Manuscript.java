@@ -14,9 +14,16 @@ import java.util.Objects;
  * @param introduction 도서 소개 (없을 수 있다)
  * @param closedOn     마감한 날
  * @param pieces       실리는 독후감, 책 순서
+ * @param prompts      엮은이의 글감 질문 (없을 수 있다)
+ * @param appendix     부록 (없을 수 있다)
  */
 public record Manuscript(String identifier, String title, String citation, String readLine, String introduction,
-                         LocalDate closedOn, List<Piece> pieces) {
+                         LocalDate closedOn, List<Piece> pieces, List<String> prompts, String appendix) {
+
+    public Manuscript(String identifier, String title, String citation, String readLine, String introduction,
+                      LocalDate closedOn, List<Piece> pieces) {
+        this(identifier, title, citation, readLine, introduction, closedOn, pieces, List.of(), null);
+    }
 
     public Manuscript {
         Objects.requireNonNull(identifier);
@@ -25,6 +32,20 @@ public record Manuscript(String identifier, String title, String citation, Strin
         Objects.requireNonNull(readLine);
         Objects.requireNonNull(closedOn);
         pieces = List.copyOf(pieces);
+        prompts = prompts == null ? List.of() : List.copyOf(prompts);
+    }
+
+    public boolean hasPrompts() {
+        return !prompts.isEmpty();
+    }
+
+    public boolean hasAppendix() {
+        return appendix != null;
+    }
+
+    /** 도서 소개 쪽을 만들지. 소개나 질문 중 하나라도 있으면 만든다. */
+    public boolean hasFrontMatter() {
+        return hasIntroduction() || hasPrompts();
     }
 
     public List<String> bylines() {

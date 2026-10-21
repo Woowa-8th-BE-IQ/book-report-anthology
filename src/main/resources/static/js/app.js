@@ -94,11 +94,19 @@
     });
   });
 
-  // 6. 두 번 제출 막기. 누른 버튼의 name/value(저장·제출 구분)는 숨은 칸으로 옮겨 살린다.
+  // 6. 확인 창(data-confirm)과 두 번 제출 막기. 누른 버튼의 name/value(저장·제출 구분)는 숨은 칸으로 옮겨 살린다.
+  document.querySelectorAll('form[data-confirm]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      if (!window.confirm(form.dataset.confirm)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    });
+  });
   document.querySelectorAll('form[data-once]').forEach((form) => {
     form.addEventListener('submit', (event) => {
       if (event.defaultPrevented) {
-        return; // 확인 창에서 취소한 경우
+        return;
       }
       const submitter = event.submitter;
       if (submitter && submitter.name) {
@@ -112,16 +120,235 @@
     });
   });
 
-  // 7. 쓰던 글이 있는데 나가려 하면 붙잡는다
-  document.querySelectorAll('form[data-guard]').forEach((form) => {
-    let dirty = false;
-    form.addEventListener('input', () => { dirty = true; });
-    form.addEventListener('submit', () => { dirty = false; });
+  const storage = {
+    get(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } },
+    set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* 저장 공간이 없으면 넘어간다 */ } },
+    remove(key) { try { localStorage.removeItem(key); } catch (e) { /* 무시 */ } },
+  };
+  const charCount = (text) => [...(text || '').trim()].length;
+
+  // 7. 쓰기 화면: 자동 저장, 이 기기 사본, 200자 문턱, 제출 전 미리보기
+  const writer = document.getElementById('essay-form');
+  if (writer) {
+    const fields = ['title', 'quote', 'body'].map((name) => writer.querySelector(`[name="${name}"]`));
+    const [titleField, quoteField, bodyField] = fields;
+    const status = document.getElementById('save-status');
+    const submitButton = document.getElementById('submit-button');
+    const draftKey = writer.dataset.draftKey;
+    const minLength = Number(writer.dataset.bodyMin || 200);
+    let serverSavedAt = Number(writer.dataset.savedAt || 0);
+    let lastSaved = JSON.stringify(fields.map((f) => f.value));
+    let timer = null;
+    let maxWaitTimer = null;
+    let inFlight = false;
+    let leaving = false;
+
+    const snapshot = () => fields.map((f) => f.value);
+    const dirty = () => JSON.stringify(snapshot()) !== lastSaved;
+    const show = (text, state) => {
+      status.textContent = text;
+      status.className = 'status' + (state ? ' ' + state : '');
+    };
+
+    // 이 기기 사본: 서버에 닿기 전에 창이 닫혀도 글이 남는다
+    const keepLocal = () => {
+      const [title, quote, body] = snapshot();
+      storage.set(draftKey, { title, quote, body, at: Date.now() });
+    };
+
+    const save = async ({ keepalive = false } = {}) => {
+      clearTimeout(timer);
+      clearTimeout(maxWaitTimer);
+      maxWaitTimer = null;
+      if (!dirty()) {
+        return;
+      }
+      if (inFlight && !keepalive) {
+        timer = setTimeout(save, 800);
+        return;
+      }
+      inFlight = true;
+      const sent = JSON.stringify(snapshot());
+      const [title, quote, body] = snapshot();
+      show('저장 중…', 'saving');
+      try {
+        const response = await fetch(writer.dataset.autosave, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: new URLSearchParams({ title, quote, body }),
+          credentials: 'same-origin',
+          keepalive,
+        });
+        const result = await response.json().catch(() => ({}));
+        if (response.ok && result.saved) {
+          lastSaved = sent;
+          serverSavedAt = result.savedAtMillis || Date.now();
+          show(`저장됨 · ${result.savedAt}`, 'saved');
+          if (!dirty()) {
+            storage.remove(draftKey);
+          }
+        } else {
+          show(`저장 안 됨 · ${result.message || '잠시 후 다시 시도할게요'}`, 'failed');
+        }
+      } catch (error) {
+        show('연결이 끊겼어요 · 이 기기에 보관 중', 'failed');
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    const schedule = () => {
+      clearTimeout(timer);
+      timer = setTimeout(save, 2500);
+      if (!maxWaitTimer) {
+        maxWaitTimer = setTimeout(save, 15000);
+      }
+    };
+
+    // 200자 문턱
+    const threshold = document.querySelector('.threshold');
+    const thresholdText = document.getElementById('threshold-text');
+    const thresholdFill = document.getElementById('threshold-fill');
+    const ready = () => titleField.value.trim().length > 0 && charCount(bodyField.value) >= minLength;
+    const updateThreshold = () => {
+      const length = charCount(bodyField.value);
+      thresholdFill.style.setProperty('--t', Math.min(1, length / minLength));
+      threshold.classList.toggle('reached', length >= minLength);
+      thresholdText.textContent = length >= minLength
+        ? `${length.toLocaleString('ko-KR')}자`
+        : `제출까지 ${(minLength - length).toLocaleString('ko-KR')}자`;
+      if (submitButton) {
+        submitButton.setAttribute('aria-disabled', String(!ready()));
+      }
+    };
+
+    writer.addEventListener('input', () => {
+      keepLocal();
+      updateThreshold();
+      show('쓰는 중…', '');
+      schedule();
+    });
+    updateThreshold();
+
+    // 창을 떠날 때: 남은 변경을 마지막으로 보낸다. 그래도 남으면 붙잡는다.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && dirty()) {
+        save({ keepalive: true });
+      }
+    });
+    writer.addEventListener('submit', () => { leaving = true; });
     window.addEventListener('beforeunload', (event) => {
-      if (dirty) {
+      if (!leaving && dirty()) {
         event.preventDefault();
         event.returnValue = '';
       }
     });
-  });
+
+    // 이 기기에만 남은 글이 서버보다 새것이면 불러올지 묻는다
+    const backup = storage.get(draftKey);
+    const restore = document.getElementById('restore');
+    if (backup && backup.at > serverSavedAt
+        && JSON.stringify([backup.title, backup.quote, backup.body]) !== JSON.stringify(snapshot())) {
+      restore.hidden = false;
+      restore.querySelector('[data-restore="apply"]').addEventListener('click', () => {
+        titleField.value = backup.title || '';
+        quoteField.value = backup.quote || '';
+        bodyField.value = backup.body || '';
+        restore.hidden = true;
+        fields.forEach((f) => f.dispatchEvent(new Event('input', { bubbles: true })));
+      });
+      restore.querySelector('[data-restore="discard"]').addEventListener('click', () => {
+        storage.remove(draftKey);
+        restore.hidden = true;
+      });
+    } else if (backup && !dirty()) {
+      storage.remove(draftKey);
+    }
+
+    // 제출 전 미리보기: 책 한 쪽에 실린 모습
+    const dialog = document.getElementById('preview');
+    if (submitButton && dialog && typeof dialog.showModal === 'function') {
+      let confirmed = false;
+      submitButton.addEventListener('click', (event) => {
+        if (confirmed) {
+          return;
+        }
+        event.preventDefault();
+        if (!ready()) {
+          show(`제목과 ${minLength}자 이상의 본문이 있어야 제출할 수 있어요`, 'failed');
+          (titleField.value.trim() ? bodyField : titleField).focus();
+          return;
+        }
+        document.getElementById('preview-byline').textContent = writer.dataset.byline;
+        document.getElementById('preview-title').textContent = titleField.value.trim();
+        const quote = quoteField.value.trim();
+        document.getElementById('preview-quote').hidden = !quote;
+        document.getElementById('preview-quote-text').textContent = quote;
+        document.getElementById('preview-citation').textContent = `— ${writer.dataset.citation}`;
+        const body = document.getElementById('preview-body');
+        body.replaceChildren(...bodyField.value.replace(/\r\n/g, '\n').split(/\n\s*\n/)
+          .map((block) => block.trim().replace(/\s*\n\s*/g, ' '))
+          .filter(Boolean)
+          .map((text) => { const p = document.createElement('p'); p.textContent = text; return p; }));
+        dialog.showModal();
+        dialog.querySelector('.preview-page').scrollTop = 0;
+      });
+      dialog.querySelector('[data-preview="close"]').addEventListener('click', () => dialog.close());
+      dialog.addEventListener('click', (event) => { if (event.target === dialog) { dialog.close(); } });
+      dialog.querySelector('[data-preview="submit"]').addEventListener('click', () => {
+        confirmed = true;
+        dialog.close();
+        writer.requestSubmit(submitButton);
+      });
+    }
+  }
+
+  // 8. 책장: 읽은 글·새 글 표시, "안 읽은 글" 보기
+  const reading = document.querySelector('article[data-read-key]');
+  if (reading && reading.dataset.mine !== 'true') {
+    const read = new Set(storage.get(reading.dataset.readKey) || []);
+    read.add(Number(reading.dataset.essayId));
+    storage.set(reading.dataset.readKey, [...read]);
+  }
+
+  const shelfSection = document.querySelector('section#shelf[data-code]');
+  if (shelfSection && shelfSection.dataset.unlocked === 'true') {
+    const code = shelfSection.dataset.code;
+    const read = new Set(storage.get(`ab-read-${code}`) || []);
+    const lastVisit = Number(storage.get(`ab-visit-${code}`) || 0);
+    shelfSection.querySelectorAll('a.essay-card[data-essay-id]').forEach((card) => {
+      if (card.dataset.mine === 'true') {
+        return;
+      }
+      if (read.has(Number(card.dataset.essayId))) {
+        card.classList.add('is-read');
+        card.querySelector('.read-badge').hidden = false;
+      } else if (lastVisit && Number(card.dataset.submitted) > lastVisit) {
+        card.querySelector('.new-badge').hidden = false;
+      }
+    });
+    storage.set(`ab-visit-${code}`, Date.now());
+
+    const shelf = shelfSection.querySelector('.shelf');
+    shelfSection.querySelectorAll('[data-filter]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const unreadOnly = chip.dataset.filter === 'unread';
+        shelf.classList.toggle('only-unread', unreadOnly);
+        shelfSection.querySelectorAll('[data-filter]').forEach((other) => {
+          other.setAttribute('aria-pressed', String(other === chip));
+        });
+      });
+    });
+  }
+
+  // 9. 책이 되는 순간: 누르면 바로 넘어간다
+  const scene = document.querySelector('.bind-scene');
+  if (scene) {
+    scene.addEventListener('click', () => scene.classList.add('skip'));
+    scene.addEventListener('animationend', (event) => {
+      if (event.animationName === 'scene-out') {
+        scene.remove();
+      }
+    });
+  }
 })();

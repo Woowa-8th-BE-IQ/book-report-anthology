@@ -21,6 +21,10 @@ public class Anthology {
     /** 문집이라 부르려면 최소 두 편은 있어야 한다. */
     public static final int MIN_ESSAYS_TO_CLOSE = 2;
     public static final int INTRODUCTION_MAX = 2000;
+    /** 엮은이가 던지는 글감 질문. 빈 페이지 앞에서 막히지 않게 한다. */
+    public static final int PROMPTS_MAX = 3;
+    public static final int PROMPT_LENGTH_MAX = 100;
+    public static final int APPENDIX_MAX = 10_000;
 
     private Long id;
     private final String code;
@@ -28,6 +32,8 @@ public class Anthology {
     private final String bookTitle;
     private final String bookAuthor;
     private String introduction;
+    private String prompts;
+    private String appendix;
     private final LocalDate dueDate;
     private AnthologyStatus status;
     private final LocalDateTime createdAt;
@@ -37,12 +43,21 @@ public class Anthology {
     public Anthology(Long id, String code, String title, String bookTitle, String bookAuthor, String introduction,
                      LocalDate dueDate, AnthologyStatus status, LocalDateTime createdAt, LocalDateTime closedAt,
                      List<Contributor> contributors) {
+        this(id, code, title, bookTitle, bookAuthor, introduction, null, null, dueDate, status, createdAt, closedAt,
+                contributors);
+    }
+
+    public Anthology(Long id, String code, String title, String bookTitle, String bookAuthor, String introduction,
+                     String prompts, String appendix, LocalDate dueDate, AnthologyStatus status,
+                     LocalDateTime createdAt, LocalDateTime closedAt, List<Contributor> contributors) {
         this.id = id;
         this.code = Objects.requireNonNull(code);
         this.title = Objects.requireNonNull(title);
         this.bookTitle = Objects.requireNonNull(bookTitle);
         this.bookAuthor = bookAuthor;
         this.introduction = introduction;
+        this.prompts = prompts;
+        this.appendix = appendix;
         this.dueDate = dueDate;
         this.status = Objects.requireNonNull(status);
         this.createdAt = Objects.requireNonNull(createdAt);
@@ -83,6 +98,62 @@ public class Anthology {
         requireEditor(requester, "도서 소개는 엮은이만 쓸 수 있어요.");
         requireCollecting("마감한 문집의 소개는 고칠 수 없어요.");
         this.introduction = Texts.optional(text, "도서 소개", INTRODUCTION_MAX);
+    }
+
+    /** 글감 질문을 정한다. 한 줄에 하나, 최대 3개. 엮은이만, 마감 전까지. */
+    public void ask(Contributor requester, String text) {
+        requireEditor(requester, "글감 질문은 엮은이만 정할 수 있어요.");
+        requireCollecting("마감한 문집의 질문은 고칠 수 없어요.");
+        List<String> lines = splitLines(text);
+        if (lines.size() > PROMPTS_MAX) {
+            throw DomainException.rule("질문은 " + PROMPTS_MAX + "개까지예요. (지금 " + lines.size() + "개)");
+        }
+        for (String line : lines) {
+            Texts.optional(line, "질문 하나", PROMPT_LENGTH_MAX);
+        }
+        this.prompts = lines.isEmpty() ? null : String.join("\n", lines);
+    }
+
+    /** 책 끝에 붙는 부록(용어사전, 후기 등). 엮은이만. 마감 뒤에도 고칠 수 있다. */
+    public void attachAppendix(Contributor requester, String text) {
+        requireEditor(requester, "부록은 엮은이만 쓸 수 있어요.");
+        this.appendix = Texts.optional(text, "부록", APPENDIX_MAX);
+    }
+
+    /**
+     * 참여자의 개인 링크를 새로 발급한다. 링크를 잃어버린 사람을 위한 것이다. 이전 링크는 막힌다.
+     * 엮은이 자신의 링크는 다시 만들 수 없다(지금 쓰는 브라우저가 바로 잠긴다).
+     */
+    public Contributor reissueLink(Contributor requester, Long contributorId, String newToken) {
+        requireEditor(requester, "링크는 엮은이만 다시 만들 수 있어요.");
+        Contributor target = contributorById(contributorId);
+        if (target.isEditor()) {
+            throw DomainException.rule("엮은이 본인의 링크는 다시 만들 수 없어요.");
+        }
+        target.reissue(newToken);
+        return target;
+    }
+
+    /** 참여자를 내보낸다. 엮은이만, 모집 중일 때만. 그 사람의 글과 답글도 함께 사라진다. */
+    public Contributor remove(Contributor requester, Long contributorId) {
+        requireEditor(requester, "내보내기는 엮은이만 할 수 있어요.");
+        requireCollecting("마감한 문집에서는 사람을 내보낼 수 없어요. 대신 그 글을 책에서 빼 달라고 부탁해 주세요.");
+        Contributor target = contributorById(contributorId);
+        if (target.isEditor()) {
+            throw DomainException.rule("엮은이는 내보낼 수 없어요.");
+        }
+        contributors.remove(target);
+        return target;
+    }
+
+    private static List<String> splitLines(String text) {
+        if (text == null) {
+            return List.of();
+        }
+        return text.replace("\r\n", "\n").lines()
+                .map(String::strip)
+                .filter(line -> !line.isEmpty())
+                .toList();
     }
 
     /** 모집을 마감한다. 되돌릴 수 없다. */
@@ -187,6 +258,19 @@ public class Anthology {
 
     public String introduction() {
         return introduction;
+    }
+
+    /** 저장용 원문(줄바꿈으로 구분). */
+    public String promptsText() {
+        return prompts;
+    }
+
+    public List<String> prompts() {
+        return splitLines(prompts);
+    }
+
+    public String appendix() {
+        return appendix;
     }
 
     public LocalDate dueDate() {
