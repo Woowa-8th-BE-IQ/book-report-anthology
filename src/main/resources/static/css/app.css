@@ -387,10 +387,19 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); box-sh
 
 /* ───────── 하단 고정 CTA ───────── */
 
-.cta-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding: 14px 0 18px; display: flex; justify-content: center; pointer-events: none;
-  background: linear-gradient(transparent, color-mix(in srgb, var(--paper) 92%, transparent) 40%); }
-.cta-bar .btn { pointer-events: auto; min-width: 200px; }
-.has-cta { padding-bottom: 90px; }
+/* 화면 맨 아래에 붙이지 않고 조금 띄운다: 눈에 잘 들어오고 누르기 쉽게 */
+.cta-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding: 28px 0 calc(44px + env(safe-area-inset-bottom)); display: flex; justify-content: center; pointer-events: none;
+  background: linear-gradient(transparent, color-mix(in srgb, var(--paper) 88%, transparent) 55%); }
+.cta-bar .btn { pointer-events: auto; min-width: 240px; padding: 17px 34px; border-radius: 999px; font-size: 16px;
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 34%, transparent), 0 2px 0 rgba(26,18,8,.08); transition: transform .2s, box-shadow .2s; }
+.cta-bar .btn:hover { transform: translateY(-2px); box-shadow: 0 14px 32px color-mix(in srgb, var(--accent) 40%, transparent), 0 2px 0 rgba(26,18,8,.08); }
+.cta-bar .btn[disabled] { box-shadow: none; }
+.has-cta { padding-bottom: 150px; }
+@media (max-width: 860px) {
+  .cta-bar { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  .cta-bar .btn { min-width: 0; width: min(420px, 100% - 40px); }
+  .has-cta { padding-bottom: 120px; }
+}
 
 /* ───────── 푸터·FAQ ───────── */
 
