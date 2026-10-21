@@ -95,7 +95,10 @@ public class RoomHub {
     public void kick(Long anthologyId, Long contributorId) {
         rooms.getOrDefault(anthologyId, List.of()).stream()
                 .filter(connection -> connection.contributorId().equals(contributorId))
-                .forEach(connection -> connection.emitter().complete());
+                .forEach(connection -> {
+                    connection.emitter().complete();
+                    leave(anthologyId, connection); // 바로 방에서 뺀다(완료 콜백을 기다리지 않는다)
+                });
     }
 
     /** 프록시가 조용한 연결을 끊지 않도록 20초마다 빈 신호를 보낸다. 끊긴 연결도 이때 걸러진다. */
@@ -132,7 +135,11 @@ public class RoomHub {
             rooms.remove(anthologyId, room);
             positions.remove(anthologyId);
         } else if (gone) {
-            positions.getOrDefault(anthologyId, Map.of()).remove(connection.contributorId());
+            // 아무도 걷지 않은 방에는 자리 표가 없다(빈 Map.of()에 remove하면 예외가 나서 나간 사람이 계속 남았다)
+            Map<Long, Position> walked = positions.get(anthologyId);
+            if (walked != null) {
+                walked.remove(connection.contributorId());
+            }
         }
         if (gone) {
             try {

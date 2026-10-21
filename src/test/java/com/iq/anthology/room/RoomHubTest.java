@@ -34,4 +34,17 @@ class RoomHubTest {
         assertThat(hub.online(1L)).containsExactly(10L);
         assertThat(hub.positionsOf(1L)).containsEntry(10L, new Position(0.2, 0.3));
     }
+
+    @Test
+    void 아무도_걷지_않은_방에서_나가도_바로_빠지고_마지막_접속이_남는다() {
+        java.util.List<Long> left = new java.util.ArrayList<>();
+        hub.onLeave((anthologyId, contributorId) -> left.add(contributorId));
+        hub.join(1L, 10L);
+        hub.join(1L, 11L);
+
+        hub.kick(1L, 11L);
+
+        assertThat(hub.online(1L)).containsExactly(10L);
+        assertThat(left).containsExactly(11L);
+    }
 }
