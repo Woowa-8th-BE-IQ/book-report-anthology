@@ -36,9 +36,18 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
-      - run: npx electron-builder ${{ matrix.target }} --publish never
+      - name: 설치 파일 만들기
+        shell: bash
+        run: |
+          set -o pipefail
+          npx electron-builder ${{ matrix.target }} --publish never 2>&1 | tee build.log
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          DEBUG: electron-builder
+      - name: 실패하면 로그 끝을 주석으로 남기기
+        if: failure()
+        shell: bash
+        run: tail -n 60 build.log | grep -v '^\s*$' | tail -n 45 | sed 's/^/::error::/'
       - uses: actions/upload-artifact@v5
         with:
           name: pet-${{ matrix.os }}
