@@ -50,8 +50,13 @@ public class FakeEssayRepository implements EssayRepository {
                 .toList();
     }
 
+    @Override
+    public void deleteByContributor(Long contributorId) {
+        rows.values().removeIf(essay -> essay.contributorId().equals(contributorId));
+    }
+
     private static Essay copy(Essay e) {
         return new Essay(e.id(), e.anthologyId(), e.contributorId(), e.title(), e.quote(), e.body(), e.status(),
-                e.includedInBook(), e.createdAt(), e.updatedAt(), e.submittedAt());
+                e.includedInBook(), e.createdAt(), e.updatedAt(), e.submittedAt(), e.bookOrder(), e.publicSample());
     }
 }

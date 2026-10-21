@@ -48,11 +48,28 @@ public class FakeAnthologyRepository implements AnthologyRepository {
     }
 
     @Override
-    public void updateIntroduction(Anthology anthology) {
+    public void updateTexts(Anthology anthology) {
         Anthology stored = rows.get(anthology.id());
         rows.put(anthology.id(), new Anthology(stored.id(), stored.code(), stored.title(), stored.bookTitle(),
-                stored.bookAuthor(), anthology.introduction(), stored.dueDate(), stored.status(),
-                stored.createdAt(), stored.closedAt(), stored.contributors()));
+                stored.bookAuthor(), anthology.introduction(), anthology.promptsText(), anthology.appendix(),
+                stored.dueDate(), stored.status(), stored.createdAt(), stored.closedAt(), stored.contributors()));
+    }
+
+    @Override
+    public void updateToken(Contributor contributor) {
+        rows.replaceAll((id, stored) -> copy(stored, stored.contributors().stream()
+                .map(c -> c.id().equals(contributor.id())
+                        ? new Contributor(c.id(), c.nickname(), c.realName(), contributor.token(), c.joinOrder(),
+                        c.joinedAt())
+                        : c)
+                .toList()));
+    }
+
+    @Override
+    public void deleteContributor(Long contributorId) {
+        rows.replaceAll((id, stored) -> copy(stored, stored.contributors().stream()
+                .filter(c -> !c.id().equals(contributorId))
+                .toList()));
     }
 
     @Override
@@ -62,8 +79,9 @@ public class FakeAnthologyRepository implements AnthologyRepository {
             throw DomainException.conflict("이미 마감");
         }
         rows.put(anthology.id(), new Anthology(stored.id(), stored.code(), stored.title(), stored.bookTitle(),
-                stored.bookAuthor(), stored.introduction(), stored.dueDate(), anthology.status(),
-                stored.createdAt(), anthology.closedAt(), stored.contributors()));
+                stored.bookAuthor(), stored.introduction(), stored.promptsText(), stored.appendix(),
+                stored.dueDate(), anthology.status(), stored.createdAt(), anthology.closedAt(),
+                stored.contributors()));
     }
 
     @Override
@@ -97,7 +115,7 @@ public class FakeAnthologyRepository implements AnthologyRepository {
                 .map(c -> new Contributor(c.id(), c.nickname(), c.realName(), c.token(), c.joinOrder(), c.joinedAt()))
                 .toList();
         return new Anthology(source.id(), source.code(), source.title(), source.bookTitle(), source.bookAuthor(),
-                source.introduction(), source.dueDate(), source.status(), source.createdAt(), source.closedAt(),
-                copies);
+                source.introduction(), source.promptsText(), source.appendix(), source.dueDate(), source.status(),
+                source.createdAt(), source.closedAt(), copies);
     }
 }

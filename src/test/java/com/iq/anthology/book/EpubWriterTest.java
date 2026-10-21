@@ -48,7 +48,7 @@ class EpubWriterTest {
 
         files.entrySet().stream()
                 .filter(file -> file.getKey().endsWith(".xhtml") || file.getKey().endsWith(".xml")
-                        || file.getKey().endsWith(".opf"))
+                        || file.getKey().endsWith(".opf") || file.getKey().endsWith(".svg"))
                 .forEach(file -> assertThatCode(() -> factory.newDocumentBuilder()
                         .parse(new ByteArrayInputStream(file.getValue().getBytes(StandardCharsets.UTF_8))))
                         .as(file.getKey())
@@ -84,6 +84,23 @@ class EpubWriterTest {
 
         assertThat(files).doesNotContainKey("OEBPS/introduction.xhtml");
         assertThat(files.get("OEBPS/content.opf")).doesNotContain("introduction");
+    }
+
+    @Test
+    void 표지가_맨_앞에_오고_글감_질문과_부록이_실린다() throws IOException {
+        Manuscript full = new Manuscript(manuscript.identifier(), manuscript.title(), manuscript.citation(),
+                manuscript.readLine(), null, manuscript.closedOn(), manuscript.pieces(),
+                List.of("가장 오래 붙든 문장은?"), "용어사전 & 기록");
+
+        Map<String, String> files = unzip(EpubWriter.write(full));
+
+        String opf = files.get("OEBPS/content.opf");
+        assertThat(opf).contains("properties=\"cover-image\"");
+        assertThat(opf.indexOf("idref=\"cover\"")).isLessThan(opf.indexOf("idref=\"title\""));
+        assertThat(files.get("OEBPS/cover.svg")).contains("2명이 쓴 독후감");
+        assertThat(files.get("OEBPS/introduction.xhtml")).contains("가장 오래 붙든 문장은?");
+        assertThat(files.get("OEBPS/appendix.xhtml")).contains("용어사전 &amp; 기록");
+        assertThat(files.get("OEBPS/nav.xhtml")).contains("부록");
     }
 
     @Test

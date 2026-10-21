@@ -5,6 +5,9 @@ import static com.iq.anthology.Fixtures.NOW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.iq.anthology.activity.ActivityLog.Engagement;
+import com.iq.anthology.activity.ActivityType;
+import com.iq.anthology.activity.JdbcActivityLog;
 import com.iq.anthology.anthology.Anthology;
 import com.iq.anthology.anthology.Contributor;
 import com.iq.anthology.anthology.JdbcAnthologyRepository;
@@ -13,18 +16,31 @@ import com.iq.anthology.essay.JdbcEssayRepository;
 import com.iq.anthology.essay.JdbcReplyRepository;
 import com.iq.anthology.essay.Reply;
 import com.iq.anthology.support.ErrorType;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
 /** 실제 H2에서 매핑과 DB 제약(동시성 방어선)을 확인한다. */
 @JdbcTest
-@Import({JdbcAnthologyRepository.class, JdbcEssayRepository.class, JdbcReplyRepository.class})
+@Import({JdbcAnthologyRepository.class, JdbcEssayRepository.class, JdbcReplyRepository.class, JdbcActivityLog.class,
+        JdbcRepositoryTest.Clocks.class})
 class JdbcRepositoryTest {
+
+    @TestConfiguration
+    static class Clocks {
+        @Bean
+        Clock clock() {
+            return Clock.system(ZoneId.of("Asia/Seoul"));
+        }
+    }
 
     @Autowired
     private JdbcAnthologyRepository anthologies;
@@ -32,6 +48,8 @@ class JdbcRepositoryTest {
     private JdbcEssayRepository essays;
     @Autowired
     private JdbcReplyRepository replies;
+    @Autowired
+    private JdbcActivityLog activity;
 
     private Anthology anthology;
 
@@ -115,5 +133,77 @@ class JdbcRepositoryTest {
 
         assertThat(replies.findByEssayIds(List.of(essay.id()))).extracting(Reply::body).containsExactly("잘 읽었어요");
         assertThat(replies.findByEssayIds(List.of())).isEmpty();
+    }
+
+    @Test
+    void 글감_질문_부록_순서_맛보기를_그대로_읽는다() {
+        Anthology found = anthologies.findByCode("abcd2345").orElseThrow();
+        found.ask(found.editor(), "가장 오래 붙든 문장은?");
+        found.attachAppendix(found.editor(), "용어사전");
+        anthologies.updateTexts(found);
+
+        Essay essay = essays.save(Essay.start(anthology.id(), anthology.editor().id(), NOW));
+        essay.revise("제목", null, LONG_BODY, NOW);
+        essay.submit(NOW);
+        essay.allowPublicSample(anthology.editor().id(), true);
+        essays.update(essay);
+
+        Anthology reread = anthologies.findByCode("abcd2345").orElseThrow();
+        assertThat(reread.prompts()).containsExactly("가장 오래 붙든 문장은?");
+        assertThat(reread.appendix()).isEqualTo("용어사전");
+        Essay rereadEssay = essays.findByAnthologyId(anthology.id()).get(0);
+        assertThat(rereadEssay.publicSample()).isTrue();
+        assertThat(rereadEssay.bookOrder()).isNull();
+    }
+
+    @Test
+    void 참여자를_지우면_글과_답글이_함께_사라진다() {
+        Contributor potato = anthologies.addContributor(anthology.id(), anthology.join("감자", null, "tp", NOW));
+        Essay editorEssay = essays.save(Essay.start(anthology.id(), anthology.editor().id(), NOW));
+        editorEssay.revise("엮은이", null, LONG_BODY, NOW);
+        editorEssay.submit(NOW);
+        essays.update(editorEssay);
+        Essay potatoEssay = essays.save(Essay.start(anthology.id(), potato.id(), NOW));
+        potatoEssay.revise("감자", null, LONG_BODY, NOW);
+        potatoEssay.submit(NOW);
+        essays.update(potatoEssay);
+        replies.save(Reply.to(editorEssay, potato.id(), "감자가 엮은이에게", NOW));
+        replies.save(Reply.to(potatoEssay, anthology.editor().id(), "엮은이가 감자에게", NOW));
+        activity.record(anthology.id(), potato.id(), ActivityType.READ_OTHERS, editorEssay.id());
+
+        replies.deleteAllAround(potato.id());
+        essays.deleteByContributor(potato.id());
+        activity.forgetContributor(potato.id());
+        anthologies.deleteContributor(potato.id());
+
+        assertThat(anthologies.findByCode("abcd2345").orElseThrow().contributors()).hasSize(1);
+        assertThat(essays.findByAnthologyId(anthology.id())).extracting(Essay::title).containsExactly("엮은이");
+        assertThat(replies.findByEssayIds(List.of(editorEssay.id(), potatoEssay.id()))).isEmpty();
+        assertThat(activity.engagement(anthology.id())).isEqualTo(Engagement.NONE);
+    }
+
+    @Test
+    void 링크를_다시_만들면_새_토큰으로만_찾는다() {
+        Anthology found = anthologies.findByCode("abcd2345").orElseThrow();
+        Contributor editor = found.editor();
+        found.reissueLink(editor, anthologies.addContributor(anthology.id(), found.join("감자", null, "old", NOW)).id(),
+                "new-token");
+        anthologies.updateToken(found.findByToken("new-token").orElseThrow());
+
+        assertThat(anthologies.findByContributorToken("old")).isEmpty();
+        assertThat(anthologies.findByContributorToken("new-token")).isPresent();
+    }
+
+    @Test
+    void 행동_기록은_서로_다른_사람과_쌍으로_센다() {
+        Long me = anthology.editor().id();
+        activity.record(anthology.id(), me, ActivityType.READ_OTHERS, 100L);
+        activity.record(anthology.id(), me, ActivityType.READ_OTHERS, 100L);
+        activity.record(anthology.id(), me, ActivityType.READ_OTHERS, 101L);
+        activity.record(anthology.id(), me, ActivityType.PDF_DOWNLOADED, null);
+        activity.record(anthology.id(), me, ActivityType.EPUB_DOWNLOADED, null);
+        activity.record(anthology.id(), null, ActivityType.ABOUT_VIEWED, null);
+
+        assertThat(activity.engagement(anthology.id())).isEqualTo(new Engagement(1, 2, 1, 1));
     }
 }

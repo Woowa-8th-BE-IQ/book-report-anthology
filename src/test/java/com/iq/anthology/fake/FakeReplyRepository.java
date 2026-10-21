@@ -23,4 +23,10 @@ public class FakeReplyRepository implements ReplyRepository {
     public List<Reply> findByEssayIds(Collection<Long> essayIds) {
         return rows.stream().filter(reply -> essayIds.contains(reply.essayId())).toList();
     }
+
+    @Override
+    public void deleteAllAround(Long contributorId) {
+        rows.removeIf(reply -> reply.contributorId().equals(contributorId));
+    }
+
 }

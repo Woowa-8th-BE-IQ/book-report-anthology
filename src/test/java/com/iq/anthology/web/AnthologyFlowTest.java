@@ -64,6 +64,16 @@ class AnthologyFlowTest {
         assertThat(link.find()).isTrue();
         String editorEssay = link.group(1);
 
+        // 자동 저장은 JSON으로 답한다
+        String saved = mvc.perform(post("/anthologies/{code}/essay/autosave", code).cookie(potato)
+                        .param("title", "가제").param("quote", "").param("body", "첫 줄"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(saved).contains("\"saved\":true");
+        mvc.perform(post("/anthologies/{code}/essay/autosave", code)
+                        .param("title", "가제").param("body", "첫 줄"))
+                .andExpect(status().isForbidden());
+
         // 감자가 초안만 저장한 상태로 엮은이 글을 열면 403
         mvc.perform(post("/anthologies/{code}/essay", code).cookie(potato)
                 .param("title", "코드보다 나를 먼저").param("body", "아직").param("action", "save"));
@@ -84,6 +94,17 @@ class AnthologyFlowTest {
         mvc.perform(post("/anthologies/{code}/close", code).cookie(editor))
                 .andExpect(status().is3xxRedirection());
 
+        // 감자가 맛보기를 허락하면 공개 소개 페이지에 그 한 편만 보인다
+        String potatoEssay = idOf(mvc.perform(get("/anthologies/{code}/book", code).cookie(potato))
+                .andReturn().getResponse().getContentAsString(), "/sample");
+        mvc.perform(post("/anthologies/{code}/essays/{id}/sample", code, potatoEssay).cookie(potato)
+                        .param("allowed", "true"))
+                .andExpect(status().is3xxRedirection());
+        assertThat(mvc.perform(get("/anthologies/{code}/about", code)).andReturn().getResponse()
+                .getContentAsString()).contains("맛보기 한 편");
+        mvc.perform(post("/anthologies/{code}/essays/{id}/sample", code, potatoEssay).cookie(potato)
+                .param("allowed", "false"));
+
         // 공개 소개 페이지에는 목차만 있고 본문은 없다
         String about = mvc.perform(get("/anthologies/{code}/about", code))
                 .andExpect(status().isOk())
@@ -97,6 +118,51 @@ class AnthologyFlowTest {
                 .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("attachment")));
         mvc.perform(get("/anthologies/{code}/book.epub", code))
                 .andExpect(status().isForbidden());
+
+        // 인쇄용 PDF
+        byte[] pdf = mvc.perform(get("/anthologies/{code}/book.pdf", code).cookie(editor))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "application/pdf"))
+                .andReturn().getResponse().getContentAsByteArray();
+        assertThat(new String(pdf, 0, 5, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF-");
+    }
+
+    @Test
+    void 엮은이는_참여자의_링크를_다시_만들고_내보낼_수_있다() throws Exception {
+        MvcResult opened = mvc.perform(post("/anthologies")
+                        .param("title", "두 번째 문집").param("bookTitle", "객체지향의 사실과 오해")
+                        .param("nickname", "레오"))
+                .andReturn();
+        String location = opened.getResponse().getRedirectedUrl();
+        String code = location.substring(location.lastIndexOf('/') + 1);
+        Cookie editor = opened.getResponse().getCookie("ab_" + code);
+        Cookie potato = mvc.perform(post("/anthologies/{code}/contributors", code).param("nickname", "감자"))
+                .andReturn().getResponse().getCookie("ab_" + code);
+
+        String editorView = mvc.perform(get("/anthologies/{code}", code).cookie(editor))
+                .andReturn().getResponse().getContentAsString();
+        String potatoId = idOf(editorView, "/reissue");
+
+        mvc.perform(post("/anthologies/{code}/contributors/{id}/reissue", code, potatoId).cookie(editor))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(result -> assertThat(result.getFlashMap().get("reissuedUrl")).asString().contains("/me/"));
+        // 옛 쿠키(옛 토큰)로는 더 이상 들어오지 못한다
+        mvc.perform(post("/anthologies/{code}/essay", code).cookie(potato)
+                        .param("title", "제목").param("body", "본문").param("action", "save"))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(post("/anthologies/{code}/contributors/{id}/remove", code, potatoId).cookie(editor))
+                .andExpect(status().is3xxRedirection());
+        assertThat(mvc.perform(get("/anthologies/{code}", code).cookie(editor)).andReturn().getResponse()
+                .getContentAsString()).doesNotContain("/contributors/" + potatoId + "/");
+    }
+
+    /** 응답 HTML에서 "/{id}{suffix}" 꼴 링크의 id를 꺼낸다. */
+    private static String idOf(String html, String suffix) {
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("/(\\d+)" + java.util.regex.Pattern.quote(suffix))
+                .matcher(html);
+        assertThat(matcher.find()).as(suffix + " 링크").isTrue();
+        return matcher.group(1);
     }
 
     @Test
