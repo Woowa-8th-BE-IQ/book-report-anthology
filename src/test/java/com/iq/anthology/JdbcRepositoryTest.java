@@ -16,31 +16,18 @@ import com.iq.anthology.essay.JdbcEssayRepository;
 import com.iq.anthology.essay.JdbcReplyRepository;
 import com.iq.anthology.essay.Reply;
 import com.iq.anthology.support.ErrorType;
-import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
 /** 실제 H2에서 매핑과 DB 제약(동시성 방어선)을 확인한다. */
 @JdbcTest
-@Import({JdbcAnthologyRepository.class, JdbcEssayRepository.class, JdbcReplyRepository.class, JdbcActivityLog.class,
-        JdbcRepositoryTest.Clocks.class})
+@Import({JdbcAnthologyRepository.class, JdbcEssayRepository.class, JdbcReplyRepository.class, JdbcActivityLog.class})
 class JdbcRepositoryTest {
-
-    @TestConfiguration
-    static class Clocks {
-        @Bean
-        Clock clock() {
-            return Clock.system(ZoneId.of("Asia/Seoul"));
-        }
-    }
 
     @Autowired
     private JdbcAnthologyRepository anthologies;
