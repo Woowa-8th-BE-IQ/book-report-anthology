@@ -12,7 +12,28 @@ permissions:
   contents: write
 
 jobs:
+  # 같은 버전은 다시 올리지 않는다(받는 중인 펫이 파일을 잃지 않게). 다시 내려면 버전을 올린다.
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      exists: ${{ steps.release.outputs.exists }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./desktop/package.json').version")
+          if gh release view "pet-v$VERSION" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::pet-v$VERSION 릴리스가 이미 있어서 건너뛴다"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: check
+    if: needs.check.outputs.exists == 'false'
     strategy:
       fail-fast: false
       matrix:
