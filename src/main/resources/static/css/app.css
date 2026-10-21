@@ -561,6 +561,10 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .room-door-arrow { font-size: 20px; color: var(--accent); transition: transform .25s; }
 .room-door:hover .room-door-arrow { transform: translateX(4px); }
 
+.pet-link { margin-top: 14px; max-width: 560px; font-size: 13.5px; }
+.pet-link summary { cursor: pointer; color: var(--accent); font-weight: 600; width: fit-content; }
+.pet-link p { margin: 10px 0 8px; color: var(--ink-soft); }
+.pet-link a { color: var(--accent); }
 .room-page .page-hero { width: min(1120px, 100% - 40px); }
 .room { width: min(1120px, 100% - 40px); margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 430px); gap: 28px; align-items: start; }
 

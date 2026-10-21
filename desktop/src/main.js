@@ -203,7 +203,10 @@ ipcMain.handle('setup:submit', (event, text) => {
   if (!setup || event.sender !== setup.webContents) return { ok: false };
   const link = personalLink(text);
   if (!link) {
-    return { ok: false, message: `${BASE.host}/me/… 꼴의 개인 링크를 붙여 넣어 주세요.` };
+    const hint = /\/anthologies\//.test(String(text))
+      ? '문집·모임방 주소가 아니라 개인 링크(…/me/…)가 필요해요. 모임방 화면 위쪽 "바탕화면 펫에 연결하기"에서 복사할 수 있어요.'
+      : `${BASE.host}/me/… 꼴의 개인 링크를 붙여 넣어 주세요. 모임방 화면 위쪽 "바탕화면 펫에 연결하기"에 있어요.`;
+    return { ok: false, message: hint };
   }
   writeConfig({ ...readConfig(), link });
   openPet(link);
