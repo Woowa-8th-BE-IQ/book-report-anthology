@@ -106,7 +106,15 @@ function openPet(link) {
   guard(pet);
   pet.loadURL(`${link}?to=pet`);
   pet.once('ready-to-show', () => pet.showInactive());
-  pet.webContents.on('did-finish-load', () => sendUpdate(updater.state()));
+  pet.webContents.on('did-finish-load', () => {
+    sendUpdate(updater.state());
+    // 지난번과 버전이 다르면(업데이트로 다시 켜졌으면) "바뀌었어요"를 확인할 때까지 띄운다
+    const config = readConfig();
+    if (config.lastVersion && config.lastVersion !== app.getVersion()) {
+      pet.webContents.send('pet:update', { status: 'updated', version: app.getVersion() });
+    }
+    if (config.lastVersion !== app.getVersion()) writeConfig({ ...config, lastVersion: app.getVersion() });
+  });
   // 서버가 잠들어 있거나 인터넷이 끊겼으면 잠시 뒤 다시 시도한다.
   pet.webContents.on('did-fail-load', () => setTimeout(() => pet && pet.loadURL(`${link}?to=pet`), 15000));
   pet.on('closed', () => { pet = null; stopWalk(); });

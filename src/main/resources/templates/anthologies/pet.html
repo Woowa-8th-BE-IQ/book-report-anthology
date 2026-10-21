@@ -73,7 +73,7 @@
         </li>
       </ol>
       <form class="pet-form" autocomplete="off">
-        <input name="body" type="text" placeholder="한마디" th:attr="maxlength=${bodyMax}" aria-label="한마디">
+        <textarea name="body" rows="1" placeholder="한마디 · Shift+Enter 줄바꿈" th:attr="maxlength=${bodyMax}" aria-label="한마디"></textarea>
         <button type="submit">보내기</button>
       </form>
       <p class="pet-status" role="status"></p>

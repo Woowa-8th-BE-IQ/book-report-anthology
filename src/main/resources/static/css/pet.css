@@ -43,6 +43,11 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
 .pet-update .u-actions { display: flex; gap: 6px; margin-top: 7px; }
 .pet-update .u-actions button { padding: 4px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); font: inherit; font-size: 12px; cursor: pointer; }
+.pet-update .u-actions .u-ok { background: var(--good); border-color: var(--good); color: #fff; font-weight: 600; }
+.pet-update.done { border-color: var(--good); background: color-mix(in srgb, var(--good) 10%, var(--card)); }
+.pet-update.done .update-icon { color: var(--good); background: color-mix(in srgb, var(--good) 16%, var(--card)); }
+.pet-avatar.has-update::after { content: ""; position: absolute; top: 6px; left: 8px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--card); animation: ping 1.6s ease-out infinite; }
+@keyframes ping { 0% { box-shadow: 0 0 0 2px var(--card), 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent); } 100% { box-shadow: 0 0 0 2px var(--card), 0 0 0 12px transparent; } }
 .pet-update .u-actions .u-now { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 .pet-update .update-icon { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 14%, var(--card)); color: var(--accent); }
 .pet-update .update-icon .i { width: 16px; height: 16px; }
@@ -75,10 +80,13 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-line span { overflow-wrap: anywhere; white-space: pre-wrap; }
 .pet-line.mine { text-align: right; }
 .pet-line.mine b { color: var(--accent); }
+.pet-form textarea { flex: 1; min-width: 0; min-height: 36px; max-height: 112px; box-sizing: border-box; resize: none; overflow-y: hidden; padding: 8px 10px; font: inherit; font-size: 13px; line-height: 1.45; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); outline: none; }
+.pet-form textarea:focus { border-color: var(--accent); }
 .pet-form { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--line); }
 .pet-form input { flex: 1; min-width: 0; padding: 8px 10px; font: inherit; font-size: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); outline: none; }
 .pet-form input:focus { border-color: var(--accent); }
-.pet-form button { padding: 0 12px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.pet-form { align-items: flex-end; }
+.pet-form button { height: 36px;  padding: 0 12px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .pet-status { margin: 0; padding: 0 12px 8px; font-size: 11.5px; color: var(--accent); }
 .pet-status:empty { display: none; }
 

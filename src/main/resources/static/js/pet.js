@@ -110,7 +110,7 @@
       renderBadges();
       bubbles.querySelectorAll('.pet-bubble:not(.pet-update)').forEach((bubble) => bubble.remove());
       scrollLog(current());
-      setTimeout(() => current().element.querySelector('input')?.focus(), 50);
+      setTimeout(() => current().element.querySelector('.pet-form textarea, .pet-form input')?.focus(), 50);
     } else {
       closeDresser();
       closeCreator();
@@ -223,12 +223,11 @@
     setTimeout(() => avatar.style.removeProperty('--gaze'), 1400);
   }, 5200);
 
-  // ───────── 새 버전: 받는 중 → 준비 중 → 3초 뒤 다시 켜기 ─────────
-  // 사용자가 지켜보다가 펫이 꺼졌다 바로 켜지게 한다. 카운트다운 중 "나중에"를 누르면 다음에 끌 때 바뀐다.
+  // ───────── 새 버전: 받는 중 → 준비 중 → 누를 때까지 남는 "다시 켜기" ─────────
+  // 보고 있지 않을 때 저절로 꺼졌다 켜지면 알 수가 없다. 그래서 준비되면 누를 때까지 남겨 두고,
+  // 바뀐 뒤에는 "바뀌었어요" 말풍선을 확인할 때까지 남긴다.
   let updateBubble = null;
   let problemShown = null;
-  let countdown = null;
-  let postponed = false;
 
   const ensureUpdateBubble = () => {
     if (updateBubble) return updateBubble;
@@ -237,18 +236,10 @@
     updateBubble.innerHTML = '<span class="mini update-icon"><svg class="i"><use href="#i-update"/></svg></span>'
       + '<div><b class="u-title"></b><p class="u-text"></p>'
       + '<div class="u-bar" hidden><i></i></div>'
-      + '<div class="u-actions" hidden><button type="button" class="u-now">지금</button>'
-      + '<button type="button" class="u-later">나중에</button></div></div>';
+      + '<div class="u-actions" hidden><button type="button" class="u-now">지금 다시 켜기</button></div></div>';
     updateBubble.querySelector('.u-now').addEventListener('click', (event) => {
       event.stopPropagation();
       restartNow();
-    });
-    updateBubble.querySelector('.u-later').addEventListener('click', (event) => {
-      event.stopPropagation();
-      postponed = true;
-      clearInterval(countdown);
-      countdown = null;
-      showReady(updateBubble.dataset.version);
     });
     bubbles.prepend(updateBubble);
     return updateBubble;
@@ -264,25 +255,25 @@
     bubble.querySelector('.u-actions').hidden = !actions;
   };
   const restartNow = () => {
-    clearInterval(countdown);
-    countdown = null;
     setBubble(`새 버전 ${updateBubble?.dataset.version || ''}`, '다시 켜는 중…', { progress: -1 });
+    avatar.classList.remove('has-update');
     app.applyUpdate();
   };
-  // 미룬 뒤에는 누르면 바로 바뀌는 말풍선으로 남긴다
   const showReady = (version) => {
-    setBubble(`새 버전 ${version} 준비됐어요`, '누르면 바꾸고 다시 켜져요. 그냥 두면 다음에 끌 때 바뀌어요.');
-    updateBubble.onclick = restartNow;
+    setBubble(`새 버전 ${version} 준비됐어요`, '누르면 바꾸고 다시 켜져요. 그냥 두면 다음에 끌 때 바뀌어요.', { actions: true });
+    avatar.classList.add('has-update');
   };
-  const startCountdown = (version) => {
-    if (countdown || postponed) return;
-    let left = 3;
-    const tick = () => setBubble(`새 버전 ${version} 준비됐어요`, `${left}초 뒤 다시 켜져요`, { progress: 100, actions: true });
-    tick();
-    countdown = setInterval(() => {
-      left -= 1;
-      if (left <= 0) restartNow(); else tick();
-    }, 1000);
+  const showUpdated = (version) => {
+    const note = document.createElement('div');
+    note.className = 'pet-bubble pet-update done';
+    note.innerHTML = '<span class="mini update-icon"><svg class="i"><use href="#i-check"/></svg></span>'
+      + '<div><b></b><p>업데이트가 끝났어요.</p><div class="u-actions"><button type="button" class="u-ok">확인</button></div></div>';
+    note.querySelector('b').textContent = `새 버전 ${version}로 바뀌었어요`;
+    note.querySelector('.u-ok').addEventListener('click', (event) => {
+      event.stopPropagation();
+      note.remove();
+    });
+    bubbles.prepend(note);
   };
 
   app.onUpdate(({ status, version, problem, progress }) => {
@@ -296,15 +287,19 @@
         setBubble(`새 버전 ${version}`, '설치 준비 중…', { progress: -1 });
         return;
       case 'ready':
-        if (postponed) showReady(version); else startCountdown(version);
+        showReady(version);
+        return;
+      case 'updated':
+        updateBubble?.remove();
+        updateBubble = null;
+        showUpdated(version);
         return;
       case 'applying':
         return;
       default:
     }
     // 진행 중이 아니면 진행 말풍선을 치운다
-    clearInterval(countdown);
-    countdown = null;
+    avatar.classList.remove('has-update');
     updateBubble?.remove();
     updateBubble = null;
     // 받지 못한 이유가 있으면 한 번 알린다(같은 이유는 다시 띄우지 않는다)
@@ -404,7 +399,20 @@
     };
 
     const form = view.element.querySelector('.pet-form');
-    const input = form.querySelector('input');
+    const input = form.querySelector('textarea, input');
+    // 길게 쓰면 아래로 늘어난다(최대 5줄). Enter는 보내기, Shift+Enter는 줄바꿈, 한글 조합 중 Enter는 무시.
+    const fit = () => {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 112) + 'px';
+      input.style.overflowY = input.scrollHeight > 112 ? 'auto' : 'hidden';
+    };
+    input.addEventListener('input', fit);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
     let sending = false;
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -422,6 +430,7 @@
         const result = await response.json().catch(() => ({}));
         if (response.ok) {
           input.value = '';
+          fit();
           receive(view, result);
         } else {
           view.status.textContent = result.message || '보내지 못했어요.';
