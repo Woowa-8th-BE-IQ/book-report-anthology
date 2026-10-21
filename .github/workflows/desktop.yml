@@ -47,7 +47,10 @@ jobs:
       - name: 실패하면 로그 끝을 주석으로 남기기
         if: failure()
         shell: bash
-        run: tail -n 60 build.log | grep -v '^\s*$' | tail -n 45 | sed 's/^/::error::/'
+        # 주석은 한 단계에 10개까지만 보이므로 오류다운 줄만 고른다
+        run: |
+          grep -iE '⨯|error|fail|cannot|exit code|hdiutil' build.log | grep -v '^\s*$' | tail -n 9 | cut -c1-900 | sed 's/^/::error::/'
+          tail -n 1 build.log | sed 's/^/::error::last: /'
       - uses: actions/upload-artifact@v5
         with:
           name: pet-${{ matrix.os }}
