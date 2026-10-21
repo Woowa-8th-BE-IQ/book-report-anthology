@@ -235,6 +235,30 @@ class AnthologyFlowTest {
                 .andExpect(status().isNoContent())
                 .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.startsWith("ab_" + secondCode + "=;")));
 
+        // 펫에서 바로 문집을 열고, 초대 링크로 참여한다
+        MvcResult petOpened = mvc.perform(post("/pet/anthologies")
+                        .param("title", "펫에서 연 문집").param("bookTitle", "이방인").param("nickname", "레오"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String petBody = petOpened.getResponse().getContentAsString();
+        java.util.regex.Matcher petCode = java.util.regex.Pattern.compile("\"code\":\"([A-Za-z0-9]+)\"").matcher(petBody);
+        assertThat(petCode.find()).isTrue();
+        assertThat(petBody).contains("\"inviteUrl\":\"http://localhost/anthologies/" + petCode.group(1) + "\"");
+        assertThat(petOpened.getResponse().getCookie("ab_" + petCode.group(1))).isNotNull();
+        mvc.perform(post("/pet/anthologies").param("title", "제목만"))
+                .andExpect(status().isUnprocessableEntity());
+        Cookie joined = mvc.perform(post("/pet/join")
+                        .param("invite", "http://localhost/anthologies/" + petCode.group(1) + "/room")
+                        .param("nickname", "펫손님"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getCookie("ab_" + petCode.group(1));
+        assertThat(joined).isNotNull();
+        mvc.perform(post("/pet/join").cookie(joined).param("invite", petCode.group(1)).param("nickname", "또"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"already\":true")));
+        mvc.perform(post("/pet/join").param("invite", "hello world").param("nickname", "감자"))
+                .andExpect(status().isUnprocessableEntity());
+
         // 펫 안에서 캐릭터 바꾸기는 JSON으로 답한다
         mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor).header("X-Room", "1")
                         .param("style", "c2b3e1m1x5k0"))

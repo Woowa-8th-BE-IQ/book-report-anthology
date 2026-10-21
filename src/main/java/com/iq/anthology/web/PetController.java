@@ -31,14 +31,90 @@ public class PetController {
 
     static final int PET_HISTORY = 60;
 
+    private static final java.util.regex.Pattern INVITE = java.util.regex.Pattern.compile("/anthologies/([A-Za-z0-9]+)");
+    private static final java.util.regex.Pattern CODE = java.util.regex.Pattern.compile("[A-Za-z0-9]{4,20}");
+
     private final RoomService roomService;
     private final EssayService essayService;
+    private final com.iq.anthology.anthology.AnthologyService anthologyService;
     private final ContributorCookies cookies;
 
-    public PetController(RoomService roomService, EssayService essayService, ContributorCookies cookies) {
+    public PetController(RoomService roomService, EssayService essayService,
+                         com.iq.anthology.anthology.AnthologyService anthologyService, ContributorCookies cookies) {
         this.roomService = roomService;
         this.essayService = essayService;
+        this.anthologyService = anthologyService;
         this.cookies = cookies;
+    }
+
+    /** 펫에서 바로 문집을 연다. 출입증을 펫에 남기고 초대 링크를 돌려준다. */
+    @PostMapping("/pet/anthologies")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> open(@RequestParam(required = false) String title,
+                                                    @RequestParam(required = false) String bookTitle,
+                                                    @RequestParam(required = false) String bookAuthor,
+                                                    @RequestParam(required = false) String dueDate,
+                                                    @RequestParam(required = false) String nickname,
+                                                    @RequestParam(required = false) String realName,
+                                                    HttpServletRequest request, HttpServletResponse response) {
+        try {
+            java.time.LocalDate due = null;
+            if (dueDate != null && !dueDate.isBlank()) {
+                try {
+                    due = java.time.LocalDate.parse(dueDate.strip());
+                } catch (java.time.format.DateTimeParseException e) {
+                    throw DomainException.rule("마감일 형식이 올바르지 않아요.");
+                }
+            }
+            var admission = anthologyService.open(title, bookTitle, bookAuthor, due, nickname, realName);
+            cookies.write(request, response, admission.code(), admission.token());
+            return ResponseEntity.ok(admitted(admission.code(), admission.token(), false));
+        } catch (DomainException e) {
+            return ResponseEntity.status(e.type().status()).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /** 펫에서 초대 링크(또는 문집 코드)로 참여한다. 이미 참여한 문집이면 그대로 돌려준다. */
+    @PostMapping("/pet/join")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> join(@RequestParam(required = false) String invite,
+                                                    @RequestParam(required = false) String nickname,
+                                                    @RequestParam(required = false) String realName,
+                                                    HttpServletRequest request, HttpServletResponse response) {
+        try {
+            String code = codeOf(invite);
+            String existing = cookies.read(request, code);
+            if (existing != null && anthologyService.get(code).findByToken(existing).isPresent()) {
+                return ResponseEntity.ok(admitted(code, existing, true));
+            }
+            var admission = anthologyService.join(code, nickname, realName);
+            cookies.write(request, response, code, admission.token());
+            return ResponseEntity.ok(admitted(code, admission.token(), false));
+        } catch (DomainException e) {
+            return ResponseEntity.status(e.type().status()).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    private Map<String, Object> admitted(String code, String token, boolean already) {
+        var base = org.springframework.web.servlet.support.ServletUriComponentsBuilder.fromCurrentContextPath();
+        return Map.of(
+                "code", code,
+                "title", anthologyService.get(code).title(),
+                "inviteUrl", base.cloneBuilder().path("/anthologies/" + code).toUriString(),
+                "personalUrl", base.cloneBuilder().path("/me/" + token).toUriString(),
+                "already", already);
+    }
+
+    static String codeOf(String invite) {
+        String text = invite == null ? "" : invite.strip();
+        java.util.regex.Matcher link = INVITE.matcher(text);
+        if (link.find()) {
+            return link.group(1);
+        }
+        if (CODE.matcher(text).matches()) {
+            return text;
+        }
+        throw DomainException.rule("초대 링크를 알아볼 수 없어요. 받은 링크를 그대로 붙여 넣어 주세요.");
     }
 
     @GetMapping("/pet")

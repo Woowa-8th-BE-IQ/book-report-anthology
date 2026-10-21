@@ -29,6 +29,7 @@
   const badge = document.getElementById('pet-badge');
   const menu = document.getElementById('pet-menu');
   const dresser = document.getElementById('pet-dresser');
+  const creator = document.getElementById('pet-create');
   const avatarBase = stage.dataset.avatarBase;
   const parse = (event) => { try { return JSON.parse(event.data); } catch (e) { return null; } };
   const restart = (element, className) => {
@@ -84,7 +85,7 @@
     if (!views.has(code)) return;
     selected = code;
     views.forEach((view) => {
-      view.element.hidden = view.code !== code || !dresser.hidden;
+      view.element.hidden = view.code !== code || !dresser.hidden || !creator.hidden;
       view.tab?.setAttribute('aria-selected', String(view.code === code));
     });
     menu.querySelectorAll('[data-menu="focus"]').forEach((item) => {
@@ -112,6 +113,7 @@
       setTimeout(() => current().element.querySelector('input')?.focus(), 50);
     } else {
       closeDresser();
+      closeCreator();
     }
   };
   document.querySelector('[data-pet="collapse"]').addEventListener('click', () => expand(false));
@@ -146,12 +148,12 @@
   menu.addEventListener('click', async (event) => {
     const item = event.target.closest('[data-menu]');
     if (!item) return;
-    closeMenu({ keepSize: ['chat', 'dress'].includes(item.dataset.menu) });
+    closeMenu({ keepSize: ['chat', 'dress', 'add'].includes(item.dataset.menu) });
     switch (item.dataset.menu) {
       case 'chat': expand(true); break;
       case 'dress': expand(true); openDresser(); break;
       case 'focus': select(item.dataset.code); break;
-      case 'add': (app.addAnthology || app.relink)(); break;
+      case 'add': expand(true); openCreator(); break;
       case 'quit':
         // 새 펫 앱은 완전히 끈다. 예전 펫 앱은 창을 닫는다(메뉴 막대 아이콘은 남는다).
         if (window.petApp?.quit) window.petApp.quit(); else window.close();
@@ -170,12 +172,14 @@
     if (event.key !== 'Escape') return;
     if (!menu.hidden) closeMenu();
     else if (!dresser.hidden) closeDresser();
+    else if (!creator.hidden) closeCreator();
     else expand(false);
   });
   app.onCommand((command) => {
     if (command === 'dress') { expand(true); openDresser(); }
     if (command === 'chat') expand(true);
     if (command === 'menu') openMenu();
+    if (command === 'create') { expand(true); openCreator(); }
   });
 
   // ───────── 아바타: 끌면 창이 따라오고, 그냥 누르면 대화창 ─────────
@@ -455,6 +459,7 @@
     });
   };
   function openDresser() {
+    closeCreator();
     const view = current();
     draft = toStyle(view.element.dataset.style) || toStyle(view.element.dataset.original);
     if (!draft) return;
@@ -516,6 +521,88 @@
         dressStatus.textContent = '연결이 끊겨 저장하지 못했어요.';
       }
     }
+  });
+
+  // ───────── 문집 열기·참여 (펫 안에서) ─────────
+  const createStatus = creator.querySelector('.create-status');
+  const done = creator.querySelector('.create-done');
+  let createdCode = null;
+  const setMode = (mode) => {
+    creator.querySelectorAll('[data-mode]').forEach((tab) => tab.setAttribute('aria-selected', String(tab.dataset.mode === mode)));
+    creator.querySelectorAll('.create-form').forEach((form) => { form.hidden = form.dataset.form !== mode; });
+    createStatus.textContent = '';
+    setTimeout(() => creator.querySelector(`.create-form[data-form="${mode}"] input`)?.focus(), 30);
+  };
+  function openCreator() {
+    closeDresser();
+    views.forEach((each) => { each.element.hidden = true; });
+    creator.hidden = false;
+    done.hidden = true;
+    creator.querySelector('.create-modes').hidden = false;
+    createdCode = null;
+    setMode('open');
+  }
+  function closeCreator() {
+    if (creator.hidden) return;
+    creator.hidden = true;
+    views.forEach((view) => { view.element.hidden = view.code !== selected; });
+  }
+  document.querySelector('[data-pet="create"]').addEventListener('click', () => {
+    if (creator.hidden) openCreator(); else closeCreator();
+  });
+  creator.querySelectorAll('[data-mode]').forEach((tab) => tab.addEventListener('click', () => setMode(tab.dataset.mode)));
+
+  creator.querySelectorAll('.create-form').forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = form.querySelector('.create-go');
+      button.disabled = true;
+      createStatus.textContent = '';
+      try {
+        const response = await fetch(form.dataset.form === 'open' ? '/pet/anthologies' : '/pet/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: new URLSearchParams(new FormData(form)),
+          credentials: 'same-origin',
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          createStatus.textContent = result.message || '하지 못했어요. 다시 시도해 주세요.';
+          return;
+        }
+        createdCode = result.code;
+        if (form.dataset.form === 'join') {
+          // 참여는 바로 그 문집 탭으로 간다
+          window.location.replace(`/pet?focus=${encodeURIComponent(result.code)}`);
+          return;
+        }
+        creator.querySelectorAll('.create-form').forEach((each) => { each.hidden = true; });
+        creator.querySelector('.create-modes').hidden = true;
+        done.querySelector('.done-title').textContent = `'${result.title}' 문집을 열었어요`;
+        done.querySelector('.done-url').value = result.inviteUrl;
+        done.hidden = false;
+      } catch (error) {
+        createStatus.textContent = '연결이 끊겨 하지 못했어요.';
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+  done.querySelector('.done-copy-btn').addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const url = done.querySelector('.done-url');
+    try {
+      await navigator.clipboard.writeText(url.value);
+    } catch (error) {
+      url.select();
+      document.execCommand('copy');
+    }
+    button.querySelector('span').textContent = '복사했어요';
+    button.classList.add('copied');
+    setTimeout(() => { button.querySelector('span').textContent = '복사'; button.classList.remove('copied'); }, 1800);
+  });
+  done.querySelector('.done-go').addEventListener('click', () => {
+    if (createdCode) window.location.replace(`/pet?focus=${encodeURIComponent(createdCode)}`);
   });
 
   select(selected);

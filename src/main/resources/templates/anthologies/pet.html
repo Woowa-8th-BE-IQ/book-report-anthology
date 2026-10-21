@@ -22,14 +22,18 @@
     <symbol id="i-dice" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="9" cy="9" r=".9" fill="currentColor"/><circle cx="15" cy="15" r=".9" fill="currentColor"/><circle cx="15" cy="9" r=".9" fill="currentColor"/><circle cx="9" cy="15" r=".9" fill="currentColor"/></symbol>
     <symbol id="i-undo" viewBox="0 0 24 24"><path d="M8 7.5L4.5 11 8 14.5"/><path d="M4.5 11H14a5 5 0 0 1 0 10h-2"/></symbol>
     <symbol id="i-update" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.1-5"/><path d="M19 4.5V9h-4.5"/><path d="M12 9v4l2.5 1.5"/></symbol>
+    <symbol id="i-plus-bare" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.2"/><path d="M15.5 8.5V6.2a1.7 1.7 0 0 0-1.7-1.7H6.2a1.7 1.7 0 0 0-1.7 1.7v7.6a1.7 1.7 0 0 0 1.7 1.7h2.3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
     <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 15.5H3z"/><path d="M12 10v4"/><circle cx="12" cy="16.8" r=".6" fill="currentColor"/></symbol>
   </svg>
 
 <!-- 연결된 문집이 없을 때 -->
 <div class="pet-stage" th:if="${tabs.isEmpty()}">
   <div class="pet-problem" data-interactive>
-    <p>연결된 문집이 없어요. 개인 링크를 붙여 넣어 주세요.</p>
-    <button type="button" data-pet="relink">문집 추가</button>
+    <p>연결된 문집이 없어요.</p>
+    <a class="pet-problem-link" th:href="@{/anthologies/new}" target="_blank" rel="noopener">새 문집 열기 ↗</a>
+    <button type="button" data-pet="relink">개인 링크 붙여 넣기</button>
   </div>
 </div>
 
@@ -46,6 +50,7 @@
           <span class="pet-tab-badge" hidden>0</span>
         </button>
       </nav>
+      <button type="button" class="pet-plus" data-pet="create" aria-label="문집 열기·참여" title="문집 열기·참여"><svg class="i"><use href="#i-plus-bare"/></svg></button>
       <button type="button" class="pet-close" data-pet="collapse" aria-label="접기">✕</button>
     </header>
 
@@ -77,6 +82,44 @@
         <span class="mini" th:utext="${member.avatar()}"></span>
       </template>
     </div>
+
+
+    <!-- 문집 열기·참여 (펫 안에서) -->
+    <section class="pet-create" id="pet-create" hidden aria-label="문집 열기·참여">
+      <div class="create-modes" role="tablist">
+        <button type="button" role="tab" data-mode="open" aria-selected="true">새 문집 열기</button>
+        <button type="button" role="tab" data-mode="join" aria-selected="false">초대받았어요</button>
+      </div>
+      <form class="create-form" data-form="open" autocomplete="off">
+        <label>문집 이름<input name="title" required maxlength="40" placeholder="예: 겨울꿈은 유난히 차갑다."></label>
+        <div class="row">
+          <label>책 제목<input name="bookTitle" required maxlength="80" placeholder="예: 이방인"></label>
+          <label>지은이<input name="bookAuthor" maxlength="40" placeholder="예: 알베르 카뮈"></label>
+        </div>
+        <div class="row">
+          <label>내 닉네임<input name="nickname" required maxlength="12" placeholder="예: 아이큐"></label>
+          <label><span>마감일 <small>· 선택</small></span><input name="dueDate" type="date"></label>
+        </div>
+        <button type="submit" class="create-go">문집 열기</button>
+      </form>
+      <form class="create-form" data-form="join" autocomplete="off" hidden>
+        <label>받은 초대 링크<input name="invite" required placeholder="https://…/anthologies/…"></label>
+        <label>내 닉네임<input name="nickname" required maxlength="12" placeholder="문집에서 쓸 이름"></label>
+        <button type="submit" class="create-go">참여하기</button>
+        <button type="button" class="create-link" data-pet="relink">개인 링크가 있어요</button>
+      </form>
+      <div class="create-done" hidden>
+        <div class="done-badge"><svg class="i"><use href="#i-check"/></svg></div>
+        <b class="done-title"></b>
+        <p class="done-text">초대 링크를 보내면 함께 쓸 수 있어요. 카톡방에 붙이면 초대 카드로 보여요.</p>
+        <div class="done-copy">
+          <input class="done-url" readonly aria-label="초대 링크">
+          <button type="button" class="done-copy-btn"><svg class="i"><use href="#i-copy"/></svg><span>복사</span></button>
+        </div>
+        <button type="button" class="create-go done-go">이 문집으로 가기</button>
+      </div>
+      <p class="pet-status create-status" role="status"></p>
+    </section>
 
     <!-- 캐릭터 바꾸기 (지금 탭의 문집에서의 내 캐릭터) -->
     <section class="pet-dresser" id="pet-dresser" hidden aria-label="캐릭터 바꾸기">
@@ -120,7 +163,7 @@
               th:attr="data-menu='focus', data-code=${tab.code()}"><svg class="i"><use href="#i-book"/></svg><span th:text="${tab.title()}">문집</span></button>
     </div>
     <hr>
-    <button type="button" role="menuitem" data-menu="add"><svg class="i"><use href="#i-plus"/></svg><span>문집 추가…</span></button>
+    <button type="button" role="menuitem" data-menu="add"><svg class="i"><use href="#i-plus"/></svg><span>문집 열기·참여…</span></button>
     <button type="button" role="menuitem" data-menu="leave"><svg class="i"><use href="#i-leave"/></svg><span>이 문집 펫에서 빼기</span></button>
     <hr>
     <button type="button" role="menuitem" data-menu="quit" class="quiet"><svg class="i"><use href="#i-power"/></svg><span>펫 끄기</span></button>
