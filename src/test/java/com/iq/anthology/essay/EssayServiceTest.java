@@ -31,6 +31,7 @@ class EssayServiceTest {
     private Admission editor;
     private Admission potato;
     private FakeActivityLog activityLog;
+    private final java.util.List<Object> published = new java.util.ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -38,7 +39,7 @@ class EssayServiceTest {
         activityLog = new FakeActivityLog();
         anthologyService = new AnthologyService(anthologies, new SequentialIdentifiers(), activityLog, clock);
         essayService = new EssayService(anthologyService, anthologies, new FakeEssayRepository(),
-                new FakeReplyRepository(), activityLog, clock);
+                new FakeReplyRepository(), activityLog, clock, published::add);
 
         editor = anthologyService.open("일단 나부터 읽어 봅니다", "리팩터링", "마틴 파울러", null, "레오", "한동희");
         potato = anthologyService.join(editor.code(), "감자", null);
@@ -206,5 +207,27 @@ class EssayServiceTest {
 
     private Shelf shelf() {
         return essayService.shelf(anthologyService.get(editor.code()));
+    }
+
+    @Test
+    void 처음_제출할_때만_제출_소식을_낸다() {
+        essayService.save(editor.code(), potato.token(), "제목", null, LONG_BODY, true);
+        essayService.save(editor.code(), potato.token(), "고친 제목", null, LONG_BODY, false);
+
+        assertThat(published).hasSize(1).first().isInstanceOf(EssayEvents.Submitted.class);
+    }
+
+    @Test
+    void 답글을_달면_글쓴이에게_갈_소식을_낸다() {
+        Essay mine = essayService.save(editor.code(), editor.token(), "제목", null, LONG_BODY, true);
+        essayService.save(editor.code(), potato.token(), "제목", null, LONG_BODY, true);
+        published.clear();
+
+        essayService.reply(editor.code(), potato.token(), mine.id(), "잘 읽었어요");
+
+        assertThat(published).singleElement().isInstanceOfSatisfying(EssayEvents.Replied.class, replied -> {
+            assertThat(replied.writerId()).isEqualTo(mine.contributorId());
+            assertThat(replied.body()).isEqualTo("잘 읽었어요");
+        });
     }
 }

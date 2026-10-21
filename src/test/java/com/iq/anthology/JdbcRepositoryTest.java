@@ -214,6 +214,30 @@ class JdbcRepositoryTest {
     }
 
     @Test
+    void 안_읽은_말은_내가_읽은_뒤_남이_한_말만_센다() {
+        Contributor potato = anthology.join("감자", null, "token-potato", NOW);
+        anthologies.addContributor(anthology.id(), potato);
+        Long editorId = anthology.editor().id();
+        RoomMessage before = roomMessages.save(RoomMessage.say(anthology.id(), editorId, "먼저 한 말", NOW));
+
+        roomMessages.startReading(anthology.id(), potato.id()); // 처음 오면 지금까지는 읽은 셈
+        assertThat(roomMessages.unreadCount(anthology.id(), potato.id())).isZero();
+        assertThat(roomMessages.lastRead(potato.id())).isEqualTo(before.id());
+
+        RoomMessage first = roomMessages.save(RoomMessage.say(anthology.id(), editorId, "하나", NOW.plusMinutes(1)));
+        roomMessages.save(RoomMessage.say(anthology.id(), editorId, "둘", NOW.plusMinutes(2)));
+        roomMessages.save(RoomMessage.say(anthology.id(), potato.id(), "내 말", NOW.plusMinutes(3)));
+        assertThat(roomMessages.unreadCount(anthology.id(), potato.id())).isEqualTo(2);
+
+        roomMessages.markRead(potato.id(), first.id());
+        assertThat(roomMessages.unreadCount(anthology.id(), potato.id())).isEqualTo(1);
+
+        roomMessages.markRead(potato.id(), before.id()); // 뒤로는 돌아가지 않는다
+        roomMessages.startReading(anthology.id(), potato.id()); // 이미 읽은 자리가 있으면 그대로
+        assertThat(roomMessages.lastRead(potato.id())).isEqualTo(first.id());
+    }
+
+    @Test
     void 마지막_접속은_1분_안에_다시_쓰지_않는다() {
         Long editorId = anthology.editor().id();
         anthologies.touch(editorId, NOW.plusMinutes(10));

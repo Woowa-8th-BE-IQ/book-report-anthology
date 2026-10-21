@@ -20,6 +20,7 @@
                data-say=@{/anthologies/{code}/room/messages(code=${a.code()})},
                data-typing=@{/anthologies/{code}/room/typing(code=${a.code()})},
                data-position=@{/anthologies/{code}/room/position(code=${a.code()})},
+               data-read=@{/anthologies/{code}/room/read(code=${a.code()})},
                data-me=${room.meId()}">
 
   <!-- 책상: 참여자가 둘러앉는다 -->
@@ -60,7 +61,7 @@
       <li class="talk-empty" th:if="${room.lines().isEmpty()}">아직 조용해요. 첫마디를 건네 보세요.</li>
       <th:block th:each="line : ${room.lines()}">
         <li class="talk-day" th:if="${line.day() != null}"><span th:text="${line.day()}">10월 21일</span></li>
-        <li class="talk-line" th:classappend="${line.mine(room.meId())} ? 'mine' : ''"
+        <li class="talk-line" th:classappend="${(line.mine(room.meId()) ? 'mine ' : '') + (line.callsMe() ? 'calls-me' : '')}"
             th:attr="data-id=${line.id()}, data-author=${line.author().id()}">
           <span class="avatar small" aria-hidden="true" th:utext="${line.author().avatar()}"></span>
           <div class="talk-body">
@@ -76,7 +77,8 @@
           th:action="@{/anthologies/{code}/room/messages(code=${a.code()})}">
       <label class="visually-hidden" for="talk-input">말</label>
       <textarea id="talk-input" name="body" rows="1" required th:attr="maxlength=${bodyMax}"
-                placeholder="한마디 건네기" title="Enter로 보내고, Shift+Enter로 줄을 바꿔요"></textarea>
+                placeholder="한마디 건네기 · @이름으로 부르기" title="Enter로 보내고, Shift+Enter로 줄을 바꿔요. @를 치면 부를 사람을 골라요"
+                data-mention=".member:not(.me)"></textarea>
       <button class="btn" type="submit">보내기</button>
     </form>
     <p class="talk-status" id="talk-status" role="status"></p>
@@ -84,5 +86,6 @@
 </main>
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/mention.js}" defer></script>
 </body>
 </html>

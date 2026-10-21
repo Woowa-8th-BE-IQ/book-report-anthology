@@ -60,4 +60,53 @@ public class JdbcRoomMessageRepository implements RoomMessageRepository {
                 .param("contributorId", contributorId)
                 .update();
     }
+
+    @Override
+    public void startReading(Long anthologyId, Long contributorId) {
+        jdbc.sql("""
+                        UPDATE contributor
+                           SET last_read_message_id = COALESCE(
+                               (SELECT MAX(id) FROM room_message WHERE anthology_id = :anthologyId), 0)
+                         WHERE id = :contributorId AND last_read_message_id IS NULL
+                        """)
+                .param("anthologyId", anthologyId)
+                .param("contributorId", contributorId)
+                .update();
+    }
+
+    @Override
+    public void markRead(Long contributorId, Long messageId) {
+        jdbc.sql("""
+                        UPDATE contributor SET last_read_message_id = :messageId
+                         WHERE id = :contributorId
+                           AND (last_read_message_id IS NULL OR last_read_message_id < :messageId)
+                        """)
+                .param("contributorId", contributorId)
+                .param("messageId", messageId)
+                .update();
+    }
+
+    @Override
+    public long lastRead(Long contributorId) {
+        return jdbc.sql("SELECT COALESCE(last_read_message_id, 0) FROM contributor WHERE id = :contributorId")
+                .param("contributorId", contributorId)
+                .query(Long.class)
+                .optional()
+                .orElse(0L);
+    }
+
+    @Override
+    public int unreadCount(Long anthologyId, Long contributorId) {
+        return jdbc.sql("""
+                        SELECT COUNT(*) FROM room_message m
+                         WHERE m.anthology_id = :anthologyId
+                           AND m.contributor_id <> :contributorId
+                           AND m.id > (SELECT COALESCE(last_read_message_id, 0) FROM contributor
+                                        WHERE id = :contributorId)
+                        """)
+                .param("anthologyId", anthologyId)
+                .param("contributorId", contributorId)
+                .query(Integer.class)
+                .single();
+    }
 }

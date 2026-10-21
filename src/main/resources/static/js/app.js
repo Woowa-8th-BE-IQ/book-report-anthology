@@ -530,8 +530,9 @@
       }
       const stick = nearBottom() || message.contributorId === me;
       talk.querySelector('.talk-empty')?.remove();
+      const callsMe = (message.mentions || []).includes(me);
       const line = document.createElement('li');
-      line.className = 'talk-line fresh' + (message.contributorId === me ? ' mine' : '');
+      line.className = 'talk-line fresh' + (message.contributorId === me ? ' mine' : '') + (callsMe ? ' calls-me' : '');
       line.dataset.id = message.id;
       line.dataset.author = message.contributorId;
       const avatar = document.createElement('span');
@@ -559,6 +560,47 @@
       renderTypers();
       showBubble(member, message.body, false);
       lookAt(member);
+      markRead();
+    };
+
+    // 어디까지 읽었는지 서버에 남긴다(펫의 안 읽은 수와 이어진다). 화면을 보고 있을 때만.
+    let readUpTo = 0;
+    let readTimer = null;
+    const markRead = () => {
+      if (document.visibilityState !== 'visible') return;
+      const upTo = Math.max(0, ...seen);
+      if (upTo <= readUpTo) return;
+      clearTimeout(readTimer);
+      readTimer = setTimeout(() => {
+        readUpTo = upTo;
+        fetch(room.dataset.read, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: new URLSearchParams({ upTo: String(upTo) }),
+          credentials: 'same-origin',
+        }).catch(() => {});
+      }, 800);
+    };
+    markRead();
+    document.addEventListener('visibilitychange', markRead);
+
+    // 문집 소식(누가 독후감을 냈다, 내 글에 답글, 마감)은 대화 사이에 한 줄로 끼운다. 저장하지 않는다.
+    const appendNews = (news) => {
+      const stick = nearBottom();
+      talk.querySelector('.talk-empty')?.remove();
+      const line = document.createElement('li');
+      line.className = `talk-news fresh ${news.kind}`;
+      const text = document.createElement('span');
+      text.textContent = `${news.title} · ${news.text}`;
+      line.append(text);
+      if (news.link) {
+        const link = document.createElement('a');
+        link.href = news.link;
+        link.textContent = news.kind === 'due' ? '쓰러 가기' : news.kind === 'reply' ? '답글 보기' : '보러 가기';
+        line.append(' ', link);
+      }
+      talk.insertBefore(line, end);
+      if (stick) toBottom();
     };
 
     // 걷기: (x, y)는 방 바닥에 대한 비율. 거리만큼 천천히, 가는 쪽을 바라보며 깡충깡충 걷는다.
@@ -652,6 +694,7 @@
       }
     });
     source.addEventListener('message', (event) => { const data = parse(event); if (data) append(data); });
+    source.addEventListener('news', (event) => { const data = parse(event); if (data) appendNews(data); });
     source.addEventListener('typing', (event) => {
       const data = parse(event);
       if (!data || data.contributorId === me) {

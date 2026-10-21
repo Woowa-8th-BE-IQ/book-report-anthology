@@ -186,6 +186,15 @@ class AnthologyFlowTest {
                 .andExpect(status().isUnprocessableEntity());
         mvc.perform(post("/anthologies/{code}/room/typing", code).cookie(editor))
                 .andExpect(status().isNoContent());
+        // 부른 사람(@닉네임)은 mentions로, 읽은 자리는 read로
+        mvc.perform(post("/anthologies/{code}/room/messages", code).cookie(editor).header("X-Room", "1")
+                        .param("body", "@모두 반가워요"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"mentions\":[]")));
+        mvc.perform(post("/anthologies/{code}/room/read", code).cookie(editor).param("upTo", "1"))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/anthologies/{code}/room/read", code).param("upTo", "1"))
+                .andExpect(status().isForbidden());
         mvc.perform(post("/anthologies/{code}/room/position", code).cookie(editor).param("x", "0.3").param("y", "0.8"))
                 .andExpect(status().isNoContent());
         mvc.perform(post("/anthologies/{code}/room/position", code).param("x", "0.3").param("y", "0.8"))

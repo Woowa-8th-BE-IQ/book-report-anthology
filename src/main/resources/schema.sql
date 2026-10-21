@@ -84,3 +84,5 @@ CREATE INDEX IF NOT EXISTS idx_room_message_anthology ON room_message (anthology
 
 ALTER TABLE contributor ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP;
 ALTER TABLE contributor ADD COLUMN IF NOT EXISTS avatar_style VARCHAR(20);
+-- 모임방에서 어디까지 읽었는지(펫의 안 읽은 수). NULL이면 아직 방에 온 적 없음
+ALTER TABLE contributor ADD COLUMN IF NOT EXISTS last_read_message_id BIGINT;

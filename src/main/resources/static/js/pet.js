@@ -52,7 +52,10 @@
       online: element.querySelector('.pet-online'),
       tab: document.querySelector(`.pet-tab[data-tab="${CSS.escape(code)}"]`),
       seen: new Set([...element.querySelectorAll('.pet-line[data-id]')].map((line) => Number(line.dataset.id))),
-      unread: 0,
+      // 안 읽은 수는 서버가 기억한다(펫을 다시 켜도 이어진다). called는 그중 나를 부른 말이 있는지.
+      unread: Number(element.dataset.unread) || 0,
+      called: element.dataset.called === 'true',
+      readUpTo: 0,
     });
   });
   const many = views.size > 1;
@@ -63,23 +66,46 @@
   const current = () => views.get(selected);
   const scrollLog = (view) => { view.log.scrollTop = view.log.scrollHeight; };
 
+  // 나를 부른 말이 있으면 숫자 앞에 "@"를 붙이고 색을 바꾼다
+  const label = (count, called) => (called ? '@' : '') + (count > 99 ? '99+' : count);
+  const paint = (element, count, called) => {
+    if (!element) return;
+    element.hidden = count === 0 && !called;
+    element.textContent = count === 0 ? '@' : label(count, called);
+    element.classList.toggle('called', called);
+  };
   const renderBadges = () => {
     let total = 0;
+    let called = false;
     views.forEach((view) => {
       total += view.unread;
-      const menuBadge = menu.querySelector(`[data-menu="focus"][data-code="${CSS.escape(view.code)}"] .pet-menu-badge`);
-      if (menuBadge) {
-        menuBadge.hidden = view.unread === 0;
-        menuBadge.textContent = view.unread > 99 ? '99+' : view.unread;
-      }
-      const tabBadge = view.tab?.querySelector('.pet-tab-badge');
-      if (tabBadge) {
-        tabBadge.hidden = view.unread === 0;
-        tabBadge.textContent = view.unread > 99 ? '99+' : view.unread;
-      }
+      called = called || view.called;
+      paint(menu.querySelector(`[data-menu="focus"][data-code="${CSS.escape(view.code)}"] .pet-menu-badge`),
+        view.unread, view.called);
+      paint(view.tab?.querySelector('.pet-tab-badge'), view.unread, view.called);
     });
-    badge.hidden = total === 0;
-    badge.textContent = total > 99 ? '99+' : total;
+    paint(badge, total, called);
+  };
+
+  // 보고 있는 대화는 어디까지 읽었는지 서버에 남긴다(0.8초 모아서 한 번)
+  const lastId = (view) => Math.max(0, ...view.seen);
+  const markRead = (view) => {
+    view.unread = 0;
+    view.called = false;
+    view.element.querySelectorAll('.pet-line.calls-me.fresh-call').forEach((line) => line.classList.remove('fresh-call'));
+    renderBadges();
+    const upTo = lastId(view);
+    if (upTo <= view.readUpTo) return;
+    clearTimeout(view.readTimer);
+    view.readTimer = setTimeout(() => {
+      view.readUpTo = upTo;
+      fetch(view.element.dataset.read, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: new URLSearchParams({ upTo: String(upTo) }),
+        credentials: 'same-origin',
+      }).catch(() => {});
+    }, 800);
   };
 
   const showMyFace = () => {
@@ -97,8 +123,7 @@
       item.setAttribute('aria-checked', String(item.dataset.code === code));
     });
     if (!panel.hidden) {
-      current().unread = 0;
-      renderBadges();
+      markRead(current());
       scrollLog(current());
     }
     showMyFace();
@@ -111,9 +136,8 @@
     if (!grownForMenu || !open) app.setExpanded(open);
     panel.hidden = !open;
     if (open) {
-      current().unread = 0;
-      renderBadges();
-      bubbles.querySelectorAll('.pet-bubble:not(.pet-update)').forEach((bubble) => bubble.remove());
+      markRead(current());
+      bubbles.querySelectorAll('.pet-bubble:not(.pet-update):not(.pet-news)').forEach((bubble) => bubble.remove());
       scrollLog(current());
       setTimeout(() => current().element.querySelector('.pet-form textarea, .pet-form input')?.focus(), 50);
     } else {
@@ -333,7 +357,8 @@
   // ───────── 말 ─────────
   const addLine = (view, message) => {
     const line = document.createElement('li');
-    line.className = 'pet-line' + (message.contributorId === view.me ? ' mine' : '');
+    const callsMe = (message.mentions || []).includes(view.me);
+    line.className = 'pet-line' + (message.contributorId === view.me ? ' mine' : '') + (callsMe ? ' calls-me fresh-call' : '');
     line.dataset.id = message.id;
     const name = document.createElement('b');
     name.textContent = faceOf(view, message.contributorId)?.dataset.name || '';
@@ -345,27 +370,86 @@
     if (view.code === selected) scrollLog(view);
   };
 
-  const showBubble = (view, message) => {
+  const trimBubbles = () => {
+    while (bubbles.querySelectorAll('.pet-bubble:not(.pet-update):not(.pet-news):not(.called)').length > 2) {
+      bubbles.querySelector('.pet-bubble:not(.pet-update):not(.pet-news):not(.called)').remove();
+    }
+    while (bubbles.querySelectorAll('.pet-news, .pet-bubble.called').length > 3) {
+      bubbles.querySelector('.pet-news, .pet-bubble.called').remove();
+    }
+  };
+  const fadeOut = (bubble, ms) => setTimeout(() => {
+    bubble.classList.add('leaving');
+    setTimeout(() => bubble.remove(), 320);
+  }, ms);
+
+  const showBubble = (view, message, called = false) => {
     const template = faceOf(view, message.contributorId);
     const bubble = document.createElement('div');
-    bubble.className = 'pet-bubble';
+    bubble.className = 'pet-bubble' + (called ? ' called' : '');
     const mini = template ? template.content.firstElementChild.cloneNode(true) : document.createElement('span');
     const body = document.createElement('div');
     const name = document.createElement('b');
-    name.textContent = (many ? `[${view.title}] ` : '') + (template?.dataset.name || '');
+    name.textContent = (many ? `[${view.title}] ` : '') + (template?.dataset.name || '')
+      + (called ? '님이 나를 불렀어요' : '');
     const text = document.createElement('p');
     text.textContent = message.body;
     body.append(name, text);
     bubble.append(mini, body);
-    bubble.addEventListener('click', () => { select(view.code); expand(true); });
+    bubble.addEventListener('click', () => { bubble.remove(); select(view.code); expand(true); });
     bubbles.append(bubble);
-    while (bubbles.querySelectorAll('.pet-bubble:not(.pet-update)').length > 2) {
-      bubbles.querySelector('.pet-bubble:not(.pet-update)').remove();
+    trimBubbles();
+    if (!called) fadeOut(bubble, 9000); // 나를 부른 말은 누를 때까지 남는다
+  };
+
+  // 문집 소식: 누가 독후감을 냈다·내 글에 답글·마감했다·마감이 코앞. 누르면 그 화면을 브라우저로 연다.
+  const newsIcon = { due: 'i-bell', closed: 'i-flag' };
+  const showNews = (view, news, lineOnly = false) => {
+    logNews(view, news);
+    if (lineOnly) return;
+    const bubble = document.createElement('div');
+    bubble.className = `pet-bubble pet-news ${news.kind}`;
+    const template = news.actorId ? faceOf(view, news.actorId) : null;
+    let mini;
+    if (template) {
+      mini = template.content.firstElementChild.cloneNode(true);
+    } else {
+      mini = document.createElement('span');
+      mini.className = 'mini news-icon';
+      mini.innerHTML = `<svg class="i"><use href="#${newsIcon[news.kind] || 'i-book'}"/></svg>`;
     }
-    setTimeout(() => {
-      bubble.classList.add('leaving');
-      setTimeout(() => bubble.remove(), 320);
-    }, 9000);
+    const body = document.createElement('div');
+    const title = document.createElement('b');
+    title.textContent = (many ? `[${view.title}] ` : '') + news.title;
+    const text = document.createElement('p');
+    text.textContent = news.text;
+    const go = document.createElement('small');
+    go.className = 'news-go';
+    go.textContent = news.kind === 'due' ? '쓰러 가기 ↗' : news.kind === 'reply' ? '답글 보기 ↗' : '보러 가기 ↗';
+    body.append(title, text, go);
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'news-close';
+    close.setAttribute('aria-label', '닫기');
+    close.textContent = '✕';
+    close.addEventListener('click', (event) => { event.stopPropagation(); bubble.remove(); });
+    bubble.append(mini, body, close);
+    bubble.addEventListener('click', () => {
+      bubble.remove();
+      if (news.link) window.open(news.link, '_blank', 'noopener');
+    });
+    bubbles.append(bubble);
+    trimBubbles();
+    // 마감 재촉과 답글은 누를 때까지, 나머지는 30초 뒤 사라진다
+    if (news.kind !== 'due' && news.kind !== 'reply') fadeOut(bubble, 30000);
+  };
+  // 대화에도 한 줄 남긴다(저장하지 않는 알림 줄)
+  const logNews = (view, news) => {
+    const line = document.createElement('li');
+    line.className = 'pet-line news';
+    line.textContent = `${news.title} · ${news.text}`;
+    view.log.append(line);
+    if (view.code === selected) scrollLog(view);
   };
 
   const receive = (view, message) => {
@@ -373,16 +457,20 @@
     view.seen.add(message.id);
     addLine(view, message);
     if (message.contributorId === view.me) return;
-    const looking = !panel.hidden && view.code === selected && dresser.hidden;
-    if (!looking) {
+    const called = (message.mentions || []).includes(view.me);
+    const looking = !panel.hidden && view.code === selected && dresser.hidden && creator.hidden;
+    if (looking) {
+      markRead(view);
+    } else {
       view.unread += 1;
+      view.called = view.called || called;
       renderBadges();
       if (panel.hidden) {
-        showBubble(view, message);
+        showBubble(view, message, called);
         app.attention();
       }
     }
-    restart(avatar, 'excited');
+    restart(avatar, called ? 'called' : 'excited');
   };
 
   views.forEach((view) => {
@@ -391,6 +479,14 @@
     source.addEventListener('hello', (event) => { online(event); view.status.textContent = ''; });
     source.addEventListener('presence', online);
     source.addEventListener('message', (event) => { const data = parse(event); if (data) receive(view, data); });
+    source.addEventListener('news', (event) => {
+      const data = parse(event);
+      if (!data) return;
+      showNews(view, data, !panel.hidden);
+      if (!panel.hidden) return; // 대화창을 보고 있으면 대화에 한 줄만 남긴다
+      app.attention();
+      restart(avatar, data.kind === 'due' ? 'called' : 'excited');
+    });
     source.addEventListener('avatar', (event) => {
       const data = parse(event);
       const template = data && faceOf(view, data.contributorId);

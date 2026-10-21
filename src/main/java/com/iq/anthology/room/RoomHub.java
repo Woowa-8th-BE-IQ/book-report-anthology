@@ -57,6 +57,20 @@ public class RoomHub {
         }
     }
 
+    /** 한 사람에게만 보낸다(그 사람이 연 탭·펫 모두). */
+    public void sendTo(Long anthologyId, Long contributorId, String event, Object data) {
+        for (Connection connection : rooms.getOrDefault(anthologyId, List.of())) {
+            if (connection.contributorId().equals(contributorId)) {
+                send(anthologyId, connection, event, data);
+            }
+        }
+    }
+
+    /** 누군가 들어와 있는 방(문집 id). */
+    public Set<Long> activeRooms() {
+        return Set.copyOf(rooms.keySet());
+    }
+
     /** 지금 방에 있는 참여자 id. 한 사람이 탭을 여러 개 열어도 한 번만 센다. */
     public Set<Long> online(Long anthologyId) {
         Set<Long> ids = new LinkedHashSet<>();

@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,16 +26,18 @@ public class EssayService {
     private final ReplyRepository replyRepository;
     private final ActivityLog activityLog;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
     public EssayService(AnthologyService anthologyService, AnthologyRepository anthologyRepository,
                         EssayRepository essayRepository, ReplyRepository replyRepository, ActivityLog activityLog,
-                        Clock clock) {
+                        Clock clock, ApplicationEventPublisher events) {
         this.anthologyService = anthologyService;
         this.anthologyRepository = anthologyRepository;
         this.essayRepository = essayRepository;
         this.replyRepository = replyRepository;
         this.activityLog = activityLog;
         this.clock = clock;
+        this.events = events;
     }
 
     /** 내 독후감을 저장한다. submit이면 제출까지 한다. 첫 저장이면 새로 만든다. 자동 저장도 이 길로 온다. */
@@ -57,6 +60,7 @@ public class EssayService {
         essayRepository.update(essay);
         if (!wasSubmitted && essay.isSubmitted()) {
             activityLog.record(anthology.id(), writer.id(), ActivityType.SUBMITTED, essay.id());
+            events.publishEvent(new EssayEvents.Submitted(anthology.code(), writer.id(), essay.id()));
         }
         return essay;
     }
@@ -80,7 +84,10 @@ public class EssayService {
         Contributor viewer = AnthologyService.requireContributor(anthology, token);
         Shelf shelf = shelf(anthology);
         Essay essay = readable(shelf, viewer, essayId);
-        return replyRepository.save(Reply.to(essay, viewer.id(), body, now()));
+        Reply reply = replyRepository.save(Reply.to(essay, viewer.id(), body, now()));
+        events.publishEvent(new EssayEvents.Replied(anthology.code(), essay.id(), essay.contributorId(), viewer.id(),
+                reply.body()));
+        return reply;
     }
 
     /** 모집을 마감한다. 엮은이만, 제출된 독후감이 두 편 이상일 때. */
@@ -90,6 +97,7 @@ public class EssayService {
         Contributor requester = AnthologyService.requireContributor(anthology, token);
         anthology.close(requester, shelf(anthology).submittedCount(), now());
         anthologyRepository.markClosed(anthology);
+        events.publishEvent(new EssayEvents.Closed(anthology.code()));
     }
 
     @Transactional

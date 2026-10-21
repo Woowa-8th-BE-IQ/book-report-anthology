@@ -14,7 +14,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /** 모임방 화면에 필요한 값. 아바타는 서버가 그려서 넣는다. */
-public record RoomView(Anthology anthology, Long meId, List<Member> members, List<Line> lines, int onlineCount) {
+public record RoomView(Anthology anthology, Long meId, List<Member> members, List<Line> lines, int onlineCount,
+                       int unread, long lastRead) {
 
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("M월 d일");
@@ -43,11 +44,14 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
                 continue; // 내보낸 사람의 말
             }
             String day = message.createdAt().format(DAY);
+            boolean callsMe = com.iq.anthology.room.Mentions.find(message.body(), contributors, message.contributorId())
+                    .contains(room.me().id());
             lines.add(new Line(message.id(), author, message.body(), message.createdAt().format(TIME),
-                    day.equals(lastDay) ? null : day));
+                    day.equals(lastDay) ? null : day, callsMe));
             lastDay = day;
         }
-        return new RoomView(anthology, room.me().id(), members, lines, room.online().size());
+        return new RoomView(anthology, room.me().id(), members, lines, room.online().size(), room.unread(),
+                room.lastRead());
     }
 
     public Member me() {
@@ -89,8 +93,13 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
                          String lastSeen) {
     }
 
-    /** day는 날짜가 바뀌는 첫 말에만 있다. */
-    public record Line(Long id, Member author, String body, String at, String day) {
+    /** 안 읽은 말 중 나를 부른 말이 있는지(펫 배지를 "@"로 바꾼다). */
+    public boolean calledWhileAway() {
+        return lines.stream().anyMatch(line -> line.callsMe() && line.id() > lastRead);
+    }
+
+    /** day는 날짜가 바뀌는 첫 말에만 있다. callsMe는 이 말이 "@내 닉네임"으로 나를 불렀는지. */
+    public record Line(Long id, Member author, String body, String at, String day, boolean callsMe) {
 
         public boolean mine(Long meId) {
             return author.id().equals(meId);

@@ -728,3 +728,14 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
   .js .member.online .avatar svg, .js .member .blink, .member.walking .avatar { animation: none; }
   @view-transition { navigation: none; }
 }
+
+/* 모임방: 나를 부른 말, 문집 소식, @ 고르기 */
+.talk-line.calls-me .talk-body p { box-shadow: inset 3px 0 0 var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--card)); }
+.talk-news { align-self: center; max-width: 92%; margin: 2px auto; padding: 5px 12px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 8%, var(--card)); border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--line)); font-size: 12.5px; color: var(--ink-soft); text-align: center; list-style: none; }
+.talk-news a { color: var(--accent); font-weight: 600; white-space: nowrap; }
+.talk-news.fresh { animation: bubble-in-line .3s ease-out; }
+.talk-form { position: relative; }
+.mention-pick { position: absolute; left: 12px; bottom: calc(100% - 6px); z-index: 5; min-width: 180px; margin: 0; padding: 4px; list-style: none; background: var(--card); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 22px rgba(26,18,8,.16); font-size: 14px; }
+.mention-pick[hidden] { display: none; }
+.mention-pick li { padding: 6px 10px; border-radius: 7px; cursor: pointer; white-space: nowrap; }
+.mention-pick li[aria-selected="true"] { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; }

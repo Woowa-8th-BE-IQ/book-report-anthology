@@ -76,11 +76,19 @@ public class RoomController {
                                                              @RequestParam(required = false) String body,
                                                              HttpServletRequest request) {
         try {
-            RoomMessage message = roomService.say(code, cookies.read(request, code), body);
-            return ResponseEntity.ok(RoomService.event(message));
+            return ResponseEntity.ok(roomService.say(code, cookies.read(request, code), body).event());
         } catch (DomainException e) {
             return ResponseEntity.status(e.type().status()).body(Map.of("message", e.getMessage()));
         }
+    }
+
+    /** 여기까지 읽었다. 펫의 안 읽은 수가 다시 켜도 이어지게 한다. */
+    @PostMapping("/anthologies/{code}/room/read")
+    @ResponseBody
+    public ResponseEntity<Void> read(@PathVariable String code, @RequestParam(required = false) Long upTo,
+                                     HttpServletRequest request) {
+        roomService.read(code, cookies.read(request, code), upTo);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @PostMapping("/anthologies/{code}/room/position")
