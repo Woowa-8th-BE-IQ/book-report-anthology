@@ -1,7 +1,7 @@
 {
   "name": "book-report-pet",
-  "productName": "남의 독후감 펫",
-  "version": "0.1.0",
+  "productName": "BookReportPet",
+  "version": "0.1.1",
   "description": "모임방 아바타가 바탕화면에 떠서 새 말을 알려 주는 데스크톱 펫",
   "main": "src/main.js",
   "author": "Woowa-8th-BE-IQ",
@@ -18,19 +18,53 @@
   "build": {
     "appId": "com.iq.anthology.pet",
     "artifactName": "book-report-pet-${version}-${os}-${arch}.${ext}",
-    "files": ["src/**/*", "build/tray*.png", "package.json"],
-    "directories": { "buildResources": "build", "output": "dist" },
+    "files": [
+      "src/**/*",
+      "build/tray*.png",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
     "mac": {
       "category": "public.app-category.social-networking",
-      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
       "icon": "build/icon.png",
-      "extendInfo": { "LSUIElement": true }
+      "extendInfo": {
+        "LSUIElement": true,
+        "CFBundleDisplayName": "남의 독후감 펫",
+        "CFBundleName": "BookReportPet"
+      },
+      "identity": "-",
+      "hardenedRuntime": false
     },
-    "dmg": { "title": "Book Report Pet ${version}" },
+    "dmg": {
+      "title": "Book Report Pet ${version}"
+    },
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "build/icon.png"
     },
-    "nsis": { "oneClick": true, "perMachine": false, "shortcutName": "남의 독후감 펫" }
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "shortcutName": "남의 독후감 펫"
+    }
   }
 }
