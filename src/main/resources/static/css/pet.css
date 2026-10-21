@@ -36,7 +36,18 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-bubble b { display: block; font-size: 11.5px; color: var(--accent); }
 .pet-bubble p { margin: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .pet-update { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
-.pet-update .update-icon { font-size: 20px; line-height: 26px; text-align: center; }
+.pet-update .u-bar { height: 5px; margin-top: 6px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 18%, transparent); overflow: hidden; }
+.pet-update .u-bar[hidden], .pet-update .u-actions[hidden] { display: none; }
+.pet-update .u-bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .3s ease-out; }
+.pet-update .u-bar.indeterminate i { width: 35% !important; animation: slide 1.1s ease-in-out infinite; }
+@keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
+.pet-update .u-actions { display: flex; gap: 6px; margin-top: 7px; }
+.pet-update .u-actions button { padding: 4px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); font: inherit; font-size: 12px; cursor: pointer; }
+.pet-update .u-actions .u-now { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.pet-update .update-icon { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 14%, var(--card)); color: var(--accent); }
+.pet-update .update-icon .i { width: 16px; height: 16px; }
+.pet-update.problem { border-color: #C48A2A; background: color-mix(in srgb, #E3C26B 14%, var(--card)); }
+.pet-update.problem .update-icon { color: #9A6A12; background: color-mix(in srgb, #E3C26B 30%, var(--card)); }
 @keyframes bubble-in { from { opacity: 0; transform: translateY(8px) scale(.94); } }
 @keyframes bubble-out { to { opacity: 0; transform: translateY(-6px); } }
 
@@ -71,13 +82,19 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 /* 우클릭 메뉴 */
 .pet-menu { position: absolute; bottom: 104px; left: 50%; transform: translateX(-50%); z-index: 5; width: 200px; padding: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 30px rgba(26,18,8,.22); animation: bubble-in .15s ease-out; }
 .pet-menu[hidden] { display: none; }
-.pet-menu button { display: block; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: none; font: inherit; font-size: 13px; text-align: left; color: var(--ink); cursor: pointer; }
-.pet-menu button:hover, .pet-menu button:focus-visible { background: var(--paper); outline: none; }
+/* 선 아이콘 */
+.i { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.pet-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: none; font: inherit; font-size: 13px; letter-spacing: -.01em; text-align: left; color: var(--ink); cursor: pointer; transition: background .15s, color .15s; }
+.pet-menu button .i { color: var(--muted); transition: color .15s, transform .2s; }
+.pet-menu button:hover, .pet-menu button:focus-visible { background: color-mix(in srgb, var(--accent) 8%, var(--card)); color: var(--accent); outline: none; }
+.pet-menu button:hover .i, .pet-menu button:focus-visible .i { color: var(--accent); transform: translateX(1px) rotate(-4deg); }
+.pet-menu button.quiet { color: var(--muted); }
+.pet-menu-label { display: block; padding: 8px 10px 3px; font-size: 10.5px; letter-spacing: .08em; color: var(--muted); }
 .pet-menu button[hidden] { display: none; }
 .pet-menu hr { margin: 4px 6px; border: 0; border-top: 1px solid var(--line); }
-.pet-menu-group span { display: block; padding: 6px 10px 2px; font-size: 11px; color: var(--muted); }
-.pet-menu-group button { padding-left: 22px; position: relative; }
-.pet-menu-group button[aria-checked="true"]::before { content: "✓"; position: absolute; left: 8px; color: var(--accent); }
+.pet-menu-group button[aria-checked="true"] { font-weight: 700; }
+.pet-menu-group button[aria-checked="true"] .i { color: var(--accent); }
+.pet-menu-group button[aria-checked="true"]::after { content: ""; margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 
 /* 펫 안 캐릭터 바꾸기 */
 .pet-dresser { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -88,6 +105,8 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .dress-top b { display: block; font-size: 14px; }
 .dress-where { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
 .dress-actions { display: flex; gap: 6px; margin-top: 8px; }
+.dress-actions button { display: inline-flex; align-items: center; gap: 5px; }
+.dress-actions .i { width: 14px; height: 14px; }
 .dress-actions button, .dress-foot button { padding: 6px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 12px; cursor: pointer; }
 .dress-parts { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 12px 10px; }
 .dress-part { margin-top: 8px; }

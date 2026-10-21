@@ -6,7 +6,6 @@
     setInteractive: noop, setExpanded: noop, dragBy: noop, dragEnd: noop, relink: noop, onWalk: noop,
     attention: noop, onUpdate: noop, applyUpdate: noop, onCommand: noop,
   }, window.petApp || {});
-  const canHide = Boolean(window.petApp && window.petApp.hide);
 
   // 투명한 곳은 클릭이 뒤의 앱으로 지나가고, 아바타·말풍선·창·메뉴 위에서만 창이 클릭을 받는다.
   let interactive = null;
@@ -124,7 +123,6 @@
   // 접힌 창은 작아서 메뉴가 잘린다. 메뉴가 열린 동안만 창을 키운다.
   let grownForMenu = false;
   const openMenu = () => {
-    menu.querySelector('[data-menu="hide"]').hidden = !canHide;
     if (panel.hidden) {
       grownForMenu = true;
       app.setExpanded(true);
@@ -154,7 +152,6 @@
       case 'dress': expand(true); openDresser(); break;
       case 'focus': select(item.dataset.code); break;
       case 'add': (app.addAnthology || app.relink)(); break;
-      case 'hide': window.petApp?.hide?.(); break;
       case 'quit':
         // 새 펫 앱은 완전히 끈다. 예전 펫 앱은 창을 닫는다(메뉴 막대 아이콘은 남는다).
         if (window.petApp?.quit) window.petApp.quit(); else window.close();
@@ -222,52 +219,109 @@
     setTimeout(() => avatar.style.removeProperty('--gaze'), 1400);
   }, 5200);
 
-  // ───────── 새 버전 알림 ─────────
+  // ───────── 새 버전: 받는 중 → 준비 중 → 3초 뒤 다시 켜기 ─────────
+  // 사용자가 지켜보다가 펫이 꺼졌다 바로 켜지게 한다. 카운트다운 중 "나중에"를 누르면 다음에 끌 때 바뀐다.
   let updateBubble = null;
   let problemShown = null;
-  app.onUpdate(({ status, version, problem }) => {
-    if (status !== 'ready') {
-      updateBubble?.remove();
-      updateBubble = null;
-      // 받지 못한 이유가 있으면 한 번 알린다(같은 이유는 다시 띄우지 않는다)
-      if (problem && problem !== problemShown) {
-        problemShown = problem;
-        const note = document.createElement('div');
-        note.className = 'pet-bubble pet-update problem';
-        const icon = document.createElement('span');
-        icon.className = 'mini update-icon';
-        icon.textContent = '⚠️';
-        const body = document.createElement('div');
-        const title = document.createElement('b');
-        title.textContent = version ? `새 버전 ${version}을 받지 못했어요` : '업데이트를 확인하지 못했어요';
-        const text = document.createElement('p');
-        text.textContent = problem;
-        body.append(title, text);
-        note.append(icon, body);
-        note.addEventListener('click', () => note.remove());
-        bubbles.prepend(note);
-        setTimeout(() => note.remove(), 30000);
-      }
-      return;
-    }
-    if (updateBubble) return;
+  let countdown = null;
+  let postponed = false;
+
+  const ensureUpdateBubble = () => {
+    if (updateBubble) return updateBubble;
     updateBubble = document.createElement('div');
     updateBubble.className = 'pet-bubble pet-update';
-    const icon = document.createElement('span');
-    icon.className = 'mini update-icon';
-    icon.textContent = '✨';
-    const body = document.createElement('div');
-    const title = document.createElement('b');
-    title.textContent = `새 버전 ${version}`;
-    const text = document.createElement('p');
-    text.textContent = '준비됐어요. 누르면 바꾸고 다시 켜져요. 그냥 두면 다음에 끌 때 바뀌어요.';
-    body.append(title, text);
-    updateBubble.append(icon, body);
-    updateBubble.addEventListener('click', () => {
-      text.textContent = '바꾸는 중…';
-      app.applyUpdate();
+    updateBubble.innerHTML = '<span class="mini update-icon"><svg class="i"><use href="#i-update"/></svg></span>'
+      + '<div><b class="u-title"></b><p class="u-text"></p>'
+      + '<div class="u-bar" hidden><i></i></div>'
+      + '<div class="u-actions" hidden><button type="button" class="u-now">지금</button>'
+      + '<button type="button" class="u-later">나중에</button></div></div>';
+    updateBubble.querySelector('.u-now').addEventListener('click', (event) => {
+      event.stopPropagation();
+      restartNow();
+    });
+    updateBubble.querySelector('.u-later').addEventListener('click', (event) => {
+      event.stopPropagation();
+      postponed = true;
+      clearInterval(countdown);
+      countdown = null;
+      showReady(updateBubble.dataset.version);
     });
     bubbles.prepend(updateBubble);
+    return updateBubble;
+  };
+  const setBubble = (title, text, { progress = null, actions = false } = {}) => {
+    const bubble = ensureUpdateBubble();
+    bubble.querySelector('.u-title').textContent = title;
+    bubble.querySelector('.u-text').textContent = text;
+    const bar = bubble.querySelector('.u-bar');
+    bar.hidden = progress === null;
+    bar.classList.toggle('indeterminate', progress === -1);
+    if (progress !== null && progress >= 0) bar.querySelector('i').style.width = `${progress}%`;
+    bubble.querySelector('.u-actions').hidden = !actions;
+  };
+  const restartNow = () => {
+    clearInterval(countdown);
+    countdown = null;
+    setBubble(`새 버전 ${updateBubble?.dataset.version || ''}`, '다시 켜는 중…', { progress: -1 });
+    app.applyUpdate();
+  };
+  // 미룬 뒤에는 누르면 바로 바뀌는 말풍선으로 남긴다
+  const showReady = (version) => {
+    setBubble(`새 버전 ${version} 준비됐어요`, '누르면 바꾸고 다시 켜져요. 그냥 두면 다음에 끌 때 바뀌어요.');
+    updateBubble.onclick = restartNow;
+  };
+  const startCountdown = (version) => {
+    if (countdown || postponed) return;
+    let left = 3;
+    const tick = () => setBubble(`새 버전 ${version} 준비됐어요`, `${left}초 뒤 다시 켜져요`, { progress: 100, actions: true });
+    tick();
+    countdown = setInterval(() => {
+      left -= 1;
+      if (left <= 0) restartNow(); else tick();
+    }, 1000);
+  };
+
+  app.onUpdate(({ status, version, problem, progress }) => {
+    if (version) ensureUpdateBubble().dataset.version = version;
+    switch (status) {
+      case 'downloading':
+        setBubble(`새 버전 ${version} 받는 중`, Number.isFinite(progress) ? `${progress}%` : '잠시만요…',
+          { progress: Number.isFinite(progress) ? progress : -1 });
+        return;
+      case 'preparing':
+        setBubble(`새 버전 ${version}`, '설치 준비 중…', { progress: -1 });
+        return;
+      case 'ready':
+        if (postponed) showReady(version); else startCountdown(version);
+        return;
+      case 'applying':
+        return;
+      default:
+    }
+    // 진행 중이 아니면 진행 말풍선을 치운다
+    clearInterval(countdown);
+    countdown = null;
+    updateBubble?.remove();
+    updateBubble = null;
+    // 받지 못한 이유가 있으면 한 번 알린다(같은 이유는 다시 띄우지 않는다)
+    if (problem && problem !== problemShown) {
+      problemShown = problem;
+      const note = document.createElement('div');
+      note.className = 'pet-bubble pet-update problem';
+      const icon = document.createElement('span');
+      icon.className = 'mini update-icon';
+      icon.innerHTML = '<svg class="i"><use href="#i-alert"/></svg>';
+      const body = document.createElement('div');
+      const title = document.createElement('b');
+      title.textContent = version ? `새 버전 ${version}을 받지 못했어요` : '업데이트를 확인하지 못했어요';
+      const text = document.createElement('p');
+      text.textContent = problem;
+      body.append(title, text);
+      note.append(icon, body);
+      note.addEventListener('click', () => note.remove());
+      bubbles.prepend(note);
+      setTimeout(() => note.remove(), 30000);
+    }
   });
 
   // ───────── 말 ─────────

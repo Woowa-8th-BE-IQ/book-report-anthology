@@ -659,6 +659,10 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
   .talk-panel { height: 68vh; }
 }
 
+/* 선 아이콘 */
+.i { width: 1.15em; height: 1.15em; vertical-align: -0.2em; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.room-dress, .pet-link summary, .pet-install summary { display: inline-flex; align-items: center; gap: 6px; }
+
 /* ───────── 캐릭터 꾸미기 ───────── */
 
 .dresser { width: min(980px, 100% - 40px); margin-inline: auto; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }

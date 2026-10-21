@@ -22,5 +22,6 @@ contextBridge.exposeInMainWorld('petApp', {
     status: String(state && state.status || 'idle'),
     version: state && typeof state.version === 'string' ? state.version : null,
     problem: state && typeof state.problem === 'string' ? state.problem : null,
+    progress: state && Number.isFinite(state.progress) ? state.progress : null,
   })),
 });

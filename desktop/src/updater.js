@@ -70,10 +70,27 @@ async function latestRelease() {
   return releases.find((release) => /^pet-v\d+\.\d+\.\d+$/.test(release.tag_name) && !release.draft);
 }
 
-async function download(url, file) {
+/** 받으면서 진행률(0~100)을 알린다. 너무 자주 알리지 않게 2%마다. */
+async function download(url, file, onProgress) {
   const response = await net.fetch(url);
   if (!response.ok || !response.body) throw new Error(`받기 실패 ${response.status}`);
-  await pipeline(Readable.fromWeb(response.body), fs.createWriteStream(file));
+  const total = Number(response.headers.get('content-length')) || 0;
+  let received = 0;
+  let reported = -1;
+  const counting = new (require('node:stream').Transform)({
+    transform(chunk, encoding, callback) {
+      received += chunk.length;
+      if (total > 0) {
+        const percent = Math.min(100, Math.floor((received / total) * 100));
+        if (percent >= reported + 2 || percent === 100) {
+          reported = percent;
+          onProgress(percent);
+        }
+      }
+      callback(null, chunk);
+    },
+  });
+  await pipeline(Readable.fromWeb(response.body), counting, fs.createWriteStream(file));
 }
 
 function freeBytes(dir) {
@@ -87,7 +104,7 @@ function freeBytes(dir) {
 const mb = (bytes) => `${Math.round(bytes / 1024 / 1024)}MB`;
 
 async function check() {
-  if (!app.isPackaged || ['checking', 'downloading', 'ready', 'applying'].includes(state.status)) return;
+  if (!app.isPackaged || ['checking', 'downloading', 'preparing', 'ready', 'applying'].includes(state.status)) return;
   try {
     set({ status: 'checking', error: null });
     log(`확인 시작 (지금 ${app.getVersion()})`);
@@ -118,9 +135,10 @@ async function check() {
       return;
     }
     log(`${version} 받는 중`);
-    set({ status: 'downloading', version });
+    set({ status: 'downloading', version, progress: 0 });
     const file = path.join(dir, name);
-    await download(asset.browser_download_url, file);
+    await download(asset.browser_download_url, file, (progress) => set({ status: 'downloading', version, progress }));
+    set({ status: 'preparing', version, progress: 100 });
 
     let staged = file;
     if (process.platform === 'darwin') {

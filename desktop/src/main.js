@@ -216,7 +216,9 @@ ipcMain.on('pet:apply-update', (event) => {
 
 function sendUpdate(state) {
   if (pet && !pet.isDestroyed()) {
-    pet.webContents.send('pet:update', { status: state.status, version: state.version, problem: state.error });
+    pet.webContents.send('pet:update', {
+      status: state.status, version: state.version, problem: state.error, progress: state.progress,
+    });
   }
 }
 
@@ -279,11 +281,12 @@ function buildTray() {
   refreshTray = () => {
     const update = updater.state();
     const updateItems = update.status === 'ready'
-      ? [{ label: `✨ 새 버전 ${update.version} 설치하고 다시 시작`, click: () => { if (updater.apply({ relaunch: true })) app.quit(); } }]
-      : update.status === 'downloading'
-        ? [{ label: `새 버전 ${update.version} 받는 중…`, enabled: false }]
+      ? [{ label: `새 버전 ${update.version} 설치하고 다시 시작`, click: () => { if (updater.apply({ relaunch: true })) app.quit(); } }]
+      : update.status === 'downloading' || update.status === 'preparing'
+        ? [{ label: update.status === 'preparing' ? `새 버전 ${update.version} 설치 준비 중…`
+          : `새 버전 ${update.version} 받는 중… ${update.progress || 0}%`, enabled: false }]
         : [
-          ...(update.error ? [{ label: `⚠️ ${update.error}`.slice(0, 80), enabled: false }] : []),
+          ...(update.error ? [{ label: `업데이트 못 함 · ${update.error}`.slice(0, 80), enabled: false }] : []),
           { label: update.status === 'checking' ? '확인 중…' : '업데이트 확인', enabled: update.status !== 'checking',
             click: () => updater.check() },
           { label: '업데이트 기록 보기', click: () => shell.openPath(updater.logFile()) },
@@ -292,11 +295,11 @@ function buildTray() {
       { label: `남의 독후감 펫 ${app.getVersion()}`, enabled: false },
       ...updateItems,
       { type: 'separator' },
-      { label: pet && pet.isVisible() ? '펫 숨기기' : '펫 보이기', click: () => {
+      ...(pet && pet.isVisible() ? [] : [{ label: '펫 다시 띄우기', click: () => {
         if (!pet) { const links = linksOf(readConfig()); links.length ? openPet(links.at(-1)) : openSetup(); }
-        else if (pet.isVisible()) pet.hide(); else pet.showInactive();
+        else pet.showInactive();
         refreshTray();
-      } },
+      } }]),
       { label: '산책하기', type: 'checkbox', checked: wanderOn, click: (item) => { wanderOn = item.checked; if (!wanderOn) stopWalk(); } },
       { label: '제자리로', click: () => {
         if (!pet) return;
@@ -313,7 +316,7 @@ function buildTray() {
       { label: '로그인할 때 열기', type: 'checkbox', checked: app.getLoginItemSettings().openAtLogin,
         click: (item) => app.setLoginItemSettings({ openAtLogin: item.checked }) },
       { type: 'separator' },
-      { label: '끝내기', role: 'quit' },
+      { label: '펫 끄기', role: 'quit' },
     ]));
   };
   refreshTray();
