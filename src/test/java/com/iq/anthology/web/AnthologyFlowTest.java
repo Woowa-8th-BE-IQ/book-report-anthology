@@ -196,6 +196,28 @@ class AnthologyFlowTest {
                 .andReturn().getResponse().getContentAsString();
         assertThat(page).contains("어서 오세요 &lt;b&gt;", "두 번째 말", "avatar-svg", "data-seat-x=\"0.5\"").doesNotContain("어서 오세요 <b>");
 
+        // 데스크톱 펫: 개인 링크에 ?to=pet을 붙이면 펫 화면으로 간다
+        String token = editor.getValue();
+        mvc.perform(get("/me/{token}", token).param("to", "pet"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
+                        .isEqualTo("/anthologies/" + code + "/pet"));
+        assertThat(mvc.perform(get("/anthologies/{code}/pet", code).cookie(editor))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString())
+                .contains("pet-avatar", "두 번째 말", "data-face=");
+        assertThat(mvc.perform(get("/anthologies/{code}/pet", code))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString())
+                .contains("링크 다시 넣기");
+
+        // 문집 화면의 참여자 목록에 마지막 접속이 보인다
+        Cookie guest = mvc.perform(post("/anthologies/{code}/contributors", code).param("nickname", "손님"))
+                .andReturn().getResponse().getCookie("ab_" + code);
+        assertThat(mvc.perform(get("/anthologies/{code}", code).cookie(guest))
+                .andReturn().getResponse().getContentAsString())
+                .contains("class=\"seen");
+
         // 실시간 연결은 이벤트 스트림으로 열린다
         mvc.perform(get("/anthologies/{code}/room/stream", code).cookie(editor))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.request().asyncStarted())

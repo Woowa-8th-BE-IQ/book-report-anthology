@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="same-origin">
+  <title th:text="${room != null} ? ${room.me().nickname()} + ' · 남의 독후감 펫' : '남의 독후감 펫'">펫</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sun-typeface/suit@2/fonts/variable/woff2/SUIT-Variable.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap">
+  <link rel="stylesheet" th:href="@{/css/pet.css}">
+  <script th:src="@{/js/pet.js}" defer></script>
+</head>
+<body class="pet-body">
+
+<!-- 연결이 끊겼을 때(링크 재발급·내보내기) -->
+<div class="pet-stage" th:if="${room == null}">
+  <div class="pet-problem" data-interactive>
+    <p th:text="${problem}">연결이 끊겼어요.</p>
+    <button type="button" data-pet="relink">링크 다시 넣기</button>
+  </div>
+</div>
+
+<div class="pet-stage" th:if="${room != null}" id="pet-stage"
+     th:with="a=${room.anthology()}"
+     th:attr="data-stream=@{/anthologies/{code}/room/stream(code=${a.code()})},
+              data-say=@{/anthologies/{code}/room/messages(code=${a.code()})},
+              data-room=@{/anthologies/{code}/room(code=${a.code()})},
+              data-me=${room.meId()}">
+
+  <!-- 펼친 대화창 -->
+  <section class="pet-panel" id="pet-panel" hidden data-interactive aria-label="모임방 대화">
+    <header>
+      <div>
+        <b th:text="${a.title()}">문집</b>
+        <small><span id="pet-online" th:text="${room.onlineCount()}">1</span>명 있어요</small>
+      </div>
+      <a class="pet-open" th:href="@{/anthologies/{code}/room(code=${a.code()})}" target="_blank" rel="noopener">방 열기 ↗</a>
+      <button type="button" class="pet-close" data-pet="collapse" aria-label="접기">✕</button>
+    </header>
+    <ol class="pet-log" id="pet-log">
+      <li class="pet-line" th:each="line : ${room.lastLines(30)}"
+          th:classappend="${line.mine(room.meId())} ? 'mine' : ''" th:attr="data-id=${line.id()}">
+        <b th:text="${line.author().nickname()}">감자</b>
+        <span th:text="${line.body()}">말</span>
+      </li>
+    </ol>
+    <form id="pet-form" autocomplete="off">
+      <input id="pet-input" name="body" type="text" placeholder="한마디" th:attr="maxlength=${bodyMax}" aria-label="한마디">
+      <button type="submit">보내기</button>
+    </form>
+    <p class="pet-status" id="pet-status" role="status"></p>
+  </section>
+
+  <!-- 말풍선 -->
+  <div class="pet-bubbles" id="pet-bubbles" aria-live="polite"></div>
+
+  <!-- 내 아바타 -->
+  <button type="button" class="pet-avatar" id="pet-avatar" data-interactive
+          th:attr="aria-label=${room.me().nickname()} + ' 펫. 누르면 대화창이 열려요'">
+    <span class="pet-face" th:utext="${room.me().avatar()}"></span>
+    <span class="pet-badge" id="pet-badge" hidden>0</span>
+  </button>
+
+  <!-- 다른 사람 얼굴(말풍선에 쓴다) -->
+  <template th:each="member : ${room.members()}" th:attr="data-face=${member.id()}, data-name=${member.nickname()}">
+    <span class="mini" th:utext="${member.avatar()}"></span>
+  </template>
+</div>
+</body>
+</html>

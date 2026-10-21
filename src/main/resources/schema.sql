@@ -81,3 +81,5 @@ CREATE TABLE IF NOT EXISTS room_message (
     created_at     TIMESTAMP     NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_room_message_anthology ON room_message (anthology_id, id);
+
+ALTER TABLE contributor ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP;

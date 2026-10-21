@@ -1,0 +1,36 @@
+{
+  "name": "book-report-pet",
+  "productName": "남의 독후감 펫",
+  "version": "0.1.0",
+  "description": "모임방 아바타가 바탕화면에 떠서 새 말을 알려 주는 데스크톱 펫",
+  "main": "src/main.js",
+  "author": "Woowa-8th-BE-IQ",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.iq.anthology.pet",
+    "artifactName": "book-report-pet-${version}-${os}-${arch}.${ext}",
+    "files": ["src/**/*", "build/tray*.png", "package.json"],
+    "directories": { "buildResources": "build", "output": "dist" },
+    "mac": {
+      "category": "public.app-category.social-networking",
+      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "icon": "build/icon.png",
+      "extendInfo": { "LSUIElement": true }
+    },
+    "dmg": { "title": "남의 독후감 펫" },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png"
+    },
+    "nsis": { "oneClick": true, "perMachine": false, "shortcutName": "남의 독후감 펫" }
+  }
+}

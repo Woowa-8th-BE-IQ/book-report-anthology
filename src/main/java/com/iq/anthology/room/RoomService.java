@@ -28,6 +28,8 @@ public class RoomService {
         this.messages = messages;
         this.hub = hub;
         this.clock = clock;
+        // 방에서 나가는 순간을 마지막 접속으로 남긴다
+        hub.onLeave((anthologyId, contributorId) -> anthologyService.seenById(contributorId));
     }
 
     public Room enter(String code, String token) {
@@ -40,6 +42,7 @@ public class RoomService {
     public SseEmitter connect(String code, String token) {
         Anthology anthology = anthologyService.get(code);
         Contributor me = AnthologyService.requireContributor(anthology, token);
+        anthologyService.seen(me);
         return hub.join(anthology.id(), me.id());
     }
 
@@ -63,6 +66,14 @@ public class RoomService {
         Anthology anthology = anthologyService.get(code);
         Contributor me = AnthologyService.requireContributor(anthology, token);
         hub.move(anthology.id(), me.id(), new RoomHub.Position(x, y));
+    }
+
+    public java.util.Set<Long> online(Anthology anthology) {
+        return hub.online(anthology.id());
+    }
+
+    public LocalDateTime now() {
+        return LocalDateTime.now(clock);
     }
 
     /** 문집 화면에 "지금 N명 있어요"를 띄울 때. */

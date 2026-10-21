@@ -37,6 +37,8 @@
         <span class="member-name">
           <span th:text="${member.nickname()}">감자</span>
           <small th:if="${member.editor()}">엮은이</small>
+          <small class="seen" th:unless="${member.me()}" th:hidden="${member.online()}"
+                 th:text="${member.lastSeen()}" title="마지막 접속">30분 전</small>
         </span>
         <span class="visually-hidden presence-label" th:text="${member.online()} ? '들어와 있음' : '자리 비움'">상태</span>
       </li>

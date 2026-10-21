@@ -54,4 +54,27 @@ public final class Texts {
         }
         return (last - HANGUL_FIRST) % 28 == 0 ? withoutFinal : withFinal;
     }
+
+    /** 사람이 읽는 지난 시간. 예: 방금, 30분 전, 3시간 전, 어제, 5일 전, 9월 2일 */
+    public static String ago(java.time.LocalDateTime then, java.time.LocalDateTime now) {
+        java.time.Duration elapsed = java.time.Duration.between(then, now);
+        long minutes = Math.max(0, elapsed.toMinutes());
+        if (minutes < 1) {
+            return "방금";
+        }
+        if (minutes < 60) {
+            return minutes + "분 전";
+        }
+        if (minutes < 24 * 60) {
+            return (minutes / 60) + "시간 전";
+        }
+        long days = java.time.temporal.ChronoUnit.DAYS.between(then.toLocalDate(), now.toLocalDate());
+        if (days <= 1) {
+            return "어제";
+        }
+        if (days < 30) {
+            return days + "일 전";
+        }
+        return then.getMonthValue() + "월 " + then.getDayOfMonth() + "일";
+    }
 }

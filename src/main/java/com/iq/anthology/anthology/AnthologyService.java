@@ -97,6 +97,22 @@ public class AnthologyService {
                 .orElseThrow(() -> DomainException.forbidden("이 문집에 참여한 사람만 할 수 있어요."));
     }
 
+    /** 참여자가 문집에 들렀다. 마지막 접속 시간으로 남긴다. */
+    public void seen(Contributor contributor) {
+        if (contributor != null && contributor.id() != null) {
+            anthologyRepository.touch(contributor.id(), now());
+        }
+    }
+
+    /** 연결이 끊길 때처럼 참여자 id만 알 때. */
+    public void seenById(Long contributorId) {
+        anthologyRepository.touch(contributorId, now());
+    }
+
+    public java.time.LocalDateTime now() {
+        return java.time.LocalDateTime.now(clock);
+    }
+
     public LocalDate today() {
         return LocalDate.now(clock);
     }

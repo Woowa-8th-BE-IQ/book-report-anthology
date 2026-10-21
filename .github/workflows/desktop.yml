@@ -1,0 +1,70 @@
+name: desktop-pet
+
+# 데스크톱 펫을 맥(dmg)·윈도우(exe)로 빌드해 GitHub 릴리스에 올린다.
+# 서명·공증은 하지 않는다(설치 안내는 desktop/README.md).
+on:
+  push:
+    branches: [main]
+    paths: ['desktop/**', '.github/workflows/desktop.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: --mac
+            files: desktop/dist/*.dmg
+          - os: windows-latest
+            target: --win
+            files: desktop/dist/*.exe
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npx electron-builder ${{ matrix.target }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v5
+        with:
+          name: pet-${{ matrix.os }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          path: out
+          merge-multiple: true
+      - id: version
+        run: echo "value=$(node -p "require('./desktop/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: pet-v${{ steps.version.outputs.value }}
+          name: 남의 독후감 펫 ${{ steps.version.outputs.value }}
+          make_latest: 'false'
+          body: |
+            모임방의 내 아바타를 바탕화면에 띄우는 데스크톱 펫이에요.
+            - 맥: `…-mac-arm64.dmg`(M1 이후) 또는 `…-mac-x64.dmg`(인텔)
+            - 윈도우: `…-win-x64.exe`
+            설치와 첫 실행 방법은 desktop/README.md를 봐 주세요.
+          files: out/*
+          overwrite_files: true

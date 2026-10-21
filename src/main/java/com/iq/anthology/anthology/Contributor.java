@@ -16,9 +16,17 @@ public class Contributor {
     private String token;
     private final int joinOrder;
     private final LocalDateTime joinedAt;
+    private final LocalDateTime lastSeenAt;
 
     public Contributor(Long id, String nickname, String realName, String token, int joinOrder,
                        LocalDateTime joinedAt) {
+        this(id, nickname, realName, token, joinOrder, joinedAt, null);
+    }
+
+    /** lastSeenAt: 마지막으로 문집에 들른 때. 아직 기록이 없으면 null(참여한 때로 본다). */
+    public Contributor(Long id, String nickname, String realName, String token, int joinOrder,
+                       LocalDateTime joinedAt, LocalDateTime lastSeenAt) {
+        this.lastSeenAt = lastSeenAt;
         this.id = id;
         this.nickname = Objects.requireNonNull(nickname);
         this.realName = realName;
@@ -38,6 +46,10 @@ public class Contributor {
     /** 목차와 본문에 쓰는 이름. 예: 감자(김주하), 실명이 없으면 감자 */
     public String byline() {
         return realName == null ? nickname : nickname + "(" + realName + ")";
+    }
+
+    public LocalDateTime lastSeenAt() {
+        return lastSeenAt == null ? joinedAt : lastSeenAt;
     }
 
     public boolean isEditor() {

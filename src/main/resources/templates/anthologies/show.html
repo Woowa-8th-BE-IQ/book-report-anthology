@@ -210,6 +210,8 @@
               th:classappend="${seat.state() + (seat.me() ? ' me' : '')}">
             <span class="avatar small" aria-hidden="true" th:utext="${seat.avatar()}"></span>
             <span th:text="${seat.byline()}">감자</span>
+            <small class="seen" th:unless="${seat.me()}" th:classappend="${seat.lastSeen() == '지금 모임방'} ? 'now' : ''"
+                   th:text="${seat.lastSeen()}" th:attr="title='마지막 접속'">30분 전</small>
             <span class="host" th:if="${seat.editor()}">엮은이</span>
           </li>
         </ol>

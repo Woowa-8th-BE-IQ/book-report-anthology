@@ -81,6 +81,18 @@ public class JdbcAnthologyRepository implements AnthologyRepository {
     }
 
     @Override
+    public void touch(Long contributorId, LocalDateTime now) {
+        jdbc.sql("""
+                        UPDATE contributor SET last_seen_at = :now
+                         WHERE id = :id AND (last_seen_at IS NULL OR last_seen_at < :threshold)
+                        """)
+                .param("now", now)
+                .param("threshold", now.minusMinutes(1))
+                .param("id", contributorId)
+                .update();
+    }
+
+    @Override
     public void updateToken(Contributor contributor) {
         jdbc.sql("UPDATE contributor SET token = :token WHERE id = :id")
                 .param("token", contributor.token())
@@ -160,7 +172,8 @@ public class JdbcAnthologyRepository implements AnthologyRepository {
                         rs.getString("real_name"),
                         rs.getString("token"),
                         rs.getInt("join_order"),
-                        rs.getObject("joined_at", LocalDateTime.class)))
+                        rs.getObject("joined_at", LocalDateTime.class),
+                        rs.getObject("last_seen_at", LocalDateTime.class)))
                 .list();
         return new Anthology(row.id(), row.code(), row.title(), row.bookTitle(), row.bookAuthor(),
                 row.introduction(), row.prompts(), row.appendix(), row.dueDate(), row.status(), row.createdAt(),

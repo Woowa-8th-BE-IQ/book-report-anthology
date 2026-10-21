@@ -599,6 +599,13 @@
         if (!on && member.classList.contains('online')) {
           backToSeat(member); // 나가면 제자리로 돌아가 앉는다
         }
+        const seen = member.querySelector('.seen');
+        if (seen) {
+          if (!on && member.classList.contains('online')) {
+            seen.textContent = '방금'; // 지금 막 나갔다
+          }
+          seen.hidden = on;
+        }
         member.classList.toggle('online', on);
         member.querySelector('.presence-label').textContent = on ? '들어와 있음' : '자리 비움';
       });

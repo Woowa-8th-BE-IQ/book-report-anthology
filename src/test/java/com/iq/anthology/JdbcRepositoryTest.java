@@ -212,4 +212,18 @@ class JdbcRepositoryTest {
         roomMessages.deleteByContributor(editorId);
         assertThat(roomMessages.recent(anthology.id(), 3)).isEmpty();
     }
+
+    @Test
+    void 마지막_접속은_1분_안에_다시_쓰지_않는다() {
+        Long editorId = anthology.editor().id();
+        anthologies.touch(editorId, NOW.plusMinutes(10));
+        anthologies.touch(editorId, NOW.plusMinutes(10).plusSeconds(30));
+
+        assertThat(anthologies.findByCode("abcd2345").orElseThrow().editor().lastSeenAt())
+                .isEqualTo(NOW.plusMinutes(10));
+
+        anthologies.touch(editorId, NOW.plusMinutes(12));
+        assertThat(anthologies.findByCode("abcd2345").orElseThrow().editor().lastSeenAt())
+                .isEqualTo(NOW.plusMinutes(12));
+    }
 }

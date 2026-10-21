@@ -15,6 +15,9 @@ public interface AnthologyRepository {
 
     void updateToken(Contributor contributor);
 
+    /** 마지막 접속 시간을 남긴다. 1분 안에 다시 들르면 쓰지 않는다(조건부 UPDATE). */
+    void touch(Long contributorId, java.time.LocalDateTime now);
+
     /** 참여자를 지운다. 그 사람의 글·답글은 서비스가 먼저 지운다. */
     void deleteContributor(Long contributorId);
 

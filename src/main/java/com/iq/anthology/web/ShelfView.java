@@ -1,6 +1,7 @@
 package com.iq.anthology.web;
 
 import com.iq.anthology.room.Avatar;
+import com.iq.anthology.support.Texts;
 import com.iq.anthology.anthology.Anthology;
 import com.iq.anthology.anthology.Contributor;
 import com.iq.anthology.essay.Essay;
@@ -27,6 +28,12 @@ public record ShelfView(
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
 
     public static ShelfView of(Shelf shelf, Contributor me, LocalDate today) {
+        return of(shelf, me, today, today.atStartOfDay(), java.util.Set.of());
+    }
+
+    /** now·inRoom: 참여자 목록에 "지금 모임방"·"30분 전" 같은 마지막 접속을 붙일 때 쓴다. */
+    public static ShelfView of(Shelf shelf, Contributor me, LocalDate today, java.time.LocalDateTime now,
+                               java.util.Set<Long> inRoom) {
         Anthology anthology = shelf.anthology();
         Essay myEssay = shelf.essayOf(me).orElse(null);
         boolean unlocked = me != null && (anthology.isClosed() || shelf.hasSubmitted(me));
@@ -56,7 +63,8 @@ public record ShelfView(
             String state = essay.map(e -> e.isSubmitted() ? "SUBMITTED" : "DRAFT").orElse("NONE");
             seats.add(new Seat(contributor.id(), contributor.nickname(), contributor.byline(), contributor.isEditor(),
                     me != null && contributor.id().equals(me.id()), state,
-                    Avatar.svg(contributor.nickname(), contributor.joinOrder())));
+                    Avatar.svg(contributor.nickname(), contributor.joinOrder()),
+                    inRoom.contains(contributor.id()) ? "지금 모임방" : Texts.ago(contributor.lastSeenAt(), now)));
         }
 
         return new ShelfView(anthology, me, myEssay, myEssay == null ? 0 : shelf.replyCountOf(myEssay), unlocked,
@@ -146,7 +154,8 @@ public record ShelfView(
     }
 
     /** 참여자 한 명과 그 사람의 진행 상태: NONE, DRAFT, SUBMITTED */
+    /** lastSeen: "지금 모임방", "방금", "30분 전" … */
     public record Seat(Long id, String nickname, String byline, boolean editor, boolean me, String state,
-                       String avatar) {
+                       String avatar, String lastSeen) {
     }
 }

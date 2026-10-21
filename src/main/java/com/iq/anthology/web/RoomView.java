@@ -19,7 +19,7 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("M월 d일");
 
-    static RoomView of(Room room, Shelf shelf) {
+    static RoomView of(Room room, Shelf shelf, java.time.LocalDateTime now) {
         Anthology anthology = room.anthology();
         List<Contributor> contributors = anthology.contributors();
         List<Member> members = new java.util.ArrayList<>();
@@ -31,7 +31,8 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
                     Avatar.svg(contributor.nickname(), contributor.joinOrder()), contributor.isEditor(),
                     contributor.id().equals(room.me().id()), room.online().contains(contributor.id()),
                     shelf.hasSubmitted(contributor), seat[0], seat[1],
-                    walked == null ? seat[0] : walked.x(), walked == null ? seat[1] : walked.y()));
+                    walked == null ? seat[0] : walked.x(), walked == null ? seat[1] : walked.y(),
+                    com.iq.anthology.support.Texts.ago(contributor.lastSeenAt(), now)));
         }
         Map<Long, Member> byId = members.stream().collect(Collectors.toMap(Member::id, Function.identity()));
         List<Line> lines = new java.util.ArrayList<>();
@@ -47,6 +48,15 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
             lastDay = day;
         }
         return new RoomView(anthology, room.me().id(), members, lines, room.online().size());
+    }
+
+    public Member me() {
+        return members.stream().filter(Member::me).findFirst().orElseThrow();
+    }
+
+    /** 최근 말 count개(펫 대화창용). */
+    public List<Line> lastLines(int count) {
+        return lines.subList(Math.max(0, lines.size() - count), lines.size());
     }
 
     /** 아직 독후감을 내지 않은 사람이 있으면 방에 조심스럽게 알린다. */
@@ -75,7 +85,8 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
 
     /** seatX·seatY는 제자리, x·y는 지금 서 있는 자리(걸어갔으면 그곳). */
     public record Member(Long id, String nickname, String byline, String avatar, boolean editor, boolean me,
-                         boolean online, boolean submitted, double seatX, double seatY, double x, double y) {
+                         boolean online, boolean submitted, double seatX, double seatY, double x, double y,
+                         String lastSeen) {
     }
 
     /** day는 날짜가 바뀌는 첫 말에만 있다. */

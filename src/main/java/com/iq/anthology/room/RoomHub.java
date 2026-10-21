@@ -27,6 +27,12 @@ public class RoomHub {
     private final Map<Long, List<Connection>> rooms = new ConcurrentHashMap<>();
     /** 방 안에서 걸어간 자리. 방을 완전히 나가면 지워지고 다시 들어오면 제자리에서 시작한다. */
     private final Map<Long, Map<Long, Position>> positions = new ConcurrentHashMap<>();
+    private volatile java.util.function.BiConsumer<Long, Long> leaveListener = (anthologyId, contributorId) -> { };
+
+    /** 한 사람의 마지막 연결이 끊길 때 불린다(마지막 접속 기록용). */
+    public void onLeave(java.util.function.BiConsumer<Long, Long> listener) {
+        this.leaveListener = listener;
+    }
 
     /** 방에 들어온다. 들어온 사람에게 지금 있는 사람들을, 방 전체에 새 얼굴을 알린다. */
     public SseEmitter join(Long anthologyId, Long contributorId) {
@@ -107,11 +113,19 @@ public class RoomHub {
         if (room == null || !room.remove(connection)) {
             return;
         }
+        boolean gone = !online(anthologyId).contains(connection.contributorId());
         if (room.isEmpty()) {
             rooms.remove(anthologyId, room);
             positions.remove(anthologyId);
-        } else if (!online(anthologyId).contains(connection.contributorId())) {
+        } else if (gone) {
             positions.getOrDefault(anthologyId, Map.of()).remove(connection.contributorId());
+        }
+        if (gone) {
+            try {
+                leaveListener.accept(anthologyId, connection.contributorId());
+            } catch (RuntimeException ignored) {
+                // 기록 실패가 연결 정리를 막지 않게 한다
+            }
         }
         broadcast(anthologyId, "presence", Map.of("online", online(anthologyId)));
     }

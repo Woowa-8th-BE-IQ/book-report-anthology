@@ -99,8 +99,10 @@ public class AnthologyController extends FormSupport {
     public String show(@PathVariable String code, HttpServletRequest request, Model model) {
         Anthology anthology = anthologyService.get(code);
         Contributor me = anthology.findByToken(cookies.read(request, code)).orElse(null);
+        anthologyService.seen(me);
         Shelf shelf = essayService.shelf(anthology);
-        ShelfView view = ShelfView.of(shelf, me, anthologyService.today());
+        ShelfView view = ShelfView.of(shelf, me, anthologyService.today(), anthologyService.now(),
+                me == null ? java.util.Set.of() : roomService.online(anthology));
         String inviteUrl = absolute("/anthologies/" + code);
         model.addAttribute("view", view);
         model.addAttribute("inviteUrl", inviteUrl);
@@ -130,6 +132,7 @@ public class AnthologyController extends FormSupport {
     public String write(@PathVariable String code, HttpServletRequest request, Model model) {
         Anthology anthology = anthologyService.get(code);
         Contributor me = AnthologyService.requireContributor(anthology, cookies.read(request, code));
+        anthologyService.seen(me);
         if (anthology.isClosed()) {
             return "redirect:/anthologies/" + code;
         }
@@ -188,6 +191,7 @@ public class AnthologyController extends FormSupport {
         Shelf shelf = reading.shelf();
         Essay essay = reading.essay();
         Contributor me = reading.viewer();
+        anthologyService.seen(me);
 
         List<Essay> order = shelf.submitted();
         int index = order.indexOf(essay);
@@ -323,11 +327,15 @@ public class AnthologyController extends FormSupport {
     // ───────── 이어 하기 ─────────
 
     /** 개인 링크로 다른 기기에서 이어 하기. 쿠키를 다시 심고 문집으로 보낸다. */
+    /** 개인 링크. {@code ?to=pet}이면 데스크톱 펫 화면으로 보낸다(펫 앱이 이 링크로 연결한다). */
     @GetMapping("/me/{token}")
-    public String resume(@PathVariable String token, HttpServletRequest request, HttpServletResponse response,
-                         RedirectAttributes redirect) {
+    public String resume(@PathVariable String token, @RequestParam(required = false) String to,
+                         HttpServletRequest request, HttpServletResponse response, RedirectAttributes redirect) {
         Anthology anthology = anthologyService.getByToken(token);
         cookies.write(request, response, anthology.code(), token);
+        if ("pet".equals(to)) {
+            return "redirect:/anthologies/" + anthology.code() + "/pet";
+        }
         redirect.addFlashAttribute("notice", "이 기기에서도 이어서 쓸 수 있어요.");
         return "redirect:/anthologies/" + anthology.code();
     }
