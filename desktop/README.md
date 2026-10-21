@@ -8,15 +8,15 @@
 
 | 컴퓨터 | 파일 |
 | --- | --- |
-| 맥 (M1 이후) | `book-report-pet-…-mac-arm64.dmg` |
-| 맥 (인텔) | `book-report-pet-…-mac-x64.dmg` |
+| 맥 (M1 이후) | `book-report-pet-…-mac-arm64.zip` |
+| 맥 (인텔) | `book-report-pet-…-mac-x64.zip` |
 | 윈도우 | `book-report-pet-…-win-x64.exe` |
 
 ## 처음 실행할 때
 
 서명하지 않은 앱이라 처음 한 번은 경고가 떠요.
 
-- **맥**: dmg를 열어 앱을 응용 프로그램 폴더로 옮겨요. 그다음 앱을 **우클릭 → 열기 → 열기**를 눌러요. 그래도 막히면 터미널에서 `xattr -cr /Applications/BookReportPet.app`를 한 번 실행해요.
+- **맥**: zip을 풀어 나온 앱을 응용 프로그램 폴더로 옮겨요. 그다음 앱을 **우클릭 → 열기 → 열기**를 눌러요. 그래도 막히면 터미널에서 `xattr -cr /Applications/BookReportPet.app`를 한 번 실행해요.
 - **윈도우**: "Windows의 PC 보호" 창이 뜨면 **추가 정보 → 실행**을 눌러요.
 
 앱이 열리면 문집 화면 아래 **내 개인 링크**를 붙여 넣어요. 그러면 연결돼요.

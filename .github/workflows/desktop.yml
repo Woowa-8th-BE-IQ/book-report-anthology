@@ -19,7 +19,7 @@ jobs:
         include:
           - os: macos-latest
             target: --mac
-            files: desktop/dist/*.dmg
+            files: desktop/dist/*.zip
           - os: windows-latest
             target: --win
             files: desktop/dist/*.exe
@@ -75,7 +75,7 @@ jobs:
           make_latest: 'false'
           body: |
             모임방의 내 아바타를 바탕화면에 띄우는 데스크톱 펫이에요.
-            - 맥: `…-mac-arm64.dmg`(M1 이후) 또는 `…-mac-x64.dmg`(인텔)
+            - 맥: `…-mac-arm64.zip`(M1 이후) 또는 `…-mac-x64.zip`(인텔)
             - 윈도우: `…-win-x64.exe`
             설치와 첫 실행 방법은 desktop/README.md를 봐 주세요.
           files: out/*
