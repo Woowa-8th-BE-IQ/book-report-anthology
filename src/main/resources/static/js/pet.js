@@ -290,6 +290,7 @@
         showReady(version);
         return;
       case 'updated':
+        avatar.classList.remove('has-update');
         updateBubble?.remove();
         updateBubble = null;
         showUpdated(version);

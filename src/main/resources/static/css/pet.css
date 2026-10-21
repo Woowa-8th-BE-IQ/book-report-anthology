@@ -45,6 +45,7 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-update .u-actions button { padding: 4px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); font: inherit; font-size: 12px; cursor: pointer; }
 .pet-update .u-actions .u-ok { background: var(--good); border-color: var(--good); color: #fff; font-weight: 600; }
 .pet-update.done { border-color: var(--good); background: color-mix(in srgb, var(--good) 10%, var(--card)); }
+.pet-update.done b { color: var(--good); }
 .pet-update.done .update-icon { color: var(--good); background: color-mix(in srgb, var(--good) 16%, var(--card)); }
 .pet-avatar.has-update::after { content: ""; position: absolute; top: 6px; left: 8px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--card); animation: ping 1.6s ease-out infinite; }
 @keyframes ping { 0% { box-shadow: 0 0 0 2px var(--card), 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent); } 100% { box-shadow: 0 0 0 2px var(--card), 0 0 0 12px transparent; } }
