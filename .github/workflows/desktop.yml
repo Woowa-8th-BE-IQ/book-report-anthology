@@ -44,6 +44,25 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           DEBUG: electron-builder
+      # 맥 앱은 바로가기(심볼릭 링크)와 서명을 보존해야 한다. electron-builder의 zip 대신 ditto로 묶는다.
+      - name: 맥 앱 묶기 (ditto)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          for dir in dist/mac-arm64 dist/mac; do
+            [ -d "$dir" ] || continue
+            app=$(ls -d "$dir"/*.app)
+            arch=$([ "$dir" = dist/mac-arm64 ] && echo arm64 || echo x64)
+            codesign --verify --deep --strict --verbose=2 "$app"
+            ditto -c -k --keepParent --sequesterRsrc "$app" "dist/book-report-pet-$VERSION-mac-$arch.zip"
+            # 풀어서 다시 검증한다: 받은 사람이 보게 될 그대로
+            rm -rf /tmp/check && mkdir /tmp/check && ditto -x -k "dist/book-report-pet-$VERSION-mac-$arch.zip" /tmp/check
+            codesign --verify --deep --strict --verbose=2 /tmp/check/*.app
+            test -L "/tmp/check/$(basename "$app")/Contents/Frameworks/Electron Framework.framework/Versions/Current"
+          done
+          ls -la dist/*.zip
       - name: 실패하면 로그 끝을 주석으로 남기기
         if: failure()
         shell: bash
