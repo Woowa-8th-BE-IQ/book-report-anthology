@@ -109,10 +109,6 @@ public class AnthologyService {
         anthologyRepository.touch(contributorId, now());
     }
 
-    public java.time.LocalDateTime now() {
-        return java.time.LocalDateTime.now(clock);
-    }
-
     public LocalDate today() {
         return LocalDate.now(clock);
     }
@@ -127,7 +123,7 @@ public class AnthologyService {
         throw DomainException.conflict("문집 코드를 만들지 못했어요. 잠시 후 다시 시도해 주세요.");
     }
 
-    private LocalDateTime now() {
+    public LocalDateTime now() {
         return LocalDateTime.now(clock);
     }
 
