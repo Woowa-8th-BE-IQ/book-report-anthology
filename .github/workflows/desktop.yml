@@ -5,7 +5,7 @@ name: desktop-pet
 on:
   push:
     branches: [main]
-    paths: ['desktop/**', '.github/workflows/desktop.yml']
+    paths: ['desktop/**', '!desktop/**/*.md', '.github/workflows/desktop.yml']
   workflow_dispatch:
 
 permissions:
