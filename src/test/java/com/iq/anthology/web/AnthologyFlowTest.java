@@ -201,15 +201,48 @@ class AnthologyFlowTest {
         mvc.perform(get("/me/{token}", token).param("to", "pet"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
-                        .isEqualTo("/anthologies/" + code + "/pet"));
-        assertThat(mvc.perform(get("/anthologies/{code}/pet", code).cookie(editor))
+                        .isEqualTo("/pet?focus=" + code));
+        mvc.perform(get("/anthologies/{code}/pet", code))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
+                        .isEqualTo("/pet?focus=" + code));
+        assertThat(mvc.perform(get("/pet").cookie(editor))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString())
-                .contains("pet-avatar", "두 번째 말", "data-face=");
-        assertThat(mvc.perform(get("/anthologies/{code}/pet", code))
+                .contains("pet-avatar", "두 번째 말", "data-face=", "모임방 문집", "캐릭터 바꾸기");
+        assertThat(mvc.perform(get("/pet"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString())
-                .contains("링크 다시 넣기");
+                .contains("연결된 문집이 없어요");
+
+        // 펫 하나에 문집 여러 개: 다른 문집의 출입증도 있으면 탭이 둘
+        MvcResult second = mvc.perform(post("/anthologies")
+                        .param("title", "두 번째 펫 문집").param("bookTitle", "변신").param("nickname", "레오"))
+                .andReturn();
+        String secondLocation = second.getResponse().getRedirectedUrl();
+        String secondCode = secondLocation.substring(secondLocation.lastIndexOf('/') + 1);
+        Cookie secondPass = second.getResponse().getCookie("ab_" + secondCode);
+        String both = mvc.perform(get("/pet").param("focus", secondCode).cookie(editor, secondPass))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(both).contains("모임방 문집", "두 번째 펫 문집", "data-selected=\"" + secondCode + "\"");
+        // 엉뚱한 출입증은 무시하고 지운다
+        String stale = mvc.perform(get("/pet").cookie(editor, new Cookie("ab_nothing", "wrong")))
+                .andExpect(header().stringValues("Set-Cookie", org.hamcrest.Matchers.hasItem(
+                        org.hamcrest.Matchers.startsWith("ab_nothing=;"))))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(stale).contains("모임방 문집");
+        mvc.perform(post("/pet/leave").param("code", secondCode).cookie(secondPass))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.startsWith("ab_" + secondCode + "=;")));
+
+        // 펫 안에서 캐릭터 바꾸기는 JSON으로 답한다
+        mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor).header("X-Room", "1")
+                        .param("style", "c2b3e1m1x5k0"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"style\":\"c2b3e1m1x5k0\"")));
+        mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor).header("X-Room", "1")
+                        .param("style", "zzz"))
+                .andExpect(status().isUnprocessableEntity());
 
         // 캐릭터 꾸미기: 미리보기 그림, 꾸미기 화면, 저장하면 모임방에 새 얼굴
         mvc.perform(get("/avatars/{style}.svg", "c8b4e2m3x5k1"))

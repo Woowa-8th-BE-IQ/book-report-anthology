@@ -54,22 +54,6 @@ public class RoomController {
         return "anthologies/room";
     }
 
-    /** 데스크톱 펫이 띄우는 작은 화면. 모임방과 같은 연결·말하기를 쓴다. */
-    @GetMapping("/anthologies/{code}/pet")
-    public String pet(@PathVariable String code, HttpServletRequest request, Model model) {
-        try {
-            Room room = roomService.enter(code, cookies.read(request, code));
-            model.addAttribute("room", RoomView.of(room, essayService.shelf(room.anthology()), roomService.now()));
-            model.addAttribute("bodyMax", RoomMessage.BODY_MAX);
-        } catch (DomainException e) {
-            if (e.type() != ErrorType.FORBIDDEN && e.type() != ErrorType.NOT_FOUND) {
-                throw e;
-            }
-            model.addAttribute("problem", "연결이 끊겼어요. 개인 링크를 다시 붙여 넣어 주세요.");
-        }
-        return "anthologies/pet";
-    }
-
     @GetMapping(path = "/anthologies/{code}/room/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(@PathVariable String code, HttpServletRequest request, HttpServletResponse response) {
         response.setHeader("Cache-Control", "no-cache");

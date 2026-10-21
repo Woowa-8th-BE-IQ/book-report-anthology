@@ -8,6 +8,9 @@ contextBridge.exposeInMainWorld('petApp', {
   dragEnd: () => ipcRenderer.send('pet:drag-end'),
   attention: () => ipcRenderer.send('pet:attention'),
   relink: () => ipcRenderer.send('pet:relink'),
+  addAnthology: () => ipcRenderer.send('pet:add'),
+  hide: () => ipcRenderer.send('pet:hide'),
+  onCommand: (callback) => ipcRenderer.on('pet:command', (event, name) => callback(String(name || ''))),
   onWalk: (callback) => ipcRenderer.on('pet:walk', (event, state) => callback({
     walking: Boolean(state && state.walking),
     facing: state && (state.facing === 'left' || state.facing === 'right') ? state.facing : null,

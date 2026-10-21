@@ -30,6 +30,13 @@ const writeConfig = (config) => {
   fs.writeFileSync(configFile(), JSON.stringify(config, null, 2));
 };
 
+/** 붙여 넣은 개인 링크들(문집마다 하나). 예전 설정(link 하나)도 읽는다. */
+const linksOf = (config) => {
+  const links = Array.isArray(config.links) ? config.links : [];
+  if (config.link && !links.includes(config.link)) links.push(config.link);
+  return links.filter((link) => personalLink(link));
+};
+
 /** 이 서비스의 개인 링크(/me/토큰)만 받는다. 다른 사이트 주소는 열지 않는다. */
 function personalLink(text) {
   try {
@@ -213,12 +220,21 @@ function sendUpdate(state) {
   }
 }
 
-/** 펫 화면 주소에서 같은 문집의 다른 화면 주소를 만든다. */
-function siblingUrl(suffix) {
-  const current = pet && pet.webContents.getURL();
-  const match = current && current.match(/^(.*\/anthologies\/[^/]+)\/pet/);
-  return match ? match[1] + suffix : null;
+/** 펫 화면에서 지금 보고 있는 문집의 모임방 주소. */
+async function currentRoomUrl() {
+  if (!pet) return null;
+  try {
+    return await pet.webContents.executeJavaScript(
+      "(document.querySelector('.pet-view:not([hidden]) .pet-open') || document.querySelector('.pet-open') || {}).href || null");
+  } catch {
+    return null;
+  }
 }
+
+ipcMain.on('pet:hide', (event) => {
+  if (pet && event.sender === pet.webContents) { pet.hide(); refreshTray(); }
+});
+ipcMain.on('pet:add', () => openSetup());
 
 ipcMain.handle('setup:submit', (event, text) => {
   if (!setup || event.sender !== setup.webContents) return { ok: false };
@@ -229,8 +245,13 @@ ipcMain.handle('setup:submit', (event, text) => {
       : `${BASE.host}/me/… 꼴의 개인 링크를 붙여 넣어 주세요. 모임방 화면 위쪽 "바탕화면 펫에 연결하기"에 있어요.`;
     return { ok: false, message: hint };
   }
-  writeConfig({ ...readConfig(), link });
-  openPet(link);
+  const config = readConfig();
+  const links = linksOf(config).filter((existing) => existing !== link);
+  links.push(link);
+  const { link: _legacy, ...rest } = config;
+  writeConfig({ ...rest, links });
+  // 링크를 열면 이 문집의 출입증이 펫에 하나 더 쌓이고, 펫 화면에 탭이 하나 늘어난다
+  if (pet) pet.loadURL(`${link}?to=pet`); else openPet(link);
   setup.close();
   return { ok: true };
 });
@@ -242,9 +263,14 @@ function buildTray() {
     process.platform === 'darwin' ? 'trayTemplate.png' : 'tray.png'));
   tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
   tray.setToolTip('남의 독후감 펫');
-  const open = (suffix) => {
-    const url = siblingUrl(suffix);
+  const openRoom = async () => {
+    const url = await currentRoomUrl();
     if (url && sameOrigin(url)) shell.openExternal(url);
+  };
+  const command = (name) => {
+    if (!pet) return;
+    pet.showInactive();
+    pet.webContents.send('pet:command', name);
   };
   refreshTray = () => {
     const update = updater.state();
@@ -258,7 +284,7 @@ function buildTray() {
       ...updateItems,
       { type: 'separator' },
       { label: pet && pet.isVisible() ? '펫 숨기기' : '펫 보이기', click: () => {
-        if (!pet) { const { link } = readConfig(); link ? openPet(link) : openSetup(); }
+        if (!pet) { const links = linksOf(readConfig()); links.length ? openPet(links.at(-1)) : openSetup(); }
         else if (pet.isVisible()) pet.hide(); else pet.showInactive();
         refreshTray();
       } },
@@ -270,10 +296,11 @@ function buildTray() {
         savePosition();
       } },
       { type: 'separator' },
-      { label: '모임방 열기', click: () => open('/room') },
-      { label: '캐릭터 꾸미기', click: () => open('/avatar?back=room') },
+      { label: '대화창 열기', click: () => command('chat') },
+      { label: '캐릭터 바꾸기', click: () => command('dress') },
+      { label: '모임방 열기 (브라우저)', click: () => openRoom() },
       { type: 'separator' },
-      { label: '개인 링크 바꾸기…', click: () => openSetup() },
+      { label: '문집 추가…', click: () => openSetup() },
       { label: '로그인할 때 열기', type: 'checkbox', checked: app.getLoginItemSettings().openAtLogin,
         click: (item) => app.setLoginItemSettings({ openAtLogin: item.checked }) },
       { type: 'separator' },
@@ -294,8 +321,8 @@ if (!app.requestSingleInstanceLock()) {
     if (process.platform === 'darwin' && app.dock) app.dock.hide();
     buildTray();
     updater.start((state) => { refreshTray(); sendUpdate(state); });
-    const { link } = readConfig();
-    if (link && personalLink(link)) openPet(link); else openSetup();
+    const links = linksOf(readConfig());
+    if (links.length) openPet(links.at(-1)); else openSetup();
   });
   app.on('window-all-closed', (event) => event.preventDefault()); // 트레이에 남는다
 }

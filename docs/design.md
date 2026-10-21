@@ -105,6 +105,12 @@ room_message(id, anthology_id, contributor_id, body, created_at)        -- 모�
 | GET | `/anthologies/{code}/room/stream` | 모임방 실시간 연결 (SSE) |
 | POST | `/anthologies/{code}/room/messages` | 말하기. `X-Room` 헤더면 JSON, 아니면 PRG |
 | POST | `/anthologies/{code}/room/typing` | 쓰는 중 알리기 (저장 안 함) |
+| POST | `/anthologies/{code}/room/position` | 내 아바타 자리 옮기기 (저장 안 함) |
+| GET | `/anthologies/{code}/avatar` | 캐릭터 꾸미기 |
+| POST | `/anthologies/{code}/avatar` | 캐릭터 저장. `X-Room` 헤더면 JSON |
+| GET | `/avatars/{style}.svg` | 모양 글자로 그린 아바타 (오래 캐시) |
+| GET | `/pet` | 데스크톱 펫 화면 (출입증의 모든 문집) |
+| POST | `/pet/leave` | 펫에서 문집 빼기 (출입증만 지움) |
 | GET | `/anthologies/{code}/write` | 내 독후감 쓰기 |
 | POST | `/anthologies/{code}/essay` | 저장(`action=save`) / 제출(`action=submit`) |
 | GET | `/anthologies/{code}/essays/{id}` | 독후감 읽기 |
@@ -169,6 +175,13 @@ OpenPDF로 A5(148×210mm) PDF를 만든다. 부크크·교보 퍼플에 그대�
 - 말은 1~500자, DB에 남는다. 방에 들어오면 최근 160개(펫은 60개)를 보여 준다. 마감 뒤에도 열려 있다.
 - 서버가 한 대라는 전제다. 여러 대로 늘리면 Redis pub/sub 같은 중계가 필요하다.
 - 엮은이가 참여자를 내보내면 그 사람의 말과 연결도 정리한다.
+
+### 데스크톱 펫
+
+- `/pet`은 이 브라우저(펫)가 가진 문집 출입증(`ab_{code}` 쿠키)을 모두 읽어 문집마다 탭을 만든다. 개인 링크를 붙일 때마다 출입증이 하나씩 쌓인다(`/me/{token}?to=pet`).
+- 문집마다 실시간 연결(SSE)을 하나씩 연다. 말풍선에는 문집이 둘 이상일 때 `[문집 이름]`을 붙인다.
+- 우클릭 메뉴와 캐릭터 바꾸기는 펫이 띄우는 웹 화면에 있어서, 서버만 배포해도 예전 펫 앱에 반영된다.
+- 펫 앱은 새 버전을 GitHub 릴리스에서 찾아 받아 두고, 누르면(아니면 끌 때) 바꿔 끼운다.
 
 ## 8. 패키지
 

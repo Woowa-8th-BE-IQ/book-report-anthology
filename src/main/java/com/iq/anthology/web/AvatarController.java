@@ -98,6 +98,38 @@ public class AvatarController extends FormSupport {
         });
     }
 
+    /** 펫 안 꾸미기 화면이 쓰는 조각 이름표. */
+    static List<Part> partNames() {
+        AvatarStyle any = new AvatarStyle(0, 0, 0, 0, 0, 0);
+        return List.of(
+                part("color", "색", AvatarStyle.COLORS, any, AvatarStyle::color, AvatarStyle::withColor,
+                        "살구", "쑥", "하늘", "라벤더", "겨자", "산호", "민트", "모래", "벚꽃", "먹구름"),
+                part("body", "몸", AvatarStyle.BODIES, any, AvatarStyle::body, AvatarStyle::withBody,
+                        "동그라미", "책", "네모", "구름", "고양이"),
+                part("eyes", "눈", AvatarStyle.EYES, any, AvatarStyle::eyes, AvatarStyle::withEyes,
+                        "점", "웃는 눈", "안경", "윙크"),
+                part("mouth", "입", AvatarStyle.MOUTHS, any, AvatarStyle::mouth, AvatarStyle::withMouth,
+                        "미소", "오", "일자", "활짝"),
+                part("extra", "소품", AvatarStyle.EXTRAS, any, AvatarStyle::extra, AvatarStyle::withExtra,
+                        "없음", "책갈피", "베레모", "새싹", "별", "꽃"),
+                part("cheeks", "볼", AvatarStyle.CHEEKS, any, AvatarStyle::cheeks, AvatarStyle::withCheeks,
+                        "없음", "볼터치"));
+    }
+
+    /** 펫에서 바꿀 때(X-Room 헤더): JSON으로 답한다. */
+    @PostMapping(path = "/anthologies/{code}/avatar", headers = "X-Room")
+    @ResponseBody
+    public ResponseEntity<java.util.Map<String, Object>> saveFromScript(@PathVariable String code,
+                                                                        @RequestParam(required = false) String style,
+                                                                        HttpServletRequest request) {
+        try {
+            AvatarStyle chosen = roomService.changeAvatar(code, cookies.read(request, code), style);
+            return ResponseEntity.ok(java.util.Map.of("style", chosen.format(), "svg", Avatar.svg(chosen)));
+        } catch (DomainException e) {
+            return ResponseEntity.status(e.type().status()).body(java.util.Map.of("message", e.getMessage()));
+        }
+    }
+
     private static Part part(String key, String label, int count, AvatarStyle current, ToIntFunction<AvatarStyle> get,
                              BiFunction<AvatarStyle, Integer, AvatarStyle> with, String... names) {
         List<Option> options = new ArrayList<>();

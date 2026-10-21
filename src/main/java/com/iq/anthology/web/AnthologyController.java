@@ -334,7 +334,7 @@ public class AnthologyController extends FormSupport {
         Anthology anthology = anthologyService.getByToken(token);
         cookies.write(request, response, anthology.code(), token);
         if ("pet".equals(to)) {
-            return "redirect:/anthologies/" + anthology.code() + "/pet";
+            return "redirect:/pet?focus=" + anthology.code();
         }
         redirect.addFlashAttribute("notice", "이 기기에서도 이어서 쓸 수 있어요.");
         return "redirect:/anthologies/" + anthology.code();

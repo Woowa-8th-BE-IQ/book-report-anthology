@@ -41,25 +41,64 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 @keyframes bubble-out { to { opacity: 0; transform: translateY(-6px); } }
 
 /* 펼친 대화창 */
-.pet-panel { width: 100%; max-width: 320px; flex: 1 1 auto; min-height: 0; max-height: 400px; display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 14px 34px rgba(26,18,8,.2); overflow: hidden; user-select: text; -webkit-user-select: text; }
+.pet-panel { width: 100%; max-width: 320px; flex: 1 1 auto; min-height: 0; max-height: 420px; display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 14px 34px rgba(26,18,8,.2); overflow: hidden; user-select: text; -webkit-user-select: text; }
 .pet-panel[hidden] { display: none; }
-.pet-panel header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--paper); }
-.pet-panel header div { flex: 1; min-width: 0; }
-.pet-panel header b { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pet-panel header small { font-size: 11px; color: var(--muted); }
+.pet-head { display: flex; align-items: center; gap: 4px; padding: 6px 6px 0 8px; border-bottom: 1px solid var(--line); background: var(--paper); }
+.pet-tabs { flex: 1; min-width: 0; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.pet-tab { display: inline-flex; align-items: center; gap: 5px; max-width: 150px; padding: 7px 10px; border: 0; border-radius: 10px 10px 0 0; background: none; font: inherit; font-size: 12.5px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.pet-tab[aria-selected="true"] { background: var(--card); color: var(--ink); font-weight: 700; box-shadow: 0 -1px 0 var(--line) inset; }
+.pet-tab-title { overflow: hidden; text-overflow: ellipsis; }
+.pet-tab-badge { min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 8px; background: var(--accent); color: #fff; font-size: 10.5px; font-weight: 700; line-height: 16px; text-align: center; }
+.pet-tab-badge[hidden] { display: none; }
+.pet-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.pet-view[hidden] { display: none; }
+.pet-sub { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.pet-sub small { font-size: 11px; color: var(--muted); }
 .pet-open { font-size: 12px; color: var(--accent); text-decoration: none; white-space: nowrap; }
-.pet-close { border: 0; background: none; font-size: 14px; color: var(--muted); cursor: pointer; padding: 4px; }
+.pet-close { border: 0; background: none; font-size: 14px; color: var(--muted); cursor: pointer; padding: 4px 6px; }
 .pet-log { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 10px 12px; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 1.5; }
 .pet-line b { font-size: 11.5px; color: var(--ink-soft); margin-right: 6px; }
 .pet-line span { overflow-wrap: anywhere; white-space: pre-wrap; }
 .pet-line.mine { text-align: right; }
 .pet-line.mine b { color: var(--accent); }
-.pet-panel form { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--line); }
-.pet-panel input { flex: 1; min-width: 0; padding: 8px 10px; font: inherit; font-size: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); outline: none; }
-.pet-panel input:focus { border-color: var(--accent); }
-.pet-panel form button { padding: 0 12px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.pet-form { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--line); }
+.pet-form input { flex: 1; min-width: 0; padding: 8px 10px; font: inherit; font-size: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); outline: none; }
+.pet-form input:focus { border-color: var(--accent); }
+.pet-form button { padding: 0 12px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .pet-status { margin: 0; padding: 0 12px 8px; font-size: 11.5px; color: var(--accent); }
 .pet-status:empty { display: none; }
+
+/* 우클릭 메뉴 */
+.pet-menu { position: absolute; bottom: 104px; left: 50%; transform: translateX(-50%); z-index: 5; width: 200px; padding: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 30px rgba(26,18,8,.22); animation: bubble-in .15s ease-out; }
+.pet-menu[hidden] { display: none; }
+.pet-menu button { display: block; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: none; font: inherit; font-size: 13px; text-align: left; color: var(--ink); cursor: pointer; }
+.pet-menu button:hover, .pet-menu button:focus-visible { background: var(--paper); outline: none; }
+.pet-menu button[hidden] { display: none; }
+.pet-menu hr { margin: 4px 6px; border: 0; border-top: 1px solid var(--line); }
+.pet-menu-group span { display: block; padding: 6px 10px 2px; font-size: 11px; color: var(--muted); }
+.pet-menu-group button { padding-left: 22px; position: relative; }
+.pet-menu-group button[aria-checked="true"]::before { content: "✓"; position: absolute; left: 8px; color: var(--accent); }
+
+/* 펫 안 캐릭터 바꾸기 */
+.pet-dresser { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.pet-dresser[hidden] { display: none; }
+.dress-top { display: flex; gap: 12px; align-items: center; padding: 12px; border-bottom: 1px solid var(--line); }
+.dress-preview { width: 84px; height: 84px; flex: none; }
+.dress-preview.pop { animation: jump .45s ease-out; }
+.dress-top b { display: block; font-size: 14px; }
+.dress-where { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+.dress-actions { display: flex; gap: 6px; margin-top: 8px; }
+.dress-actions button, .dress-foot button { padding: 6px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 12px; cursor: pointer; }
+.dress-parts { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 12px 10px; }
+.dress-part { margin-top: 8px; }
+.dress-label { display: block; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 4px; }
+.dress-options { display: flex; flex-wrap: wrap; gap: 4px; }
+.dress-option { padding: 3px; border: 1.5px solid transparent; border-radius: 10px; background: none; cursor: pointer; line-height: 0; }
+.dress-option:hover { background: var(--paper); }
+.dress-option[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
+.dress-option img { width: 34px; height: 34px; }
+.dress-foot { display: flex; justify-content: flex-end; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--line); }
+.dress-foot [data-dress="save"] { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 
 .pet-problem { max-width: 230px; padding: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 8px 20px rgba(26,18,8,.16); font-size: 13px; text-align: center; }
 .pet-problem p { margin: 0 0 10px; }
