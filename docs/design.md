@@ -33,7 +33,12 @@
 | 도서 소개 | 엮은이만, 마감 전까지, 최대 2,000자 | 403 / 422 |
 | 마감 | 엮은이만, 제출 2편 이상. 되돌릴 수 없다 | 403 / 422 |
 | 책 포함 여부 | 마감 뒤 본인 글만 | 403 / 422 |
-| 책 순서 | 닉네임 가나다순(한국어 Collator), 같으면 먼저 낸 순 | — |
+| 글감 질문 | 엮은이만, 마감 전까지, 최대 3개, 한 줄 100자 | 403 / 422 |
+| 링크 다시 만들기 | 엮은이만, 다른 사람의 링크만. 옛 토큰은 즉시 막힌다 | 403 / 422 |
+| 내보내기 | 엮은이만, 마감 전, 엮은이 자신은 못 내보낸다. 그 사람의 글·답글·기록도 지운다 | 403 / 422 |
+| 책 순서 | 엮은이가 정한 순서(마감 뒤 ↑↓) → 없으면 닉네임 가나다순(한국어 Collator) → 먼저 낸 순 | 403 / 422 |
+| 부록 | 엮은이만, 언제든, 최대 10,000자. 비우면 빠진다 | 403 / 422 |
+| 공개 맛보기 | 마감 뒤 쓴 사람만 허락·철회. 책에 실리는 글 중 책 순서로 첫 한 편만 공개 | 403 / 422 |
 | 책 생성 | 마감 후, 실릴 글이 한 편 이상 | 422 |
 
 밑줄 150자 상한은 저작권법 제28조(정당한 범위의 인용)를 지키기 위한 제품 규칙이다. 모든 밑줄에는 원서 출처가 자동으로 붙는다. 수치는 법률 자문 후 조정한다.
@@ -63,6 +68,9 @@ contributor(id, anthology_id, nickname, real_name, token UNIQUE, join_order, joi
 essay(id, anthology_id, contributor_id, title, quote, body TEXT, status, included_in_book,
       created_at, updated_at, submitted_at, UNIQUE(anthology_id, contributor_id))
 reply(id, essay_id, contributor_id, body, created_at)
+activity(id, anthology_id, contributor_id, kind, essay_id, created_at)   -- 퍼널 기록
+-- 2차: anthology.prompts, anthology.appendix, essay.book_order, essay.public_sample
+--      (ALTER TABLE … ADD COLUMN IF NOT EXISTS 로 기존 DB에 그대로 붙는다)
 ```
 
 동시성은 DB가 막는다.
@@ -84,6 +92,14 @@ reply(id, essay_id, contributor_id, body, created_at)
 | GET | `/anthologies/{code}` | 문집 화면 (비참여자면 참여 폼) |
 | POST | `/anthologies/{code}/contributors` | 참여 |
 | POST | `/anthologies/{code}/introduction` | 도서 소개 저장 (엮은이) |
+| POST | `/anthologies/{code}/prompts` | 글감 질문 저장 (엮은이) |
+| POST | `/anthologies/{code}/appendix` | 부록 저장 (엮은이) |
+| POST | `/anthologies/{code}/contributors/{id}/reissue` | 개인 링크 다시 만들기 (엮은이) |
+| POST | `/anthologies/{code}/contributors/{id}/remove` | 참여자 내보내기 (엮은이) |
+| POST | `/anthologies/{code}/essay/autosave` | 자동 저장. JSON으로 답한다 |
+| POST | `/anthologies/{code}/essays/{id}/move` | 차례 순서 바꾸기 `delta=±1` (엮은이, 마감 뒤) |
+| POST | `/anthologies/{code}/essays/{id}/sample` | 공개 맛보기 허락·철회 (쓴 사람) |
+| GET | `/anthologies/{code}/book.pdf` | A5 인쇄용 PDF (참여자만) |
 | GET | `/anthologies/{code}/write` | 내 독후감 쓰기 |
 | POST | `/anthologies/{code}/essay` | 저장(`action=save`) / 제출(`action=submit`) |
 | GET | `/anthologies/{code}/essays/{id}` | 독후감 읽기 |
@@ -104,30 +120,57 @@ EPUB 3, `java.util.zip`만 쓴다. epubcheck 통과.
 ```
 mimetype                  무압축, 첫 항목
 META-INF/container.xml
-OEBPS/content.opf         dc:creator = 각 지은이
+OEBPS/content.opf         dc:creator = 각 지은이, cover-image
+OEBPS/cover.svg           표지 그림 (CoverArt: 종이 카드 + 제목 + N명)
+OEBPS/cover.xhtml         표지 (spine 첫 장)
 OEBPS/title.xhtml         표제지: 제목 · "~을 읽고" · N명이 쓴 독후감
-OEBPS/introduction.xhtml  도서 소개 (있을 때만)
+OEBPS/introduction.xhtml  도서 소개 + 글감 질문 (있을 때만)
 OEBPS/nav.xhtml           차례: 지은이 · 제목
 OEBPS/essay-{n}.xhtml     독후감 (밑줄 + 출처, 본문)
+OEBPS/appendix.xhtml      부록 (있을 때만)
 OEBPS/colophon.xhtml      지은이 목록, 마감일, 저작권 안내
 ```
 
-## 7. 패키지
+### 인쇄용 PDF (POD)
+
+OpenPDF로 A5(148×210mm) PDF를 만든다. 부크크·교보 퍼플에 그대로 올리는 용도.
+
+- 나눔명조(OFL)를 `resources/fonts`에 두고 서브셋으로 넣는다.
+- 표제 → 소개·질문 → 차례 → 글(한 편씩 새 쪽) → 부록 → 판권. 표제 쪽엔 쪽번호가 없다.
+- 차례의 쪽번호는 두 번 그려서 얻는다(첫 번째에서 각 글의 시작 쪽을 재고, 두 번째에 채운다).
+- 줄바꿈은 어절 단위.
+
+## 7. 화면 경험 (2차)
+
+| 장면 | 하는 일 |
+| --- | --- |
+| 쓰기 | 2.5초 쉬면 자동 저장(15초 넘게 계속 쓰면 그 사이에도). 서버보다 먼저 이 기기(localStorage)에 사본. 사본이 서버보다 새것이면 "불러올까요?" |
+| 200자 문턱 | 본문 아래 선이 차오른다. 넘으면 "제출할 수 있어요" |
+| 제출 전 | 책 한 쪽에 실린 모습으로 미리보기 → "이대로 제출하기" |
+| 열리는 순간 | 첫 제출 직후 잠긴 카드가 하나씩 테이프가 떨어지며 열린다 |
+| 잠긴 카드 | 본문은 서버가 보내지 않는다. 글 길이에 비례한 줄 수, 분량·답글 수만 |
+| 책장 | 지난 방문 뒤 들어온 글에 "새 글", 읽은 글은 흐리게, "안 읽은 글만" 보기 (이 기기 기준) |
+| 카드 → 글 | View Transitions로 카드가 글 종이로 이어진다 |
+| 마감 직후 | 종이가 쌓이고 표지가 덮이는 장면. 누르면 넘어간다 |
+| 엮은이 | 퍼널(참여→써 봄→제출→읽음→내려받음), 아직 안 낸 사람에게 보낼 문구 복사 |
+| 링크 미리보기 | 카카오톡·슬랙용 OG 태그와 1200×630 이미지 |
+
+## 8. 패키지
 
 ```
 com.iq.anthology
 ├── anthology  Anthology, Contributor, AnthologyService, AnthologyRepository(+Jdbc)
 ├── essay      Essay, Reply, Shelf(읽기 규칙·책 순서), EssayService, 저장소(+Jdbc)
-├── book       Manuscript, ManuscriptFactory, EpubWriter, BookService
+├── activity   ActivityLog(+Jdbc), ActivityType, Funnel
+├── book       Manuscript, ManuscriptFactory, EpubWriter, CoverArt, PdfBook, BookService
 ├── support    DomainException, ErrorType, Texts(글자 수·조사), IdentifierGenerator
-└── web        AnthologyController, ShelfView, ContributorCookies, ErrorPages
+└── web        AnthologyController, EditorController, DraftApiController, ShelfView, ContributorCookies, ErrorPages
 ```
 
 도메인 모델은 Spring에 의존하지 않는다.
 
-## 8. 다음 단계 (이번 범위 밖)
+## 9. 다음 단계 (이번 범위 밖)
 
-- 부크크·교보 퍼플 POD용 PDF 내보내기 (종이책)
 - 공개 소개 페이지에서 구매 연결
 - 마감일 알림 (메일)
-- 엮은이의 순서 조정, 부록(용어사전 등)
+- 읽음 표시를 기기 밖(서버)으로
