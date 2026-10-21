@@ -190,11 +190,25 @@
         </th:block>
       </div>
 
+      <a class="paper tape room-door" th:if="${view.isContributor()}"
+         th:href="@{/anthologies/{code}/room(code=${a.code()})}">
+        <span class="room-faces" aria-hidden="true">
+          <span class="avatar" th:each="seat, stat : ${view.seats()}" th:if="${stat.index < 5}"
+                th:utext="${seat.avatar()}"></span>
+        </span>
+        <span class="room-door-text">
+          <b>모임방</b>
+          <small th:text="${roomOnline != null and roomOnline > 0} ? '지금 ' + ${roomOnline} + '명이 이야기하는 중' : '같은 책 읽은 사람들과 수다 떨기'">모임방</small>
+        </span>
+        <span class="room-door-arrow" aria-hidden="true">→</span>
+      </a>
+
       <div class="paper" th:if="${view.isContributor()}">
         <h3>함께 쓰는 사람</h3>
         <ol class="seats">
           <li class="seat" th:each="seat : ${view.seats()}"
               th:classappend="${seat.state() + (seat.me() ? ' me' : '')}">
+            <span class="avatar small" aria-hidden="true" th:utext="${seat.avatar()}"></span>
             <span th:text="${seat.byline()}">감자</span>
             <span class="host" th:if="${seat.editor()}">엮은이</span>
           </li>

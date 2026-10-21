@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${room.anthology().title()} + ' 모임방')}"></head>
+<body class="room-page" th:with="a=${room.anthology()}">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<section class="page-hero narrow" style="padding-bottom:8px">
+  <a class="kicker" th:href="@{/anthologies/{code}(code=${a.code()})}" th:text="'← ' + ${a.title()}">← 문집</a>
+  <h1 data-reveal>모임방</h1>
+  <p class="lead">같은 책을 읽은 사람들이 둘러앉는 곳이에요. 불이 켜진 얼굴이 지금 들어와 있는 사람이에요.</p>
+</section>
+
+<main class="section room" style="padding-top:20px"
+      th:attr="data-stream=@{/anthologies/{code}/room/stream(code=${a.code()})},
+               data-say=@{/anthologies/{code}/room/messages(code=${a.code()})},
+               data-typing=@{/anthologies/{code}/room/typing(code=${a.code()})},
+               data-me=${room.meId()}">
+
+  <!-- 책상: 참여자가 둘러앉는다 -->
+  <section class="table-scene" aria-label="모임방에 있는 사람"
+           th:classappend="${room.members().size() > 14} ? 'crowd' : ''"
+           th:style="'--n:' + ${room.members().size()}">
+    <div class="table-top" aria-hidden="true">
+      <span class="table-book"></span>
+      <span class="table-cup"></span>
+      <p class="hand table-count"><span id="online-count" th:text="${room.onlineCount()}">1</span>명 있어요</p>
+    </div>
+    <ul class="ring">
+      <li class="member" th:each="member, stat : ${room.members()}"
+          th:classappend="${(member.online() ? 'online ' : '') + (member.me() ? 'me' : '')}"
+          th:style="'--i:' + ${stat.index}"
+          th:attr="data-member=${member.id()}, data-name=${member.nickname()}">
+        <span class="bubble" hidden></span>
+        <span class="avatar" th:utext="${member.avatar()}"></span>
+        <span class="member-name">
+          <span th:text="${member.nickname()}">감자</span>
+          <small th:if="${member.editor()}">엮은이</small>
+        </span>
+        <span class="visually-hidden presence-label" th:text="${member.online()} ? '들어와 있음' : '자리 비움'">상태</span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 이야기 -->
+  <section class="paper talk-panel" aria-label="이야기">
+    <p class="room-note" th:if="${room.notSubmittedCount() > 0}">
+      아직 독후감을 내지 않은 사람이 <b th:text="${room.notSubmittedCount()}">2</b>명 있어요. 남의 글 내용은 조금만 아껴 주세요.
+    </p>
+    <ol class="talk" id="talk" aria-live="polite">
+      <li class="talk-empty" th:if="${room.lines().isEmpty()}">아직 조용해요. 첫마디를 건네 보세요.</li>
+      <th:block th:each="line : ${room.lines()}">
+        <li class="talk-day" th:if="${line.day() != null}"><span th:text="${line.day()}">10월 21일</span></li>
+        <li class="talk-line" th:classappend="${line.mine(room.meId())} ? 'mine' : ''"
+            th:attr="data-id=${line.id()}, data-author=${line.author().id()}">
+          <span class="avatar small" aria-hidden="true" th:utext="${line.author().avatar()}"></span>
+          <div class="talk-body">
+            <span class="talk-who"><b th:text="${line.author().nickname()}">감자</b> <time th:text="${line.at()}">11:20</time></span>
+            <p th:text="${line.body()}">말</p>
+          </div>
+        </li>
+      </th:block>
+      <li id="talk-end" aria-hidden="true"></li>
+    </ol>
+    <p class="typing-line" id="typing-line" aria-live="polite"></p>
+    <form class="talk-form" id="talk-form" method="post"
+          th:action="@{/anthologies/{code}/room/messages(code=${a.code()})}">
+      <label class="visually-hidden" for="talk-input">말</label>
+      <textarea id="talk-input" name="body" rows="1" required th:attr="maxlength=${bodyMax}"
+                placeholder="한마디 건네기" title="Enter로 보내고, Shift+Enter로 줄을 바꿔요"></textarea>
+      <button class="btn" type="submit">보내기</button>
+    </form>
+    <p class="talk-status" id="talk-status" role="status"></p>
+  </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

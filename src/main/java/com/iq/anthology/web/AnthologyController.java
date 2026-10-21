@@ -7,6 +7,7 @@ import com.iq.anthology.anthology.Contributor;
 import com.iq.anthology.book.BookService;
 import com.iq.anthology.essay.Essay;
 import com.iq.anthology.essay.EssayService;
+import com.iq.anthology.room.RoomService;
 import com.iq.anthology.essay.Shelf;
 import com.iq.anthology.support.DomainException;
 import com.iq.anthology.support.ErrorType;
@@ -38,10 +39,12 @@ public class AnthologyController extends FormSupport {
     private final AnthologyService anthologyService;
     private final EssayService essayService;
     private final BookService bookService;
+    private final RoomService roomService;
     private final ContributorCookies cookies;
 
     public AnthologyController(AnthologyService anthologyService, EssayService essayService, BookService bookService,
-                               ContributorCookies cookies) {
+                               RoomService roomService, ContributorCookies cookies) {
+        this.roomService = roomService;
         this.anthologyService = anthologyService;
         this.essayService = essayService;
         this.bookService = bookService;
@@ -104,6 +107,7 @@ public class AnthologyController extends FormSupport {
         model.addAttribute("aboutUrl", absolute("/anthologies/" + code + "/about"));
         if (me != null) {
             model.addAttribute("personalUrl", absolute("/me/" + me.token()));
+            model.addAttribute("roomOnline", roomService.onlineCount(anthology));
         }
         if (view.isEditor()) {
             model.addAttribute("funnel", essayService.funnel(shelf));

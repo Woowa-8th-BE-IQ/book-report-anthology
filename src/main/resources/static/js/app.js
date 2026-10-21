@@ -448,4 +448,174 @@
       click(kind);
     });
   }
+
+  // 11. 모임방: SSE로 들고 남·말·쓰는 중을 받는다. 보내기는 fetch, JS가 없으면 폼 제출로 동작한다.
+  const room = document.querySelector('main.room[data-stream]');
+  if (room && window.EventSource) {
+    const me = Number(room.dataset.me);
+    const talk = document.getElementById('talk');
+    const end = document.getElementById('talk-end');
+    const form = document.getElementById('talk-form');
+    const input = document.getElementById('talk-input');
+    const status = document.getElementById('talk-status');
+    const typingLine = document.getElementById('typing-line');
+    const onlineCount = document.getElementById('online-count');
+    const memberOf = (id) => room.querySelector(`.member[data-member="${id}"]`);
+    const seen = new Set([...talk.querySelectorAll('.talk-line[data-id]')].map((line) => Number(line.dataset.id)));
+    const typers = new Map();
+    const bubbleTimers = new Map();
+
+    const nearBottom = () => talk.scrollHeight - talk.scrollTop - talk.clientHeight < 120;
+    const toBottom = () => { talk.scrollTop = talk.scrollHeight; };
+    toBottom();
+
+    const showBubble = (member, text, typing) => {
+      const bubble = member.querySelector('.bubble');
+      clearTimeout(bubbleTimers.get(member));
+      bubble.classList.toggle('typing', typing);
+      if (typing) {
+        bubble.replaceChildren(...['·', '·', '·'].map((dot) => { const span = document.createElement('span'); span.textContent = dot; return span; }));
+      } else {
+        bubble.textContent = text;
+      }
+      bubble.hidden = false;
+      member.classList.toggle('speaking', !typing);
+      bubbleTimers.set(member, setTimeout(() => {
+        bubble.hidden = true;
+        member.classList.remove('speaking');
+      }, typing ? 3500 : 6000));
+    };
+
+    const renderTypers = () => {
+      const names = [...typers.keys()].map((id) => memberOf(id)?.dataset.name).filter(Boolean);
+      typingLine.textContent = names.length === 0 ? ''
+        : names.length === 1 ? `${names[0]}님이 쓰는 중…` : `${names.length}명이 쓰는 중…`;
+    };
+
+    const append = (message) => {
+      if (seen.has(message.id)) {
+        return;
+      }
+      seen.add(message.id);
+      const member = memberOf(message.contributorId);
+      if (!member) {
+        return;
+      }
+      const stick = nearBottom() || message.contributorId === me;
+      talk.querySelector('.talk-empty')?.remove();
+      const line = document.createElement('li');
+      line.className = 'talk-line fresh' + (message.contributorId === me ? ' mine' : '');
+      line.dataset.id = message.id;
+      const avatar = document.createElement('span');
+      avatar.className = 'avatar small';
+      avatar.setAttribute('aria-hidden', 'true');
+      avatar.innerHTML = member.querySelector('.avatar').innerHTML; // 서버가 그린 SVG(사용자 글자 없음)
+      const body = document.createElement('div');
+      body.className = 'talk-body';
+      const who = document.createElement('span');
+      who.className = 'talk-who';
+      const name = document.createElement('b');
+      name.textContent = member.dataset.name;
+      const time = document.createElement('time');
+      time.textContent = message.at;
+      who.append(name, ' ', time);
+      const text = document.createElement('p');
+      text.textContent = message.body;
+      body.append(who, text);
+      line.append(avatar, body);
+      talk.insertBefore(line, end);
+      if (stick) {
+        toBottom();
+      }
+      typers.delete(message.contributorId);
+      renderTypers();
+      showBubble(member, message.body, false);
+    };
+
+    const setOnline = (ids) => {
+      const online = new Set(ids);
+      room.querySelectorAll('.member[data-member]').forEach((member) => {
+        const on = online.has(Number(member.dataset.member));
+        member.classList.toggle('online', on);
+        member.querySelector('.presence-label').textContent = on ? '들어와 있음' : '자리 비움';
+      });
+      onlineCount.textContent = online.size;
+    };
+
+    const source = new EventSource(room.dataset.stream);
+    const parse = (event) => { try { return JSON.parse(event.data); } catch (e) { return null; } };
+    source.addEventListener('hello', (event) => { const data = parse(event); if (data) setOnline(data.online); status.textContent = ''; });
+    source.addEventListener('presence', (event) => { const data = parse(event); if (data) setOnline(data.online); });
+    source.addEventListener('message', (event) => { const data = parse(event); if (data) append(data); });
+    source.addEventListener('typing', (event) => {
+      const data = parse(event);
+      if (!data || data.contributorId === me) {
+        return;
+      }
+      clearTimeout(typers.get(data.contributorId));
+      typers.set(data.contributorId, setTimeout(() => { typers.delete(data.contributorId); renderTypers(); }, 3500));
+      renderTypers();
+      const member = memberOf(data.contributorId);
+      if (member && !member.classList.contains('speaking')) {
+        showBubble(member, '', true);
+      }
+    });
+    source.onerror = () => {
+      if (source.readyState === EventSource.CONNECTING) {
+        status.textContent = '연결이 잠깐 끊겼어요. 다시 붙는 중…';
+      }
+    };
+    window.addEventListener('pagehide', () => source.close());
+
+    // 입력: 높이 맞추기, 쓰는 중 알리기(3초에 한 번), Enter로 보내기(한글 조합 중에는 보내지 않는다)
+    let lastTyping = 0;
+    const fit = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 140) + 'px'; };
+    input.addEventListener('input', () => {
+      fit();
+      const now = Date.now();
+      if (input.value.trim() && now - lastTyping > 3000) {
+        lastTyping = now;
+        fetch(room.dataset.typing, { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+      }
+    });
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    let sending = false;
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const body = input.value.trim();
+      if (!body || sending) {
+        return;
+      }
+      sending = true;
+      status.textContent = '';
+      try {
+        const response = await fetch(room.dataset.say, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8', 'X-Room': '1' },
+          body: new URLSearchParams({ body }),
+          credentials: 'same-origin',
+        });
+        const result = await response.json().catch(() => ({}));
+        if (response.ok) {
+          input.value = '';
+          fit();
+          lastTyping = 0;
+          append(result); // 실시간 이벤트가 먼저 와도 id로 한 번만 붙는다
+        } else {
+          status.textContent = result.message || '보내지 못했어요. 잠시 후 다시 시도해 주세요.';
+        }
+      } catch (error) {
+        status.textContent = '연결이 끊겨 보내지 못했어요.';
+      } finally {
+        sending = false;
+        input.focus();
+      }
+    });
+  }
 })();

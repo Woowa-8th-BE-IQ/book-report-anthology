@@ -3,6 +3,7 @@ package com.iq.anthology.web;
 import com.iq.anthology.anthology.AnthologyService;
 import com.iq.anthology.anthology.AnthologyService.Reissued;
 import com.iq.anthology.essay.EssayService;
+import com.iq.anthology.room.RoomService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,11 +17,14 @@ public class EditorController extends FormSupport {
 
     private final AnthologyService anthologyService;
     private final EssayService essayService;
+    private final RoomService roomService;
     private final ContributorCookies cookies;
 
-    public EditorController(AnthologyService anthologyService, EssayService essayService, ContributorCookies cookies) {
+    public EditorController(AnthologyService anthologyService, EssayService essayService, RoomService roomService,
+                            ContributorCookies cookies) {
         this.anthologyService = anthologyService;
         this.essayService = essayService;
+        this.roomService = roomService;
         this.cookies = cookies;
     }
 
@@ -80,6 +84,7 @@ public class EditorController extends FormSupport {
                          RedirectAttributes redirect) {
         return attempt(redirect, "/anthologies/" + code, null, null, () -> {
             String nickname = essayService.remove(code, cookies.read(request, code), contributorId);
+            roomService.forget(anthologyService.get(code).id(), contributorId);
             redirect.addFlashAttribute("notice", nickname + "님을 내보냈어요. 그 사람의 글과 답글도 지웠어요.");
             return "redirect:/anthologies/" + code + "#editor";
         });

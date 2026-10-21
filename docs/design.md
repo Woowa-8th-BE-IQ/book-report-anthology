@@ -69,6 +69,7 @@ essay(id, anthology_id, contributor_id, title, quote, body TEXT, status, include
       created_at, updated_at, submitted_at, UNIQUE(anthology_id, contributor_id))
 reply(id, essay_id, contributor_id, body, created_at)
 activity(id, anthology_id, contributor_id, kind, essay_id, created_at)   -- 퍼널 기록
+room_message(id, anthology_id, contributor_id, body, created_at)        -- 모임방
 -- 2차: anthology.prompts, anthology.appendix, essay.book_order, essay.public_sample
 --      (ALTER TABLE … ADD COLUMN IF NOT EXISTS 로 기존 DB에 그대로 붙는다)
 ```
@@ -100,6 +101,10 @@ activity(id, anthology_id, contributor_id, kind, essay_id, created_at)   -- 퍼�
 | POST | `/anthologies/{code}/essays/{id}/move` | 차례 순서 바꾸기 `delta=±1` (엮은이, 마감 뒤) |
 | POST | `/anthologies/{code}/essays/{id}/sample` | 공개 맛보기 허락·철회 (쓴 사람) |
 | GET | `/anthologies/{code}/book.pdf` | A5 인쇄용 PDF (참여자만) |
+| GET | `/anthologies/{code}/room` | 모임방 (참여자만, 아니면 참여 폼으로) |
+| GET | `/anthologies/{code}/room/stream` | 모임방 실시간 연결 (SSE) |
+| POST | `/anthologies/{code}/room/messages` | 말하기. `X-Room` 헤더면 JSON, 아니면 PRG |
+| POST | `/anthologies/{code}/room/typing` | 쓰는 중 알리기 (저장 안 함) |
 | GET | `/anthologies/{code}/write` | 내 독후감 쓰기 |
 | POST | `/anthologies/{code}/essay` | 저장(`action=save`) / 제출(`action=submit`) |
 | GET | `/anthologies/{code}/essays/{id}` | 독후감 읽기 |
@@ -155,6 +160,16 @@ OpenPDF로 A5(148×210mm) PDF를 만든다. 부크크·교보 퍼플에 그대�
 | 엮은이 | 퍼널(참여→써 봄→제출→읽음→내려받음), 아직 안 낸 사람에게 보낼 문구 복사 |
 | 링크 미리보기 | 카카오톡·슬랙용 OG 태그와 1200×630 이미지 |
 
+### 모임방
+
+문집마다 방이 하나. 참여자는 닉네임과 참여 순서로 그린 아바타(`Avatar`, SVG)로 책상에 둘러앉는다.
+
+- 실시간은 SSE. `RoomHub`가 서버 메모리에 연결을 들고 `hello`·`presence`·`message`·`typing`을 보낸다.
+- 20초마다 빈 신호(keep-alive)로 프록시가 연결을 끊지 않게 하고, 끊긴 연결을 걸러 낸다. 연결은 15분마다 새로 붙는다(EventSource가 자동으로).
+- 말은 1~500자, DB에 남는다. 방에 들어오면 최근 80개를 보여 준다. 마감 뒤에도 열려 있다.
+- 서버가 한 대라는 전제다. 여러 대로 늘리면 Redis pub/sub 같은 중계가 필요하다.
+- 엮은이가 참여자를 내보내면 그 사람의 말과 연결도 정리한다.
+
 ## 8. 패키지
 
 ```
@@ -162,9 +177,10 @@ com.iq.anthology
 ├── anthology  Anthology, Contributor, AnthologyService, AnthologyRepository(+Jdbc)
 ├── essay      Essay, Reply, Shelf(읽기 규칙·책 순서), EssayService, 저장소(+Jdbc)
 ├── activity   ActivityLog(+Jdbc), ActivityType, Funnel
+├── room       Avatar, RoomMessage, RoomHub(SSE), RoomService, 저장소(+Jdbc)
 ├── book       Manuscript, ManuscriptFactory, EpubWriter, CoverArt, PdfBook, BookService
 ├── support    DomainException, ErrorType, Texts(글자 수·조사), IdentifierGenerator
-└── web        AnthologyController, EditorController, DraftApiController, ShelfView, ContributorCookies, ErrorPages
+└── web        AnthologyController, EditorController, DraftApiController, RoomController, ShelfView, ContributorCookies, ErrorPages
 ```
 
 도메인 모델은 Spring에 의존하지 않는다.

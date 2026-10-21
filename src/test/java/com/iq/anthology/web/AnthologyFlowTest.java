@@ -157,6 +157,47 @@ class AnthologyFlowTest {
                 .getContentAsString()).doesNotContain("/contributors/" + potatoId + "/");
     }
 
+    @Test
+    void 참여자는_모임방에서_이야기한다() throws Exception {
+        MvcResult opened = mvc.perform(post("/anthologies")
+                        .param("title", "모임방 문집").param("bookTitle", "데미안").param("nickname", "레오"))
+                .andReturn();
+        String location = opened.getResponse().getRedirectedUrl();
+        String code = location.substring(location.lastIndexOf('/') + 1);
+        Cookie editor = opened.getResponse().getCookie("ab_" + code);
+
+        // 참여자가 아니면 참여 폼으로 보낸다
+        mvc.perform(get("/anthologies/{code}/room", code))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
+                        .isEqualTo("/anthologies/" + code));
+        mvc.perform(post("/anthologies/{code}/room/messages", code).header("X-Room", "1").param("body", "몰래"))
+                .andExpect(status().isForbidden());
+
+        // 스크립트로 보내면 JSON, 폼으로 보내면 방으로 돌아온다
+        mvc.perform(post("/anthologies/{code}/room/messages", code).cookie(editor).header("X-Room", "1")
+                        .param("body", "어서 오세요 <b>"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"body\":\"어서 오세요 <b>\"")));
+        mvc.perform(post("/anthologies/{code}/room/messages", code).cookie(editor).param("body", "두 번째 말"))
+                .andExpect(status().is3xxRedirection());
+        mvc.perform(post("/anthologies/{code}/room/messages", code).cookie(editor).header("X-Room", "1")
+                        .param("body", " "))
+                .andExpect(status().isUnprocessableEntity());
+        mvc.perform(post("/anthologies/{code}/room/typing", code).cookie(editor))
+                .andExpect(status().isNoContent());
+
+        String page = mvc.perform(get("/anthologies/{code}/room", code).cookie(editor))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(page).contains("어서 오세요 &lt;b&gt;", "두 번째 말", "avatar-svg").doesNotContain("어서 오세요 <b>");
+
+        // 실시간 연결은 이벤트 스트림으로 열린다
+        mvc.perform(get("/anthologies/{code}/room/stream", code).cookie(editor))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.request().asyncStarted())
+                .andExpect(header().string("Content-Type", org.hamcrest.Matchers.startsWith("text/event-stream")));
+    }
+
     /** 응답 HTML에서 "/{id}{suffix}" 꼴 링크의 id를 꺼낸다. */
     private static String idOf(String html, String suffix) {
         java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("/(\\d+)" + java.util.regex.Pattern.quote(suffix))

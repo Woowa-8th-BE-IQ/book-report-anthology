@@ -15,6 +15,8 @@ import com.iq.anthology.essay.Essay;
 import com.iq.anthology.essay.JdbcEssayRepository;
 import com.iq.anthology.essay.JdbcReplyRepository;
 import com.iq.anthology.essay.Reply;
+import com.iq.anthology.room.JdbcRoomMessageRepository;
+import com.iq.anthology.room.RoomMessage;
 import com.iq.anthology.support.ErrorType;
 import java.time.LocalDate;
 import java.util.List;
@@ -26,7 +28,8 @@ import org.springframework.context.annotation.Import;
 
 /** 실제 H2에서 매핑과 DB 제약(동시성 방어선)을 확인한다. */
 @JdbcTest
-@Import({JdbcAnthologyRepository.class, JdbcEssayRepository.class, JdbcReplyRepository.class, JdbcActivityLog.class})
+@Import({JdbcAnthologyRepository.class, JdbcEssayRepository.class, JdbcReplyRepository.class, JdbcActivityLog.class,
+        JdbcRoomMessageRepository.class})
 class JdbcRepositoryTest {
 
     @Autowired
@@ -37,6 +40,8 @@ class JdbcRepositoryTest {
     private JdbcReplyRepository replies;
     @Autowired
     private JdbcActivityLog activity;
+    @Autowired
+    private JdbcRoomMessageRepository roomMessages;
 
     private Anthology anthology;
 
@@ -192,5 +197,19 @@ class JdbcRepositoryTest {
         activity.record(anthology.id(), null, ActivityType.ABOUT_VIEWED, null);
 
         assertThat(activity.engagement(anthology.id())).isEqualTo(new Engagement(1, 2, 1, 1));
+    }
+
+    @Test
+    void 모임방은_최근_말을_오래된_순으로_돌려준다() {
+        Long editorId = anthology.editor().id();
+        for (int i = 1; i <= 5; i++) {
+            roomMessages.save(RoomMessage.say(anthology.id(), editorId, "말 " + i, NOW.plusMinutes(i)));
+        }
+
+        assertThat(roomMessages.recent(anthology.id(), 3)).extracting(RoomMessage::body)
+                .containsExactly("말 3", "말 4", "말 5");
+
+        roomMessages.deleteByContributor(editorId);
+        assertThat(roomMessages.recent(anthology.id(), 3)).isEmpty();
     }
 }
