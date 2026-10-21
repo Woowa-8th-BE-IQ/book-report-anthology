@@ -461,6 +461,7 @@
     const typingLine = document.getElementById('typing-line');
     const onlineCount = document.getElementById('online-count');
     const memberOf = (id) => room.querySelector(`.member[data-member="${id}"]`);
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const seen = new Set([...talk.querySelectorAll('.talk-line[data-id]')].map((line) => Number(line.dataset.id)));
     const typers = new Map();
     const bubbleTimers = new Map();
@@ -485,6 +486,32 @@
         member.classList.remove('speaking');
       }, typing ? 3500 : 6000));
     };
+
+    // 시선: 누가 말하면 방에 있는 사람들이 그쪽을 본다. 가만히 있을 때는 가끔 두리번거린다.
+    const gaze = (member, direction, ms) => {
+      const flipped = member.classList.contains('facing-left') ? -1 : 1;
+      member.style.setProperty('--gaze', (direction * flipped * 2.6) + 'px');
+      clearTimeout(member.gazeTimer);
+      member.gazeTimer = setTimeout(() => member.style.removeProperty('--gaze'), ms);
+    };
+    const lookAt = (speaker) => {
+      const at = positionOf(speaker);
+      room.querySelectorAll('.member.online').forEach((member) => {
+        if (member === speaker) {
+          return;
+        }
+        const dx = at.x - positionOf(member).x;
+        gaze(member, Math.abs(dx) < 0.02 ? 0 : Math.sign(dx), 3200);
+      });
+    };
+    if (!reduceMotion) {
+      setInterval(() => {
+        const idle = [...room.querySelectorAll('.member.online:not(.walking):not(.speaking)')];
+        if (idle.length) {
+          gaze(idle[Math.floor(Math.random() * idle.length)], Math.random() < 0.5 ? -1 : 1, 1400);
+        }
+      }, 3800);
+    }
 
     const renderTypers = () => {
       const names = [...typers.keys()].map((id) => memberOf(id)?.dataset.name).filter(Boolean);
@@ -530,12 +557,48 @@
       typers.delete(message.contributorId);
       renderTypers();
       showBubble(member, message.body, false);
+      lookAt(member);
     };
+
+    // 걷기: (x, y)는 방 바닥에 대한 비율. 거리만큼 천천히, 가는 쪽을 바라보며 깡충깡충 걷는다.
+    const walkTimers = new Map();
+    const positionOf = (member) => ({
+      x: parseFloat(member.style.getPropertyValue('--x')),
+      y: parseFloat(member.style.getPropertyValue('--y')),
+    });
+    const walkTo = (member, x, y, animate) => {
+      const from = positionOf(member);
+      const distance = Math.hypot(x - from.x, y - from.y);
+      if (distance < 0.002) {
+        return;
+      }
+      const seconds = animate && !reduceMotion ? Math.min(1.8, Math.max(0.35, distance * 2.2)) : 0;
+      member.style.setProperty('--walk', seconds + 's');
+      if (Math.abs(x - from.x) > 0.01) {
+        member.classList.toggle('facing-left', x < from.x);
+      }
+      member.style.setProperty('--x', x);
+      member.style.setProperty('--y', y);
+      clearTimeout(walkTimers.get(member));
+      member.classList.remove('arrived');
+      if (seconds > 0) {
+        member.classList.add('walking');
+        walkTimers.set(member, setTimeout(() => {
+          member.classList.remove('walking');
+          member.classList.add('arrived');
+        }, seconds * 1000));
+      }
+    };
+    const backToSeat = (member) => walkTo(member, Number(member.dataset.seatX), Number(member.dataset.seatY), true);
 
     const setOnline = (ids) => {
       const online = new Set(ids);
+      room.classList.toggle('can-walk', online.has(me));
       room.querySelectorAll('.member[data-member]').forEach((member) => {
         const on = online.has(Number(member.dataset.member));
+        if (!on && member.classList.contains('online')) {
+          backToSeat(member); // 나가면 제자리로 돌아가 앉는다
+        }
         member.classList.toggle('online', on);
         member.querySelector('.presence-label').textContent = on ? '들어와 있음' : '자리 비움';
       });
@@ -544,8 +607,27 @@
 
     const source = new EventSource(room.dataset.stream);
     const parse = (event) => { try { return JSON.parse(event.data); } catch (e) { return null; } };
-    source.addEventListener('hello', (event) => { const data = parse(event); if (data) setOnline(data.online); status.textContent = ''; });
+    source.addEventListener('hello', (event) => {
+      const data = parse(event);
+      if (!data) {
+        return;
+      }
+      setOnline(data.online);
+      Object.entries(data.positions || {}).forEach(([id, at]) => {
+        const member = memberOf(id);
+        if (member) walkTo(member, at.x, at.y, false);
+      });
+      room.classList.toggle('can-walk', data.online.includes(me));
+      status.textContent = '';
+    });
     source.addEventListener('presence', (event) => { const data = parse(event); if (data) setOnline(data.online); });
+    source.addEventListener('move', (event) => {
+      const data = parse(event);
+      const member = data && memberOf(data.contributorId);
+      if (member && data.contributorId !== me) {
+        walkTo(member, data.x, data.y, true);
+      }
+    });
     source.addEventListener('message', (event) => { const data = parse(event); if (data) append(data); });
     source.addEventListener('typing', (event) => {
       const data = parse(event);
@@ -566,6 +648,61 @@
       }
     };
     window.addEventListener('pagehide', () => source.close());
+
+    // 내 아바타 옮기기: 바닥을 누르거나, 바닥에 초점을 두고 방향키(WASD도)를 누른다.
+    const floor = document.getElementById('floor');
+    const mine = memberOf(me);
+    let sendTimer = null;
+    const sendPosition = (x, y) => {
+      clearTimeout(sendTimer);
+      sendTimer = setTimeout(() => {
+        fetch(room.dataset.position, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: new URLSearchParams({ x: x.toFixed(3), y: y.toFixed(3) }),
+          credentials: 'same-origin',
+        }).catch(() => {});
+      }, 120);
+    };
+    // 책상 위로는 못 올라간다: 가운데 원 안을 누르면 책상 가장자리로 밀어낸다.
+    const settle = (x, y) => {
+      const table = room.querySelector('.table-scene').classList.contains('crowd') ? 0.24 : 0.29;
+      let dx = x - 0.5;
+      let dy = y - 0.5;
+      const r = Math.hypot(dx, dy);
+      if (r < table) {
+        if (r < 0.001) { dx = 0; dy = 1; } else { dx /= r; dy /= r; }
+        x = 0.5 + dx * table;
+        y = 0.5 + dy * table;
+      }
+      const clamp = (v) => Math.min(0.94, Math.max(0.06, v));
+      return [clamp(x), clamp(y)];
+    };
+    const moveMine = (x, y) => {
+      if (!mine || !room.classList.contains('can-walk')) {
+        return;
+      }
+      [x, y] = settle(x, y);
+      walkTo(mine, x, y, true);
+      sendPosition(x, y);
+    };
+    if (floor && mine) {
+      floor.addEventListener('click', (event) => {
+        const box = floor.getBoundingClientRect();
+        moveMine((event.clientX - box.left) / box.width, (event.clientY - box.top) / box.height);
+      });
+      const steps = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1],
+        a: [-1, 0], d: [1, 0], w: [0, -1], s: [0, 1] };
+      floor.addEventListener('keydown', (event) => {
+        const step = steps[event.key];
+        if (!step) {
+          return;
+        }
+        event.preventDefault();
+        const at = positionOf(mine);
+        moveMine(at.x + step[0] * 0.05, at.y + step[1] * 0.05);
+      });
+    }
 
     // 입력: 높이 맞추기, 쓰는 중 알리기(3초에 한 번), Enter로 보내기(한글 조합 중에는 보내지 않는다)
     let lastTyping = 0;

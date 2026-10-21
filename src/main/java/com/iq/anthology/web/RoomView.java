@@ -1,8 +1,10 @@
 package com.iq.anthology.web;
 
 import com.iq.anthology.anthology.Anthology;
+import com.iq.anthology.anthology.Contributor;
 import com.iq.anthology.essay.Shelf;
 import com.iq.anthology.room.Avatar;
+import com.iq.anthology.room.RoomHub;
 import com.iq.anthology.room.RoomMessage;
 import com.iq.anthology.room.RoomService.Room;
 import java.time.format.DateTimeFormatter;
@@ -19,12 +21,18 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
 
     static RoomView of(Room room, Shelf shelf) {
         Anthology anthology = room.anthology();
-        List<Member> members = anthology.contributors().stream()
-                .map(contributor -> new Member(contributor.id(), contributor.nickname(), contributor.byline(),
-                        Avatar.svg(contributor.nickname(), contributor.joinOrder()), contributor.isEditor(),
-                        contributor.id().equals(room.me().id()), room.online().contains(contributor.id()),
-                        shelf.hasSubmitted(contributor)))
-                .toList();
+        List<Contributor> contributors = anthology.contributors();
+        List<Member> members = new java.util.ArrayList<>();
+        for (int i = 0; i < contributors.size(); i++) {
+            Contributor contributor = contributors.get(i);
+            double[] seat = seat(i, contributors.size());
+            RoomHub.Position walked = room.positions().get(contributor.id());
+            members.add(new Member(contributor.id(), contributor.nickname(), contributor.byline(),
+                    Avatar.svg(contributor.nickname(), contributor.joinOrder()), contributor.isEditor(),
+                    contributor.id().equals(room.me().id()), room.online().contains(contributor.id()),
+                    shelf.hasSubmitted(contributor), seat[0], seat[1],
+                    walked == null ? seat[0] : walked.x(), walked == null ? seat[1] : walked.y()));
+        }
         Map<Long, Member> byId = members.stream().collect(Collectors.toMap(Member::id, Function.identity()));
         List<Line> lines = new java.util.ArrayList<>();
         String lastDay = null;
@@ -46,8 +54,28 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
         return members.stream().filter(member -> !member.submitted()).count();
     }
 
+    /**
+     * 책상 둘레의 제자리. 14명까지는 한 바퀴, 넘으면 바깥에 한 바퀴 더(20자리). 그보다 많으면 바깥 바퀴에 겹쳐 앉는다.
+     * 값은 방 너비·높이에 대한 비율(0~1)이다.
+     */
+    static double[] seat(int index, int count) {
+        int inner = Math.min(count, 14);
+        boolean onInner = index < inner;
+        int ringSize = onInner ? inner : Math.max(1, Math.min(count - 14, 20));
+        int position = onInner ? index : (index - 14) % 20;
+        double radius = onInner ? 0.38 : 0.465;
+        double offset = onInner ? 0 : Math.PI / ringSize;
+        double angle = 2 * Math.PI * position / ringSize - Math.PI / 2 + offset;
+        return new double[]{round(0.5 + radius * Math.cos(angle)), round(0.5 + radius * Math.sin(angle))};
+    }
+
+    private static double round(double value) {
+        return Math.round(value * 1000) / 1000.0;
+    }
+
+    /** seatX·seatY는 제자리, x·y는 지금 서 있는 자리(걸어갔으면 그곳). */
     public record Member(Long id, String nickname, String byline, String avatar, boolean editor, boolean me,
-                         boolean online, boolean submitted) {
+                         boolean online, boolean submitted, double seatX, double seatY, double x, double y) {
     }
 
     /** day는 날짜가 바뀌는 첫 말에만 있다. */

@@ -14,22 +14,24 @@
       th:attr="data-stream=@{/anthologies/{code}/room/stream(code=${a.code()})},
                data-say=@{/anthologies/{code}/room/messages(code=${a.code()})},
                data-typing=@{/anthologies/{code}/room/typing(code=${a.code()})},
+               data-position=@{/anthologies/{code}/room/position(code=${a.code()})},
                data-me=${room.meId()}">
 
   <!-- 책상: 참여자가 둘러앉는다 -->
   <section class="table-scene" aria-label="모임방에 있는 사람"
-           th:classappend="${room.members().size() > 14} ? 'crowd' : ''"
-           th:style="'--n:' + ${room.members().size()}">
+           th:classappend="${room.members().size() > 14} ? 'crowd' : ''">
     <div class="table-top" aria-hidden="true">
       <span class="table-book"></span>
       <span class="table-cup"></span>
       <p class="hand table-count"><span id="online-count" th:text="${room.onlineCount()}">1</span>명 있어요</p>
     </div>
-    <ul class="ring">
+    <ul class="ring floor" id="floor" tabindex="0"
+        aria-label="방 바닥. 누르거나 방향키로 내 아바타를 옮겨요">
       <li class="member" th:each="member, stat : ${room.members()}"
           th:classappend="${(member.online() ? 'online ' : '') + (member.me() ? 'me' : '')}"
-          th:style="'--i:' + ${stat.index}"
-          th:attr="data-member=${member.id()}, data-name=${member.nickname()}">
+          th:style="'--x:' + ${member.x()} + ';--y:' + ${member.y()} + ';--d:' + ${stat.index % 7}"
+          th:attr="data-member=${member.id()}, data-name=${member.nickname()},
+                   data-seat-x=${member.seatX()}, data-seat-y=${member.seatY()}">
         <span class="bubble" hidden></span>
         <span class="avatar" th:utext="${member.avatar()}"></span>
         <span class="member-name">
@@ -39,6 +41,7 @@
         <span class="visually-hidden presence-label" th:text="${member.online()} ? '들어와 있음' : '자리 비움'">상태</span>
       </li>
     </ul>
+    <p class="floor-hint hand">바닥을 누르면 내 아바타가 걸어가요 · 방향키도 돼요</p>
   </section>
 
   <!-- 이야기 -->

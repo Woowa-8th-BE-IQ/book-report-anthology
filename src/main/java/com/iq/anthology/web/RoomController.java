@@ -81,6 +81,14 @@ public class RoomController {
         }
     }
 
+    @PostMapping("/anthologies/{code}/room/position")
+    @ResponseBody
+    public ResponseEntity<Void> move(@PathVariable String code, @RequestParam double x, @RequestParam double y,
+                                     HttpServletRequest request) {
+        roomService.move(code, cookies.read(request, code), x, y);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
     @PostMapping("/anthologies/{code}/room/typing")
     @ResponseBody
     public ResponseEntity<Void> typing(@PathVariable String code, HttpServletRequest request) {

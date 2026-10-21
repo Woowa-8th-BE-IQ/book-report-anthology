@@ -23,8 +23,11 @@ public final class Avatar {
                         + "aria-hidden=\"true\" focusable=\"false\">");
         svg.append(body(pick(seed, 0, 3), color));
         svg.append(extra(pick(seed, 1, 5), color));
+        // 얼굴(눈·입)은 따로 묶어 둔다. 화면이 시선을 돌리고(face) 눈을 깜빡이게(blink) 한다.
+        svg.append("<g class=\"face\">");
         svg.append(eyes(pick(seed, 2, 4)));
         svg.append(mouth(pick(seed, 3, 4)));
+        svg.append("</g>");
         if (pick(seed, 4, 2) == 0) {
             svg.append("<circle cx=\"20\" cy=\"41\" r=\"3.4\" fill=\"#fff\" opacity=\".35\"/>"
                     + "<circle cx=\"44\" cy=\"41\" r=\"3.4\" fill=\"#fff\" opacity=\".35\"/>");
@@ -61,17 +64,17 @@ public final class Avatar {
     /** 0: 점, 1: 웃는 눈, 2: 동그란 안경, 3: 윙크 */
     private static String eyes(int kind) {
         return switch (kind) {
-            case 1 -> "<path d=\"M21 34 q3 -4 6 0 M37 34 q3 -4 6 0\" stroke=\"" + INK
-                    + "\" stroke-width=\"2.2\" fill=\"none\" stroke-linecap=\"round\"/>";
+            case 1 -> "<g class=\"blink\"><path d=\"M21 34 q3 -4 6 0 M37 34 q3 -4 6 0\" stroke=\"" + INK
+                    + "\" stroke-width=\"2.2\" fill=\"none\" stroke-linecap=\"round\"/></g>";
             case 2 -> "<circle cx=\"24\" cy=\"33\" r=\"5.5\" fill=\"#fff\" fill-opacity=\".35\" stroke=\"" + INK
                     + "\" stroke-width=\"1.8\"/><circle cx=\"40\" cy=\"33\" r=\"5.5\" fill=\"#fff\" fill-opacity=\".35\" "
                     + "stroke=\"" + INK + "\" stroke-width=\"1.8\"/><path d=\"M29.5 33 h5\" stroke=\"" + INK
-                    + "\" stroke-width=\"1.8\"/><circle cx=\"24\" cy=\"33\" r=\"1.7\" fill=\"" + INK
-                    + "\"/><circle cx=\"40\" cy=\"33\" r=\"1.7\" fill=\"" + INK + "\"/>";
-            case 3 -> "<circle cx=\"24\" cy=\"33\" r=\"2.4\" fill=\"" + INK + "\"/><path d=\"M37 33 h6\" stroke=\""
-                    + INK + "\" stroke-width=\"2.2\" stroke-linecap=\"round\"/>";
-            default -> "<circle cx=\"24\" cy=\"33\" r=\"2.4\" fill=\"" + INK + "\"/><circle cx=\"40\" cy=\"33\" r=\"2.4\" fill=\""
-                    + INK + "\"/>";
+                    + "\" stroke-width=\"1.8\"/><g class=\"blink\"><circle cx=\"24\" cy=\"33\" r=\"1.7\" fill=\""
+                    + INK + "\"/><circle cx=\"40\" cy=\"33\" r=\"1.7\" fill=\"" + INK + "\"/></g>";
+            case 3 -> "<g class=\"blink\"><circle cx=\"24\" cy=\"33\" r=\"2.4\" fill=\"" + INK
+                    + "\"/></g><path d=\"M37 33 h6\" stroke=\"" + INK + "\" stroke-width=\"2.2\" stroke-linecap=\"round\"/>";
+            default -> "<g class=\"blink\"><circle cx=\"24\" cy=\"33\" r=\"2.4\" fill=\"" + INK
+                    + "\"/><circle cx=\"40\" cy=\"33\" r=\"2.4\" fill=\"" + INK + "\"/></g>";
         };
     }
 

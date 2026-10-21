@@ -186,11 +186,15 @@ class AnthologyFlowTest {
                 .andExpect(status().isUnprocessableEntity());
         mvc.perform(post("/anthologies/{code}/room/typing", code).cookie(editor))
                 .andExpect(status().isNoContent());
+        mvc.perform(post("/anthologies/{code}/room/position", code).cookie(editor).param("x", "0.3").param("y", "0.8"))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/anthologies/{code}/room/position", code).param("x", "0.3").param("y", "0.8"))
+                .andExpect(status().isForbidden());
 
         String page = mvc.perform(get("/anthologies/{code}/room", code).cookie(editor))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        assertThat(page).contains("어서 오세요 &lt;b&gt;", "두 번째 말", "avatar-svg").doesNotContain("어서 오세요 <b>");
+        assertThat(page).contains("어서 오세요 &lt;b&gt;", "두 번째 말", "avatar-svg", "data-seat-x=\"0.5\"").doesNotContain("어서 오세요 <b>");
 
         // 실시간 연결은 이벤트 스트림으로 열린다
         mvc.perform(get("/anthologies/{code}/room/stream", code).cookie(editor))

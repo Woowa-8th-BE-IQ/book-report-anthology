@@ -33,7 +33,8 @@ public class RoomService {
     public Room enter(String code, String token) {
         Anthology anthology = anthologyService.get(code);
         Contributor me = AnthologyService.requireContributor(anthology, token);
-        return new Room(anthology, me, messages.recent(anthology.id(), HISTORY), hub.online(anthology.id()));
+        return new Room(anthology, me, messages.recent(anthology.id(), HISTORY), hub.online(anthology.id()),
+                hub.positionsOf(anthology.id()));
     }
 
     public SseEmitter connect(String code, String token) {
@@ -57,6 +58,13 @@ public class RoomService {
         hub.broadcast(anthology.id(), "typing", Map.of("contributorId", me.id()));
     }
 
+    /** 내 아바타를 걸어가게 한다. 저장하지 않고 방에만 알린다. */
+    public void move(String code, String token, double x, double y) {
+        Anthology anthology = anthologyService.get(code);
+        Contributor me = AnthologyService.requireContributor(anthology, token);
+        hub.move(anthology.id(), me.id(), new RoomHub.Position(x, y));
+    }
+
     /** 문집 화면에 "지금 N명 있어요"를 띄울 때. */
     public int onlineCount(Anthology anthology) {
         return hub.online(anthology.id()).size();
@@ -76,6 +84,7 @@ public class RoomService {
                 "at", message.createdAt().format(TIME));
     }
 
-    public record Room(Anthology anthology, Contributor me, List<RoomMessage> messages, java.util.Set<Long> online) {
+    public record Room(Anthology anthology, Contributor me, List<RoomMessage> messages, java.util.Set<Long> online,
+                       Map<Long, RoomHub.Position> positions) {
     }
 }
