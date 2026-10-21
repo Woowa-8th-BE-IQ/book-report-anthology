@@ -40,7 +40,13 @@
                    data-byline=${me.byline()},
                    data-citation=${anthology.citation()},
                    data-body-min=${limits.bodyMin()}">
-      <p class="card-byline" style="margin:0 0 6px;font-size:13px;color:var(--muted)" th:text="${me.byline()}">닉네임(실명)</p>
+      <div class="editor-top">
+        <p class="card-byline" style="margin:0;font-size:13px;color:var(--muted)" th:text="${me.byline()}">닉네임(실명)</p>
+        <button type="button" class="sound-toggle" id="typing-sound" aria-pressed="false" hidden
+                title="키를 누를 때 타자 소리를 내요">
+          <span aria-hidden="true">⌨</span> <span class="label">타자 소리 꺼짐</span>
+        </button>
+      </div>
 
       <div class="field">
         <label for="title" class="visually-hidden">제목</label>
