@@ -15,16 +15,19 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @Service
 public class RoomService {
 
-    public static final int HISTORY = 80;
+    public static final int HISTORY = 160;
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
 
     private final AnthologyService anthologyService;
+    private final com.iq.anthology.anthology.AnthologyRepository anthologies;
     private final RoomMessageRepository messages;
     private final RoomHub hub;
     private final Clock clock;
 
-    public RoomService(AnthologyService anthologyService, RoomMessageRepository messages, RoomHub hub, Clock clock) {
+    public RoomService(AnthologyService anthologyService, com.iq.anthology.anthology.AnthologyRepository anthologies,
+                       RoomMessageRepository messages, RoomHub hub, Clock clock) {
         this.anthologyService = anthologyService;
+        this.anthologies = anthologies;
         this.messages = messages;
         this.hub = hub;
         this.clock = clock;
@@ -52,6 +55,31 @@ public class RoomService {
         RoomMessage message = messages.save(RoomMessage.say(anthology.id(), me.id(), body, LocalDateTime.now(clock)));
         hub.broadcast(anthology.id(), "message", event(message));
         return message;
+    }
+
+    /**
+     * 내 캐릭터를 바꾼다. style이 비어 있으면 기본 얼굴로 돌아간다.
+     * 모임방과 펫에 바로 보이도록 새 그림을 방에 알린다.
+     */
+    public AvatarStyle changeAvatar(String code, String token, String style) {
+        Anthology anthology = anthologyService.get(code);
+        Contributor me = AnthologyService.requireContributor(anthology, token);
+        boolean reset = style == null || style.isBlank();
+        AvatarStyle chosen = reset ? AvatarStyle.derived(me.nickname(), me.joinOrder()) : AvatarStyle.parse(style);
+        me.dressUp(reset ? null : chosen.format());
+        anthologies.updateAvatar(me);
+        hub.broadcast(anthology.id(), "avatar", Map.of("contributorId", me.id(), "svg", Avatar.svg(chosen)));
+        return chosen;
+    }
+
+    /** 꾸미기 화면에 쓸 지금 내 모양. */
+    public Dressing dressing(String code, String token) {
+        Anthology anthology = anthologyService.get(code);
+        Contributor me = AnthologyService.requireContributor(anthology, token);
+        return new Dressing(anthology, me, Avatar.styleOf(me), AvatarStyle.derived(me.nickname(), me.joinOrder()));
+    }
+
+    public record Dressing(Anthology anthology, Contributor me, AvatarStyle current, AvatarStyle original) {
     }
 
     /** "○○님이 쓰는 중". 저장하지 않고 방에만 알린다. */

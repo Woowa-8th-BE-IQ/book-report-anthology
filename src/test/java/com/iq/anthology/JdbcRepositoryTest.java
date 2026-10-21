@@ -226,4 +226,13 @@ class JdbcRepositoryTest {
         assertThat(anthologies.findByCode("abcd2345").orElseThrow().editor().lastSeenAt())
                 .isEqualTo(NOW.plusMinutes(12));
     }
+
+    @Test
+    void 고른_캐릭터를_저장하고_읽는다() {
+        Anthology found = anthologies.findByCode("abcd2345").orElseThrow();
+        found.editor().dressUp("c8b4e2m3x5k1");
+        anthologies.updateAvatar(found.editor());
+
+        assertThat(anthologies.findByCode("abcd2345").orElseThrow().editor().avatarStyle()).isEqualTo("c8b4e2m3x5k1");
+    }
 }

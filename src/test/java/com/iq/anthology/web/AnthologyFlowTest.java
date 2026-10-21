@@ -211,6 +211,30 @@ class AnthologyFlowTest {
                 .andReturn().getResponse().getContentAsString())
                 .contains("링크 다시 넣기");
 
+        // 캐릭터 꾸미기: 미리보기 그림, 꾸미기 화면, 저장하면 모임방에 새 얼굴
+        mvc.perform(get("/avatars/{style}.svg", "c8b4e2m3x5k1"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", org.hamcrest.Matchers.startsWith("image/svg+xml")));
+        mvc.perform(get("/avatars/{style}.svg", "nope")).andExpect(status().isUnprocessableEntity());
+        assertThat(mvc.perform(get("/anthologies/{code}/avatar", code).cookie(editor))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString())
+                .contains("내 캐릭터", "고양이", "/avatars/c");
+        mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor)
+                        .param("style", "c8b4e2m3x5k1").param("back", "room"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
+                        .isEqualTo("/anthologies/" + code + "/room"));
+        assertThat(mvc.perform(get("/anthologies/{code}/room", code).cookie(editor)).andReturn().getResponse()
+                .getContentAsString()).contains("#F2B8C6"); // 8번 색(벚꽃)
+        mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor).param("style", "c99b0e0m0x0k0"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(result -> assertThat(result.getFlashMap().get("error")).asString().contains("색"));
+        // JS 없이 조각별 값으로도 저장된다
+        mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor)
+                        .param("color", "1").param("body", "3").param("eyes", "0").param("mouth", "0")
+                        .param("extra", "0").param("cheeks", "0"))
+                .andExpect(status().is3xxRedirection());
+
         // 설치 스크립트를 내려준다
         assertThat(mvc.perform(get("/pet/install.sh")).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString()).contains("BookReportPet.app");

@@ -93,6 +93,14 @@ public class JdbcAnthologyRepository implements AnthologyRepository {
     }
 
     @Override
+    public void updateAvatar(Contributor contributor) {
+        jdbc.sql("UPDATE contributor SET avatar_style = :style WHERE id = :id")
+                .param("style", contributor.avatarStyle())
+                .param("id", contributor.id())
+                .update();
+    }
+
+    @Override
     public void updateToken(Contributor contributor) {
         jdbc.sql("UPDATE contributor SET token = :token WHERE id = :id")
                 .param("token", contributor.token())
@@ -173,7 +181,8 @@ public class JdbcAnthologyRepository implements AnthologyRepository {
                         rs.getString("token"),
                         rs.getInt("join_order"),
                         rs.getObject("joined_at", LocalDateTime.class),
-                        rs.getObject("last_seen_at", LocalDateTime.class)))
+                        rs.getObject("last_seen_at", LocalDateTime.class),
+                        rs.getString("avatar_style")))
                 .list();
         return new Anthology(row.id(), row.code(), row.title(), row.bookTitle(), row.bookAuthor(),
                 row.introduction(), row.prompts(), row.appendix(), row.dueDate(), row.status(), row.createdAt(),

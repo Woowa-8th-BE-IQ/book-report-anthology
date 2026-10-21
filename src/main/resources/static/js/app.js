@@ -533,6 +533,7 @@
       const line = document.createElement('li');
       line.className = 'talk-line fresh' + (message.contributorId === me ? ' mine' : '');
       line.dataset.id = message.id;
+      line.dataset.author = message.contributorId;
       const avatar = document.createElement('span');
       avatar.className = 'avatar small';
       avatar.setAttribute('aria-hidden', 'true');
@@ -628,6 +629,21 @@
       status.textContent = '';
     });
     source.addEventListener('presence', (event) => { const data = parse(event); if (data) setOnline(data.online); });
+    // 누가 캐릭터를 바꾸면 자리와 대화의 얼굴을 바로 바꾼다(서버가 그린 SVG, 사용자 글자 없음)
+    source.addEventListener('avatar', (event) => {
+      const data = parse(event);
+      if (!data) return;
+      const member = memberOf(data.contributorId);
+      if (member) {
+        member.querySelector('.avatar').innerHTML = data.svg;
+        member.classList.remove('arrived');
+        void member.offsetWidth;
+        member.classList.add('arrived');
+      }
+      talk.querySelectorAll(`.talk-line[data-author="${data.contributorId}"] .avatar`).forEach((face) => {
+        face.innerHTML = data.svg;
+      });
+    });
     source.addEventListener('move', (event) => {
       const data = parse(event);
       const member = data && memberOf(data.contributorId);
@@ -760,6 +776,66 @@
         sending = false;
         input.focus();
       }
+    });
+  }
+
+  // 12. 캐릭터 꾸미기: 조각을 고르면 미리보기와 다른 조각의 보기 그림이 함께 바뀐다.
+  const dresser = document.getElementById('dresser');
+  if (dresser) {
+    const order = ['color', 'body', 'eyes', 'mouth', 'extra', 'cheeks'];
+    const letter = { color: 'c', body: 'b', eyes: 'e', mouth: 'm', extra: 'x', cheeks: 'k' };
+    const hidden = document.getElementById('style-value');
+    const image = document.getElementById('dresser-image');
+    const base = image.getAttribute('src').replace(/[^/]+\.svg$/, '');
+    hidden.disabled = false;
+
+    const current = () => Object.fromEntries(order.map((part) =>
+      [part, Number(dresser.querySelector(`input[name="${part}"]:checked`)?.value || 0)]));
+    const format = (style) => order.map((part) => letter[part] + style[part]).join('');
+    const parse = (text) => {
+      const match = /^c(\d+)b(\d)e(\d)m(\d)x(\d)k(\d)$/.exec(text || '');
+      return match ? Object.fromEntries(order.map((part, i) => [part, Number(match[i + 1])])) : null;
+    };
+
+    const render = (pop) => {
+      const style = current();
+      hidden.value = format(style);
+      image.src = base + hidden.value + '.svg';
+      if (pop) {
+        image.classList.remove('pop');
+        void image.offsetWidth;
+        image.classList.add('pop');
+      }
+      // 각 보기 그림은 "지금 모양에서 그 조각만 바꾼 모양"
+      dresser.querySelectorAll('fieldset[data-part]').forEach((fieldset) => {
+        const part = fieldset.dataset.part;
+        fieldset.querySelectorAll('.option').forEach((option) => {
+          const value = Number(option.querySelector('input').value);
+          option.querySelector('img').src = base + format({ ...style, [part]: value }) + '.svg';
+        });
+      });
+    };
+    const apply = (style) => {
+      order.forEach((part) => {
+        const input = dresser.querySelector(`input[name="${part}"][value="${style[part]}"]`);
+        if (input) input.checked = true;
+      });
+      render(true);
+    };
+
+    dresser.addEventListener('change', () => render(true));
+    const counts = Object.fromEntries(order.map((part) =>
+      [part, dresser.querySelectorAll(`input[name="${part}"]`).length]));
+    const randomButton = dresser.querySelector('[data-dress="random"]');
+    const originalButton = dresser.querySelector('[data-dress="original"]');
+    randomButton.hidden = false;
+    originalButton.hidden = false;
+    randomButton.addEventListener('click', () => {
+      apply(Object.fromEntries(order.map((part) => [part, Math.floor(Math.random() * counts[part])])));
+    });
+    originalButton.addEventListener('click', () => {
+      const original = parse(dresser.dataset.original);
+      if (original) apply(original);
     });
   }
 })();

@@ -659,6 +659,36 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
   .talk-panel { height: 68vh; }
 }
 
+/* ───────── 캐릭터 꾸미기 ───────── */
+
+.dresser { width: min(980px, 100% - 40px); margin-inline: auto; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
+.dresser-preview { position: sticky; top: 90px; padding: 30px 24px; text-align: center; }
+.dresser-stage { width: 200px; height: 200px; margin: 0 auto; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--paper) 60%, #fff), var(--paper)); }
+.dresser-stage img { width: 180px; height: 180px; transform-origin: 50% 88%; animation: breathe 3.6s ease-in-out infinite; filter: drop-shadow(0 8px 8px rgba(26,18,8,.15)); }
+.dresser-stage img.pop { animation: pop .35s ease-out, breathe 3.6s ease-in-out .35s infinite; }
+@keyframes pop { 40% { transform: scale(1.12) translateY(-6px); } }
+.dresser-name { margin: 14px 0 16px; font-weight: 700; font-size: 17px; }
+.dresser-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.dresser-actions [hidden] { display: none; }
+.dresser-parts { display: grid; gap: 18px; }
+.part { margin: 0; padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.part legend { padding: 0 6px; font-weight: 700; font-size: 14px; }
+.options { display: flex; flex-wrap: wrap; gap: 8px; }
+.option { position: relative; display: grid; justify-items: center; gap: 2px; width: 74px; padding: 8px 4px 6px; border: 1.5px solid transparent; border-radius: 12px; cursor: pointer; transition: background .15s, border-color .15s, transform .15s; }
+.option:hover { background: var(--paper); transform: translateY(-2px); }
+.option input { position: absolute; opacity: 0; pointer-events: none; }
+.option img { width: 52px; height: 52px; }
+.option span { font-size: 11.5px; color: var(--ink-soft); }
+.option:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--card)); }
+.option:has(input:focus-visible) { outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent); outline-offset: 2px; }
+.seat .dress-link { font-size: 11px; color: var(--accent); text-decoration: none; }
+.room-dress { display: inline-block; margin-top: 10px; margin-right: 14px; font-size: 13.5px; color: var(--accent); font-weight: 600; text-decoration: none; }
+@media (max-width: 860px) {
+  .dresser { grid-template-columns: 1fr; }
+  .dresser-preview { position: static; }
+  .option { width: 64px; }
+}
+
 /* ───────── 반응형 ───────── */
 
 @media (max-width: 860px) {

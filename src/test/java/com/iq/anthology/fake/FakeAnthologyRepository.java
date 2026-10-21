@@ -60,7 +60,7 @@ public class FakeAnthologyRepository implements AnthologyRepository {
         rows.replaceAll((id, stored) -> copy(stored, stored.contributors().stream()
                 .map(c -> c.id().equals(contributor.id())
                         ? new Contributor(c.id(), c.nickname(), c.realName(), contributor.token(), c.joinOrder(),
-                        c.joinedAt(), c.lastSeenAt())
+                        c.joinedAt(), c.lastSeenAt(), c.avatarStyle())
                         : c)
                 .toList()));
     }
@@ -70,8 +70,22 @@ public class FakeAnthologyRepository implements AnthologyRepository {
         rows.replaceAll((id, stored) -> copy(stored, stored.contributors().stream()
                 .map(c -> c.id().equals(contributorId)
                         ? new Contributor(c.id(), c.nickname(), c.realName(), c.token(), c.joinOrder(), c.joinedAt(),
-                        now)
+                        now, c.avatarStyle())
                         : c)
+                .toList()));
+    }
+
+    @Override
+    public void updateAvatar(Contributor contributor) {
+        rows.replaceAll((id, stored) -> copy(stored, stored.contributors().stream()
+                .map(c -> {
+                    if (!c.id().equals(contributor.id())) {
+                        return c;
+                    }
+                    Contributor dressed = new Contributor(c.id(), c.nickname(), c.realName(), c.token(), c.joinOrder(),
+                            c.joinedAt(), c.lastSeenAt(), contributor.avatarStyle());
+                    return dressed;
+                })
                 .toList()));
     }
 
@@ -123,7 +137,7 @@ public class FakeAnthologyRepository implements AnthologyRepository {
     private static Anthology copy(Anthology source, List<Contributor> contributors) {
         List<Contributor> copies = contributors.stream()
                 .map(c -> new Contributor(c.id(), c.nickname(), c.realName(), c.token(), c.joinOrder(), c.joinedAt(),
-                        c.lastSeenAt()))
+                        c.lastSeenAt(), c.avatarStyle()))
                 .toList();
         return new Anthology(source.id(), source.code(), source.title(), source.bookTitle(), source.bookAuthor(),
                 source.introduction(), source.promptsText(), source.appendix(), source.dueDate(), source.status(),

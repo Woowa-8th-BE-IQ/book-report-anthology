@@ -8,6 +8,7 @@
   <a class="kicker" th:href="@{/anthologies/{code}(code=${a.code()})}" th:text="'← ' + ${a.title()}">← 문집</a>
   <h1 data-reveal>모임방</h1>
   <p class="lead">같은 책을 읽은 사람들이 둘러앉는 곳이에요. 불이 켜진 얼굴이 지금 들어와 있는 사람이에요.</p>
+  <a class="room-dress" th:href="@{/anthologies/{code}/avatar(code=${room.anthology().code()}, back='room')}">🎨 내 캐릭터 꾸미기</a>
   <details class="pet-link">
     <summary>🖥 바탕화면 펫에 연결하기</summary>
     <div th:replace="~{fragments/pet :: box(${personalUrl})}"></div>

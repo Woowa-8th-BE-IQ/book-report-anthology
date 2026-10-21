@@ -38,7 +38,7 @@
       <button type="button" class="pet-close" data-pet="collapse" aria-label="접기">✕</button>
     </header>
     <ol class="pet-log" id="pet-log">
-      <li class="pet-line" th:each="line : ${room.lastLines(30)}"
+      <li class="pet-line" th:each="line : ${room.lastLines(60)}"
           th:classappend="${line.mine(room.meId())} ? 'mine' : ''" th:attr="data-id=${line.id()}">
         <b th:text="${line.author().nickname()}">감자</b>
         <span th:text="${line.body()}">말</span>

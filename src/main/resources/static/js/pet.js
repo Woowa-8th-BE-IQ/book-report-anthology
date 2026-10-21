@@ -3,6 +3,9 @@
   const app = window.petApp || {
     setInteractive() {}, setExpanded() {}, dragBy() {}, dragEnd() {}, relink() {}, onWalk() {}, attention() {},
   };
+  // 예전 펫 앱에는 업데이트 기능이 없다
+  app.onUpdate = app.onUpdate || (() => {});
+  app.applyUpdate = app.applyUpdate || (() => {});
 
   // 투명한 곳은 클릭이 뒤의 앱으로 지나가고, 아바타·말풍선·대화창 위에서만 창이 클릭을 받는다.
   let interactive = null;
@@ -47,7 +50,7 @@
     if (open) {
       unread = 0;
       badge.hidden = true;
-      bubbles.replaceChildren();
+      bubbles.querySelectorAll('.pet-bubble:not(.pet-update)').forEach((bubble) => bubble.remove());
       scrollLog();
       setTimeout(() => input.focus(), 50);
     }
@@ -92,6 +95,34 @@
     if (facing) avatar.classList.toggle('facing-left', facing === 'left');
   });
 
+  // 새 버전이 준비되면 말풍선으로 알린다. 누르면 바꿔 끼우고 다시 켜진다.
+  let updateBubble = null;
+  app.onUpdate(({ status, version }) => {
+    if (status !== 'ready') {
+      updateBubble?.remove();
+      updateBubble = null;
+      return;
+    }
+    if (updateBubble) return;
+    updateBubble = document.createElement('div');
+    updateBubble.className = 'pet-bubble pet-update';
+    const body = document.createElement('div');
+    const title = document.createElement('b');
+    title.textContent = `새 버전 ${version}`;
+    const text = document.createElement('p');
+    text.textContent = '준비됐어요. 누르면 바꾸고 다시 켜져요. 그냥 두면 다음에 끌 때 바뀌어요.';
+    body.append(title, text);
+    const icon = document.createElement('span');
+    icon.className = 'mini update-icon';
+    icon.textContent = '✨';
+    updateBubble.append(icon, body);
+    updateBubble.addEventListener('click', () => {
+      text.textContent = '바꾸는 중…';
+      app.applyUpdate();
+    });
+    bubbles.prepend(updateBubble);
+  });
+
   // 가끔 두리번거린다.
   setInterval(() => {
     const flipped = avatar.classList.contains('facing-left') ? -1 : 1;
@@ -109,7 +140,7 @@
     text.textContent = message.body;
     line.append(name, text);
     log.append(line);
-    while (log.children.length > 60) log.firstElementChild.remove();
+    while (log.children.length > 120) log.firstElementChild.remove();
     scrollLog();
   };
 
@@ -127,7 +158,9 @@
     bubble.append(face, body);
     bubble.addEventListener('click', () => expand(true));
     bubbles.append(bubble);
-    while (bubbles.children.length > 2) bubbles.firstElementChild.remove();
+    while (bubbles.querySelectorAll('.pet-bubble:not(.pet-update)').length > 2) {
+      bubbles.querySelector('.pet-bubble:not(.pet-update)').remove();
+    }
     setTimeout(() => {
       bubble.classList.add('leaving');
       setTimeout(() => bubble.remove(), 320);
@@ -157,6 +190,19 @@
   source.addEventListener('hello', (event) => { online(event); status.textContent = ''; });
   source.addEventListener('presence', online);
   source.addEventListener('message', (event) => { const data = parse(event); if (data) receive(data); });
+  // 캐릭터가 바뀌면 말풍선 얼굴과(나라면) 내 펫 얼굴도 바꾼다
+  source.addEventListener('avatar', (event) => {
+    const data = parse(event);
+    if (!data) return;
+    const template = faceOf(data.contributorId);
+    if (template) template.content.firstElementChild.innerHTML = data.svg;
+    if (data.contributorId === me) {
+      avatar.querySelector('.pet-face').innerHTML = data.svg;
+      avatar.classList.remove('excited');
+      void avatar.offsetWidth;
+      avatar.classList.add('excited');
+    }
+  });
   source.onerror = () => {
     if (source.readyState === EventSource.CONNECTING) status.textContent = '다시 연결하는 중…';
   };

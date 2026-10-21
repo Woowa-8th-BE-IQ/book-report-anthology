@@ -28,7 +28,7 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
             double[] seat = seat(i, contributors.size());
             RoomHub.Position walked = room.positions().get(contributor.id());
             members.add(new Member(contributor.id(), contributor.nickname(), contributor.byline(),
-                    Avatar.svg(contributor.nickname(), contributor.joinOrder()), contributor.isEditor(),
+                    Avatar.of(contributor), contributor.isEditor(),
                     contributor.id().equals(room.me().id()), room.online().contains(contributor.id()),
                     shelf.hasSubmitted(contributor), seat[0], seat[1],
                     walked == null ? seat[0] : walked.x(), walked == null ? seat[1] : walked.y(),

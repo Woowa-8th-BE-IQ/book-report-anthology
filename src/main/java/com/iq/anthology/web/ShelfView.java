@@ -63,7 +63,7 @@ public record ShelfView(
             String state = essay.map(e -> e.isSubmitted() ? "SUBMITTED" : "DRAFT").orElse("NONE");
             seats.add(new Seat(contributor.id(), contributor.nickname(), contributor.byline(), contributor.isEditor(),
                     me != null && contributor.id().equals(me.id()), state,
-                    Avatar.svg(contributor.nickname(), contributor.joinOrder()),
+                    Avatar.of(contributor),
                     inRoom.contains(contributor.id()) ? "지금 모임방" : Texts.ago(contributor.lastSeenAt(), now)));
         }
 

@@ -17,6 +17,7 @@ public class Contributor {
     private final int joinOrder;
     private final LocalDateTime joinedAt;
     private final LocalDateTime lastSeenAt;
+    private String avatarStyle;
 
     public Contributor(Long id, String nickname, String realName, String token, int joinOrder,
                        LocalDateTime joinedAt) {
@@ -26,6 +27,13 @@ public class Contributor {
     /** lastSeenAt: 마지막으로 문집에 들른 때. 아직 기록이 없으면 null(참여한 때로 본다). */
     public Contributor(Long id, String nickname, String realName, String token, int joinOrder,
                        LocalDateTime joinedAt, LocalDateTime lastSeenAt) {
+        this(id, nickname, realName, token, joinOrder, joinedAt, lastSeenAt, null);
+    }
+
+    /** avatarStyle: 직접 고른 캐릭터 모양(예: c3b1e2m0x4k1). 고르지 않았으면 null. */
+    public Contributor(Long id, String nickname, String realName, String token, int joinOrder,
+                       LocalDateTime joinedAt, LocalDateTime lastSeenAt, String avatarStyle) {
+        this.avatarStyle = avatarStyle;
         this.lastSeenAt = lastSeenAt;
         this.id = id;
         this.nickname = Objects.requireNonNull(nickname);
@@ -50,6 +58,15 @@ public class Contributor {
 
     public LocalDateTime lastSeenAt() {
         return lastSeenAt == null ? joinedAt : lastSeenAt;
+    }
+
+    public String avatarStyle() {
+        return avatarStyle;
+    }
+
+    /** 캐릭터 모양을 바꾼다. null이면 기본 얼굴로 돌아간다. 모양이 맞는지는 부르는 쪽(AvatarStyle)이 확인한다. */
+    public void dressUp(String style) {
+        this.avatarStyle = style;
     }
 
     public boolean isEditor() {

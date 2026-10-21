@@ -13,4 +13,9 @@ contextBridge.exposeInMainWorld('petApp', {
     facing: state && (state.facing === 'left' || state.facing === 'right') ? state.facing : null,
   })),
   submitLink: (text) => ipcRenderer.invoke('setup:submit', String(text || '')),
+  applyUpdate: () => ipcRenderer.send('pet:apply-update'),
+  onUpdate: (callback) => ipcRenderer.on('pet:update', (event, state) => callback({
+    status: String(state && state.status || 'idle'),
+    version: state && typeof state.version === 'string' ? state.version : null,
+  })),
 });

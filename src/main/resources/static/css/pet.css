@@ -35,6 +35,8 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-bubble .mini svg { width: 100%; height: 100%; }
 .pet-bubble b { display: block; font-size: 11.5px; color: var(--accent); }
 .pet-bubble p { margin: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.pet-update { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
+.pet-update .update-icon { font-size: 20px; line-height: 26px; text-align: center; }
 @keyframes bubble-in { from { opacity: 0; transform: translateY(8px) scale(.94); } }
 @keyframes bubble-out { to { opacity: 0; transform: translateY(-6px); } }
 

@@ -3,6 +3,7 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, screen, shell, nativeImage } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
+const updater = require('./updater');
 
 const BASE = new URL(process.env.PET_BASE_URL || 'https://book-report-anthology.onrender.com');
 const SIZE = { collapsed: { width: 260, height: 300 }, expanded: { width: 340, height: 560 } };
@@ -16,6 +17,7 @@ let dragging = false;
 let walking = null;
 let wanderOn = true;
 let wanderTimer = null;
+let refreshTray = () => {};
 
 // ───────── 설정(개인 링크) ─────────
 
@@ -97,6 +99,7 @@ function openPet(link) {
   guard(pet);
   pet.loadURL(`${link}?to=pet`);
   pet.once('ready-to-show', () => pet.showInactive());
+  pet.webContents.on('did-finish-load', () => sendUpdate(updater.state()));
   // 서버가 잠들어 있거나 인터넷이 끊겼으면 잠시 뒤 다시 시도한다.
   pet.webContents.on('did-fail-load', () => setTimeout(() => pet && pet.loadURL(`${link}?to=pet`), 15000));
   pet.on('closed', () => { pet = null; stopWalk(); });
@@ -199,6 +202,24 @@ ipcMain.on('pet:attention', (event) => {
 
 ipcMain.on('pet:relink', () => openSetup());
 
+ipcMain.on('pet:apply-update', (event) => {
+  if (!pet || event.sender !== pet.webContents) return;
+  if (updater.apply({ relaunch: true })) app.quit();
+});
+
+function sendUpdate(state) {
+  if (pet && !pet.isDestroyed()) {
+    pet.webContents.send('pet:update', { status: state.status, version: state.version });
+  }
+}
+
+/** 펫 화면 주소에서 같은 문집의 다른 화면 주소를 만든다. */
+function siblingUrl(suffix) {
+  const current = pet && pet.webContents.getURL();
+  const match = current && current.match(/^(.*\/anthologies\/[^/]+)\/pet/);
+  return match ? match[1] + suffix : null;
+}
+
 ipcMain.handle('setup:submit', (event, text) => {
   if (!setup || event.sender !== setup.webContents) return { ok: false };
   const link = personalLink(text);
@@ -221,32 +242,46 @@ function buildTray() {
     process.platform === 'darwin' ? 'trayTemplate.png' : 'tray.png'));
   tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
   tray.setToolTip('남의 독후감 펫');
-  const refresh = () => tray.setContextMenu(Menu.buildFromTemplate([
-    { label: pet && pet.isVisible() ? '펫 숨기기' : '펫 보이기', click: () => {
-      if (!pet) { const { link } = readConfig(); link ? openPet(link) : openSetup(); }
-      else if (pet.isVisible()) pet.hide(); else pet.showInactive();
-      refresh();
-    } },
-    { label: '산책하기', type: 'checkbox', checked: wanderOn, click: (item) => { wanderOn = item.checked; if (!wanderOn) stopWalk(); } },
-    { label: '제자리로', click: () => {
-      if (!pet) return;
-      const { x, y } = bottomRight(pet.getBounds());
-      pet.setPosition(x, y);
-      savePosition();
-    } },
-    { label: '모임방 열기', click: () => {
-      const room = pet && pet.webContents.getURL().replace(/\/pet(\?.*)?$/, '/room');
-      if (room && sameOrigin(room)) shell.openExternal(room);
-    } },
-    { type: 'separator' },
-    { label: '개인 링크 바꾸기…', click: () => openSetup() },
-    { label: '로그인할 때 열기', type: 'checkbox', checked: app.getLoginItemSettings().openAtLogin,
-      click: (item) => app.setLoginItemSettings({ openAtLogin: item.checked }) },
-    { type: 'separator' },
-    { label: '끝내기', role: 'quit' },
-  ]));
-  refresh();
-  tray.on('click', refresh);
+  const open = (suffix) => {
+    const url = siblingUrl(suffix);
+    if (url && sameOrigin(url)) shell.openExternal(url);
+  };
+  refreshTray = () => {
+    const update = updater.state();
+    const updateItems = update.status === 'ready'
+      ? [{ label: `✨ 새 버전 ${update.version} 설치하고 다시 시작`, click: () => { if (updater.apply({ relaunch: true })) app.quit(); } }]
+      : update.status === 'downloading'
+        ? [{ label: `새 버전 ${update.version} 받는 중…`, enabled: false }]
+        : [{ label: '업데이트 확인', click: () => updater.check() }];
+    tray.setContextMenu(Menu.buildFromTemplate([
+      { label: `남의 독후감 펫 ${app.getVersion()}`, enabled: false },
+      ...updateItems,
+      { type: 'separator' },
+      { label: pet && pet.isVisible() ? '펫 숨기기' : '펫 보이기', click: () => {
+        if (!pet) { const { link } = readConfig(); link ? openPet(link) : openSetup(); }
+        else if (pet.isVisible()) pet.hide(); else pet.showInactive();
+        refreshTray();
+      } },
+      { label: '산책하기', type: 'checkbox', checked: wanderOn, click: (item) => { wanderOn = item.checked; if (!wanderOn) stopWalk(); } },
+      { label: '제자리로', click: () => {
+        if (!pet) return;
+        const { x, y } = bottomRight(pet.getBounds());
+        pet.setPosition(x, y);
+        savePosition();
+      } },
+      { type: 'separator' },
+      { label: '모임방 열기', click: () => open('/room') },
+      { label: '캐릭터 꾸미기', click: () => open('/avatar?back=room') },
+      { type: 'separator' },
+      { label: '개인 링크 바꾸기…', click: () => openSetup() },
+      { label: '로그인할 때 열기', type: 'checkbox', checked: app.getLoginItemSettings().openAtLogin,
+        click: (item) => app.setLoginItemSettings({ openAtLogin: item.checked }) },
+      { type: 'separator' },
+      { label: '끝내기', role: 'quit' },
+    ]));
+  };
+  refreshTray();
+  tray.on('click', refreshTray);
 }
 
 // ───────── 시작 ─────────
@@ -258,6 +293,7 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(() => {
     if (process.platform === 'darwin' && app.dock) app.dock.hide();
     buildTray();
+    updater.start((state) => { refreshTray(); sendUpdate(state); });
     const { link } = readConfig();
     if (link && personalLink(link)) openPet(link); else openSetup();
   });
