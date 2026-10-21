@@ -15,7 +15,7 @@ const run = promisify(execFile);
 const REPO = 'Woowa-8th-BE-IQ/book-report-anthology';
 const FIRST_CHECK_MS = 15 * 1000;
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
-const NEED_BYTES = 600 * 1024 * 1024;
+const NEED_BYTES = 420 * 1024 * 1024;
 
 let state = { status: 'idle', version: null, staged: null, error: null };
 let listener = () => {};
@@ -131,9 +131,10 @@ function apply({ relaunch }) {
     fs.writeFileSync(script, `#!/bin/bash
 PID="$1"; TARGET="$2"; NEW="$3"; RELAUNCH="$4"
 for i in $(seq 1 100); do kill -0 "$PID" 2>/dev/null || break; sleep 0.2; done
-STAMP=$(date +%Y%m%d-%H%M%S)
-mv "$TARGET" "$HOME/.Trash/BookReportPet (예전 $STAMP).app" 2>/dev/null || rm -rf "$TARGET"
-ditto "$NEW" "$TARGET" && xattr -cr "$TARGET"
+# 공간을 아끼려고 예전 앱은 지우고, 받아 둔 새 앱을 제자리로 옮긴다(같은 디스크라 복사하지 않는다)
+rm -rf "$TARGET"
+mv "$NEW" "$TARGET" 2>/dev/null || ditto "$NEW" "$TARGET"
+xattr -cr "$TARGET"
 rm -rf "$(dirname "$(dirname "$NEW")")"
 [ "$RELAUNCH" = "1" ] && open "$TARGET"
 rm -f "$0"
