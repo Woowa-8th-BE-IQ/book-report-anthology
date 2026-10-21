@@ -59,14 +59,19 @@ function guard(win) {
 }
 
 function openSetup(message) {
-  if (setup) { setup.focus(); return; }
+  if (setup) { setup.show(); app.focus({ steal: true }); setup.focus(); return; }
   setup = new BrowserWindow({
     width: 420, height: 330, resizable: false, title: '남의 독후감 펫', show: false,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true },
   });
   guard(setup);
   setup.loadFile(path.join(__dirname, 'setup.html'), { query: { base: BASE.origin, message: message || '' } });
-  setup.once('ready-to-show', () => setup.show());
+  // 독 아이콘이 없는 앱이라 창이 다른 앱 뒤에 숨기 쉽다. 맨 앞으로 끌어온다.
+  setup.once('ready-to-show', () => {
+    setup.show();
+    if (process.platform === 'darwin') app.focus({ steal: true });
+    setup.focus();
+  });
   setup.on('closed', () => { setup = null; });
 }
 
