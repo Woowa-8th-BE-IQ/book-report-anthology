@@ -139,6 +139,7 @@
   };
   avatar.addEventListener('contextmenu', (event) => {
     event.preventDefault();
+    press = null; // 우클릭(두 손가락 클릭·Ctrl+클릭)은 대화창을 열지 않는다
     if (menu.hidden) openMenu(); else closeMenu();
   });
   document.addEventListener('pointerdown', (event) => {
@@ -183,7 +184,7 @@
   // ───────── 아바타: 끌면 창이 따라오고, 그냥 누르면 대화창 ─────────
   let press = null;
   avatar.addEventListener('pointerdown', (event) => {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || event.ctrlKey) return; // 맥의 Ctrl+클릭은 우클릭이다
     press = { x: event.screenX, y: event.screenY, moved: false };
     avatar.setPointerCapture(event.pointerId);
   });
@@ -197,10 +198,12 @@
     press.x = event.screenX;
     press.y = event.screenY;
   });
-  avatar.addEventListener('pointerup', () => {
-    if (press && !press.moved) expand(panel.hidden);
-    else if (press) app.dragEnd();
+  avatar.addEventListener('pointerup', (event) => {
+    const was = press;
     press = null;
+    if (!was || event.button !== 0 || event.ctrlKey || !menu.hidden) return;
+    if (!was.moved) expand(panel.hidden);
+    else app.dragEnd();
   });
   avatar.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {

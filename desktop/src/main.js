@@ -325,7 +325,18 @@ function buildTray() {
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.on('second-instance', () => { if (pet) pet.showInactive(); else openSetup(); });
+  // 숨긴 펫을 다시 보이게: 응용 프로그램에서 다시 열면 맥은 새로 켜지 않고 activate만 보낸다
+  const reveal = () => {
+    if (pet) {
+      pet.showInactive();
+      refreshTray();
+    } else {
+      const links = linksOf(readConfig());
+      if (links.length) openPet(links.at(-1)); else openSetup();
+    }
+  };
+  app.on('second-instance', reveal);
+  app.on('activate', reveal);
   app.whenReady().then(() => {
     if (process.platform === 'darwin' && app.dock) app.dock.hide();
     buildTray();
