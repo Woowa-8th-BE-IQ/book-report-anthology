@@ -104,9 +104,11 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-menu-label { display: block; padding: 8px 10px 3px; font-size: 10.5px; letter-spacing: .08em; color: var(--muted); }
 .pet-menu button[hidden] { display: none; }
 .pet-menu hr { margin: 4px 6px; border: 0; border-top: 1px solid var(--line); }
+.pet-menu-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pet-menu-badge { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--accent); color: #fff; font-style: normal; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+.pet-menu-badge[hidden] { display: none; }
 .pet-menu-group button[aria-checked="true"] { font-weight: 700; }
 .pet-menu-group button[aria-checked="true"] .i { color: var(--accent); }
-.pet-menu-group button[aria-checked="true"]::after { content: ""; margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 
 /* 펫 안 캐릭터 바꾸기 */
 .pet-dresser { flex: 1; min-height: 0; display: flex; flex-direction: column; }

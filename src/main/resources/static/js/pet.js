@@ -67,6 +67,11 @@
     let total = 0;
     views.forEach((view) => {
       total += view.unread;
+      const menuBadge = menu.querySelector(`[data-menu="focus"][data-code="${CSS.escape(view.code)}"] .pet-menu-badge`);
+      if (menuBadge) {
+        menuBadge.hidden = view.unread === 0;
+        menuBadge.textContent = view.unread > 99 ? '99+' : view.unread;
+      }
       const tabBadge = view.tab?.querySelector('.pet-tab-badge');
       if (tabBadge) {
         tabBadge.hidden = view.unread === 0;
@@ -125,6 +130,8 @@
   // 접힌 창은 작아서 메뉴가 잘린다. 메뉴가 열린 동안만 창을 키운다.
   let grownForMenu = false;
   const openMenu = () => {
+    const leave = menu.querySelector('.leave-label');
+    if (leave) leave.textContent = `'${current().title}' 펫에서 빼기`;
     if (panel.hidden) {
       grownForMenu = true;
       app.setExpanded(true);
@@ -148,11 +155,10 @@
   menu.addEventListener('click', async (event) => {
     const item = event.target.closest('[data-menu]');
     if (!item) return;
-    closeMenu({ keepSize: ['chat', 'dress', 'add'].includes(item.dataset.menu) });
+    closeMenu({ keepSize: ['focus', 'dress', 'add'].includes(item.dataset.menu) });
     switch (item.dataset.menu) {
-      case 'chat': expand(true); break;
       case 'dress': expand(true); openDresser(); break;
-      case 'focus': select(item.dataset.code); break;
+      case 'focus': select(item.dataset.code); expand(true); closeDresser(); closeCreator(); break;
       case 'add': expand(true); openCreator(); break;
       case 'quit':
         // 새 펫 앱은 완전히 끈다. 예전 펫 앱은 창을 닫는다(메뉴 막대 아이콘은 남는다).
