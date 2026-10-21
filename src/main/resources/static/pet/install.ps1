@@ -1,4 +1,4 @@
-# 남의 독후감 펫 설치 (윈도우)
+# 덕후감 펫 설치 (윈도우)
 #   irm https://book-report-anthology.onrender.com/pet/install.ps1 | iex
 $ErrorActionPreference = 'Stop'
 $repo = 'Woowa-8th-BE-IQ/book-report-anthology'

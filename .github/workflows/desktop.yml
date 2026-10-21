@@ -90,7 +90,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: pet-v${{ steps.version.outputs.value }}
-          name: 남의 독후감 펫 ${{ steps.version.outputs.value }}
+          name: 덕후감 펫 ${{ steps.version.outputs.value }}
           make_latest: 'false'
           body: |
             모임방의 내 아바타를 바탕화면에 띄우는 데스크톱 펫이에요.

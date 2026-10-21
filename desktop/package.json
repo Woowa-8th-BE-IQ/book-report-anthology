@@ -1,8 +1,8 @@
 {
   "name": "book-report-pet",
   "productName": "BookReportPet",
-  "version": "0.4.0",
-  "description": "모임방 아바타가 바탕화면에 떠서 새 말을 알려 주는 데스크톱 펫",
+  "version": "0.4.1",
+  "description": "덕후감 모임방 아바타가 바탕화면에 떠서 새 말을 알려 주는 데스크톱 펫",
   "main": "src/main.js",
   "author": "Woowa-8th-BE-IQ",
   "license": "MIT",
@@ -41,7 +41,7 @@
       "icon": "build/icon.png",
       "extendInfo": {
         "LSUIElement": true,
-        "CFBundleDisplayName": "남의 독후감 펫",
+        "CFBundleDisplayName": "덕후감 펫",
         "CFBundleName": "BookReportPet"
       },
       "hardenedRuntime": false,
@@ -61,7 +61,7 @@
     "nsis": {
       "oneClick": true,
       "perMachine": false,
-      "shortcutName": "남의 독후감 펫"
+      "shortcutName": "덕후감 펫"
     },
     "afterPack": "build/after-pack.js"
   }

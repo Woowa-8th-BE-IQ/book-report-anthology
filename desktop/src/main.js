@@ -1,4 +1,4 @@
-// 남의 독후감 펫: 모임방의 내 아바타를 바탕화면 위에 띄운다.
+// 덕후감 펫: 모임방의 내 아바타를 바탕화면 위에 띄운다.
 // 창은 투명하고 항상 위에 있으며, 아바타·말풍선·대화창이 아닌 곳의 클릭은 뒤의 앱으로 지나간다.
 const { app, BrowserWindow, Tray, Menu, ipcMain, screen, shell, nativeImage } = require('electron');
 const fs = require('node:fs');
@@ -70,7 +70,7 @@ function guard(win) {
 function openSetup(message) {
   if (setup) { setup.show(); app.focus({ steal: true }); setup.focus(); return; }
   setup = new BrowserWindow({
-    width: 420, height: 330, resizable: false, title: '남의 독후감 펫', show: false,
+    width: 420, height: 330, resizable: false, title: '덕후감 펫', show: false,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true },
   });
   guard(setup);
@@ -97,7 +97,7 @@ function openPet(link) {
     ...SIZE.collapsed, ...start,
     transparent: true, frame: false, resizable: false, movable: true, hasShadow: false,
     alwaysOnTop: true, skipTaskbar: true, fullscreenable: false, show: false,
-    backgroundColor: '#00000000', title: '남의 독후감 펫',
+    backgroundColor: '#00000000', title: '덕후감 펫',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true },
   });
   pet.setAlwaysOnTop(true, 'floating');
@@ -268,7 +268,7 @@ function buildTray() {
   const icon = nativeImage.createFromPath(path.join(__dirname, '..', 'build',
     process.platform === 'darwin' ? 'trayTemplate.png' : 'tray.png'));
   tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
-  tray.setToolTip('남의 독후감 펫');
+  tray.setToolTip('덕후감 펫');
   const openRoom = async () => {
     const url = await currentRoomUrl();
     if (url && sameOrigin(url)) shell.openExternal(url);
@@ -292,7 +292,7 @@ function buildTray() {
           { label: '업데이트 기록 보기', click: () => shell.openPath(updater.logFile()) },
         ];
     tray.setContextMenu(Menu.buildFromTemplate([
-      { label: `남의 독후감 펫 ${app.getVersion()}`, enabled: false },
+      { label: `덕후감 펫 ${app.getVersion()}`, enabled: false },
       ...updateItems,
       { type: 'separator' },
       ...(pet && pet.isVisible() ? [] : [{ label: '펫 다시 띄우기', click: () => {

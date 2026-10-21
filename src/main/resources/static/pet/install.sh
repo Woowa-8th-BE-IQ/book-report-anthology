@@ -1,5 +1,5 @@
 #!/bin/bash
-# 남의 독후감 펫 설치 (맥)
+# 덕후감 펫 설치 (맥)
 #   curl -fsSL https://book-report-anthology.onrender.com/pet/install.sh | bash
 # 최신 펫을 받아 /Applications/BookReportPet.app 에 설치하고 바로 띄운다.
 # 공간을 아끼려고 새 앱을 먼저 받아 검증한 뒤, 예전 펫은 지우고 새 앱을 제자리로 옮긴다.

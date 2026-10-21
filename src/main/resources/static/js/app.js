@@ -1,4 +1,4 @@
-// 남의 독후감 화면 효과. 번들러 없이 그대로 쓴다.
+// 덕후감 화면 효과. 번들러 없이 그대로 쓴다.
 (() => {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 

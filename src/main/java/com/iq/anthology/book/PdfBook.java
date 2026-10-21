@@ -68,7 +68,7 @@ public final class PdfBook {
             document.addTitle(manuscript.title());
             document.addAuthor(String.join(", ", manuscript.bylines()));
             document.addSubject(manuscript.readLine());
-            document.addCreator("남의 독후감");
+            document.addCreator("덕후감");
             document.open();
 
             titlePage(document, manuscript, fonts);
