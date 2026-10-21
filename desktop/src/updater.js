@@ -14,7 +14,7 @@ const { promisify } = require('node:util');
 const run = promisify(execFile);
 const REPO = 'Woowa-8th-BE-IQ/book-report-anthology';
 const FIRST_CHECK_MS = 15 * 1000;
-const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
+const CHECK_EVERY_MS = 30 * 60 * 1000;
 const NEED_BYTES = 420 * 1024 * 1024;
 const RETRY_MS = 30 * 60 * 1000;
 
