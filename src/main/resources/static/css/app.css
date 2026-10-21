@@ -563,8 +563,13 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 
 .pet-link { margin-top: 14px; max-width: 560px; font-size: 13.5px; }
 .pet-link summary { cursor: pointer; color: var(--accent); font-weight: 600; width: fit-content; }
-.pet-link p { margin: 10px 0 8px; color: var(--ink-soft); }
-.pet-link a { color: var(--accent); }
+.pet-link .pet-box { margin-top: 10px; }
+.pet-box h3 { margin-top: 0; }
+.pet-box .pet-install { margin-top: 14px; font-size: 13.5px; }
+.pet-box .pet-install summary { cursor: pointer; color: var(--accent); font-weight: 600; width: fit-content; }
+.pet-box .pet-install ol { margin: 12px 0 8px; padding-left: 18px; display: grid; gap: 10px; color: var(--ink-soft); line-height: 1.55; }
+.pet-box .os-label { display: inline-block; margin: 8px 0 4px; font-size: 11.5px; color: var(--muted); }
+.copy-line.code input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 .room-page .page-hero { width: min(1120px, 100% - 40px); }
 .room { width: min(1120px, 100% - 40px); margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 430px); gap: 28px; align-items: start; }
 

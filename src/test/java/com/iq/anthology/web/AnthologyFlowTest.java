@@ -211,12 +211,19 @@ class AnthologyFlowTest {
                 .andReturn().getResponse().getContentAsString())
                 .contains("링크 다시 넣기");
 
+        // 설치 스크립트를 내려준다
+        assertThat(mvc.perform(get("/pet/install.sh")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString()).contains("BookReportPet.app");
+        mvc.perform(get("/pet/install.ps1")).andExpect(status().isOk());
+
         // 문집 화면의 참여자 목록에 마지막 접속이 보인다
         Cookie guest = mvc.perform(post("/anthologies/{code}/contributors", code).param("nickname", "손님"))
                 .andReturn().getResponse().getCookie("ab_" + code);
         assertThat(mvc.perform(get("/anthologies/{code}", code).cookie(guest))
                 .andReturn().getResponse().getContentAsString())
-                .contains("class=\"seen");
+                .contains("class=\"seen", "/pet/install.sh | bash", "내 개인 링크");
+        assertThat(mvc.perform(get("/anthologies/{code}", code)).andReturn().getResponse().getContentAsString())
+                .doesNotContain("pet-install-mac"); // 참여자가 아니면 개인 링크·펫 안내가 없다
 
         // 실시간 연결은 이벤트 스트림으로 열린다
         mvc.perform(get("/anthologies/{code}/room/stream", code).cookie(editor))

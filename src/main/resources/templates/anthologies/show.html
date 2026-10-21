@@ -178,6 +178,10 @@
         </div>
       </div>
 
+      <th:block th:if="${view.isContributor()}">
+        <div th:replace="~{fragments/pet :: box(${personalUrl})}"></div>
+      </th:block>
+
       <!-- 엮은이가 아닌 사람에게 보이는 소개·질문 -->
       <div class="paper" th:if="${!view.isEditor() and (a.introduction() != null or !a.prompts().isEmpty())}">
         <th:block th:if="${a.introduction() != null}">
@@ -289,14 +293,6 @@
         </form>
       </section>
 
-      <div class="paper" th:if="${view.isContributor()}">
-        <h3>내 개인 링크</h3>
-        <p>다른 기기에서 이어 쓸 때 열어요. <b>나만 갖고 있어야 해요.</b> 잃어버리면 엮은이가 새로 만들어 줄 수 있어요.</p>
-        <div class="copy-line">
-          <input id="personal-url" type="text" th:value="${personalUrl}" readonly aria-label="내 개인 링크">
-          <button class="btn small ghost" type="button" data-copy="personal-url">복사</button>
-        </div>
-      </div>
     </aside>
   </div>
 </main>

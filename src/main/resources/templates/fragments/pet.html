@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 내 개인 링크 + 바탕화면 펫 설치 안내. 문집 화면과 모임방에서 같이 쓴다. -->
+<div th:fragment="box(personalUrl)" class="paper pet-box">
+  <h3>내 개인 링크 · 바탕화면 펫</h3>
+  <p>다른 기기에서 이어 쓰거나 펫에 연결할 때 써요. <b>나만 갖고 있어야 해요.</b></p>
+  <div class="copy-line">
+    <input id="personal-url" type="text" th:value="${personalUrl}" readonly aria-label="내 개인 링크">
+    <button class="btn small" type="button" data-copy="personal-url">복사</button>
+  </div>
+
+  <details class="pet-install">
+    <summary>🖥 바탕화면 펫 설치하기</summary>
+    <ol>
+      <li>
+        <b>설치 명령을 복사해요.</b>
+        <div class="os-tabs" role="tablist">
+          <span class="os-label">맥 · 터미널</span>
+        </div>
+        <div class="copy-line code">
+          <input id="pet-install-mac" type="text" readonly aria-label="맥 설치 명령"
+                 th:value="'curl -fsSL ' + (${baseUrl} ?: '') + '/pet/install.sh | bash'">
+          <button class="btn small ghost" type="button" data-copy="pet-install-mac">복사</button>
+        </div>
+        <div class="os-tabs"><span class="os-label">윈도우 · PowerShell</span></div>
+        <div class="copy-line code">
+          <input id="pet-install-win" type="text" readonly aria-label="윈도우 설치 명령"
+                 th:value="'irm ' + (${baseUrl} ?: '') + '/pet/install.ps1 | iex'">
+          <button class="btn small ghost" type="button" data-copy="pet-install-win">복사</button>
+        </div>
+      </li>
+      <li><b>터미널(윈도우는 PowerShell)에 붙여 넣고 Enter.</b> 받고, 설치하고, 펫을 띄우는 것까지 알아서 해요.</li>
+      <li><b>펫 창이 뜨면 위의 개인 링크를 붙여 넣어요.</b> 끝이에요.</li>
+    </ol>
+    <p class="tool-note">펫을 누르면 모임방 대화창이 열리고, 끌면 옮겨져요. 메뉴 막대의 책 얼굴 아이콘에서 숨기기·끝내기를 할 수 있어요.</p>
+  </details>
+</div>
+</body>
+</html>
