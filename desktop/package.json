@@ -26,7 +26,7 @@
       "icon": "build/icon.png",
       "extendInfo": { "LSUIElement": true }
     },
-    "dmg": { "title": "남의 독후감 펫" },
+    "dmg": { "title": "Book Report Pet ${version}" },
     "win": {
       "target": [{ "target": "nsis", "arch": ["x64"] }],
       "icon": "build/icon.png"
