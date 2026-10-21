@@ -216,9 +216,13 @@ ipcMain.on('pet:apply-update', (event) => {
 
 function sendUpdate(state) {
   if (pet && !pet.isDestroyed()) {
-    pet.webContents.send('pet:update', { status: state.status, version: state.version });
+    pet.webContents.send('pet:update', { status: state.status, version: state.version, problem: state.error });
   }
 }
+
+ipcMain.on('pet:quit', (event) => {
+  if (pet && event.sender === pet.webContents) app.quit();
+});
 
 /** 펫 화면에서 지금 보고 있는 문집의 모임방 주소. */
 async function currentRoomUrl() {
@@ -278,7 +282,12 @@ function buildTray() {
       ? [{ label: `✨ 새 버전 ${update.version} 설치하고 다시 시작`, click: () => { if (updater.apply({ relaunch: true })) app.quit(); } }]
       : update.status === 'downloading'
         ? [{ label: `새 버전 ${update.version} 받는 중…`, enabled: false }]
-        : [{ label: '업데이트 확인', click: () => updater.check() }];
+        : [
+          ...(update.error ? [{ label: `⚠️ ${update.error}`.slice(0, 80), enabled: false }] : []),
+          { label: update.status === 'checking' ? '확인 중…' : '업데이트 확인', enabled: update.status !== 'checking',
+            click: () => updater.check() },
+          { label: '업데이트 기록 보기', click: () => shell.openPath(updater.logFile()) },
+        ];
     tray.setContextMenu(Menu.buildFromTemplate([
       { label: `남의 독후감 펫 ${app.getVersion()}`, enabled: false },
       ...updateItems,

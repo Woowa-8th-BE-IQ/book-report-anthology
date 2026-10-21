@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('petApp', {
   relink: () => ipcRenderer.send('pet:relink'),
   addAnthology: () => ipcRenderer.send('pet:add'),
   hide: () => ipcRenderer.send('pet:hide'),
+  quit: () => ipcRenderer.send('pet:quit'),
   onCommand: (callback) => ipcRenderer.on('pet:command', (event, name) => callback(String(name || ''))),
   onWalk: (callback) => ipcRenderer.on('pet:walk', (event, state) => callback({
     walking: Boolean(state && state.walking),
@@ -20,5 +21,6 @@ contextBridge.exposeInMainWorld('petApp', {
   onUpdate: (callback) => ipcRenderer.on('pet:update', (event, state) => callback({
     status: String(state && state.status || 'idle'),
     version: state && typeof state.version === 'string' ? state.version : null,
+    problem: state && typeof state.problem === 'string' ? state.problem : null,
   })),
 });

@@ -16,8 +16,19 @@ const REPO = 'Woowa-8th-BE-IQ/book-report-anthology';
 const FIRST_CHECK_MS = 15 * 1000;
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
 const NEED_BYTES = 420 * 1024 * 1024;
+const RETRY_MS = 30 * 60 * 1000;
 
-let state = { status: 'idle', version: null, staged: null, error: null };
+let state = { status: 'idle', version: null, staged: null, error: null, checkedAt: null };
+
+// 업데이트 과정을 파일로 남긴다(문제가 생기면 이 파일을 보면 된다)
+const logFile = () => path.join(app.getPath('userData'), 'update.log');
+function log(message) {
+  try {
+    fs.appendFileSync(logFile(), `${new Date().toISOString()} ${message}\n`);
+  } catch {
+    // 기록 실패는 무시한다
+  }
+}
 let listener = () => {};
 let applyingOnQuit = false;
 
@@ -65,38 +76,48 @@ async function download(url, file) {
   await pipeline(Readable.fromWeb(response.body), fs.createWriteStream(file));
 }
 
-function enoughSpace(dir) {
+function freeBytes(dir) {
   try {
     const stats = fs.statfsSync(dir);
-    return stats.bavail * stats.bsize > NEED_BYTES;
+    return stats.bavail * stats.bsize;
   } catch {
-    return true;
+    return Infinity;
   }
 }
+const mb = (bytes) => `${Math.round(bytes / 1024 / 1024)}MB`;
 
 async function check() {
   if (!app.isPackaged || ['checking', 'downloading', 'ready', 'applying'].includes(state.status)) return;
   try {
     set({ status: 'checking', error: null });
+    log(`확인 시작 (지금 ${app.getVersion()})`);
     const release = await latestRelease();
     const version = release && release.tag_name.replace(/^pet-v/, '');
     if (!version || !newer(version, app.getVersion())) {
-      set({ status: 'idle' });
+      log(`새 버전 없음 (최신 ${version || '-'})`);
+      set({ status: 'idle', version: null, checkedAt: Date.now() });
       return;
     }
     const name = assetName(version);
     const asset = release.assets.find((item) => item.name === name);
     if (!asset) {
-      set({ status: 'idle' });
+      log(`${version}에 ${name} 파일이 없음`);
+      set({ status: 'idle', version: null });
       return;
     }
     const dir = path.join(app.getPath('temp'), `book-report-pet-update-${version}`);
     fs.rmSync(dir, { recursive: true, force: true });
     fs.mkdirSync(dir, { recursive: true });
-    if (!enoughSpace(dir)) {
-      set({ status: 'idle', error: '저장 공간이 모자라 새 버전을 받지 못했어요.' });
+    const free = freeBytes(dir);
+    if (free < NEED_BYTES) {
+      const message = `저장 공간이 모자라요. 남은 공간 ${mb(free)}, 필요한 공간 약 ${mb(NEED_BYTES)}. `
+        + '시스템 설정 → 일반 → 저장 공간에서 정리하면 다음 확인 때 받아요.';
+      log(`공간 부족: ${mb(free)}`);
+      set({ status: 'idle', version, error: message });
+      setTimeout(check, RETRY_MS); // 정리했을 수 있으니 조금 뒤 다시 본다
       return;
     }
+    log(`${version} 받는 중`);
     set({ status: 'downloading', version });
     const file = path.join(dir, name);
     await download(asset.browser_download_url, file);
@@ -112,9 +133,13 @@ async function check() {
       await run('xattr', ['-cr', staged]);
       await run('codesign', ['--verify', '--deep', '--strict', staged]); // 서명이 깨졌으면 바꿔 끼우지 않는다
     }
-    set({ status: 'ready', version, staged });
+    log(`${version} 준비됨: ${staged}`);
+    set({ status: 'ready', version, staged, error: null });
   } catch (error) {
-    set({ status: 'idle', error: String(error && error.message || error) });
+    const message = String(error && error.message || error);
+    log(`실패: ${message}`);
+    set({ status: 'idle', error: `업데이트 중 문제가 생겼어요: ${message}` });
+    setTimeout(check, RETRY_MS);
   }
 }
 
@@ -148,6 +173,7 @@ rm -f "$0"
   } else {
     return false;
   }
+  log(`${state.version} 적용 (다시 켜기: ${relaunch})`);
   set({ status: 'applying' });
   return true;
 }
@@ -167,5 +193,6 @@ module.exports = {
   },
   check,
   apply,
+  logFile,
   state: () => state,
 };

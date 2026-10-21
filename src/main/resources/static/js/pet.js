@@ -154,6 +154,10 @@
       case 'focus': select(item.dataset.code); break;
       case 'add': (app.addAnthology || app.relink)(); break;
       case 'hide': window.petApp?.hide?.(); break;
+      case 'quit':
+        // 새 펫 앱은 완전히 끈다. 예전 펫 앱은 창을 닫는다(메뉴 막대 아이콘은 남는다).
+        if (window.petApp?.quit) window.petApp.quit(); else window.close();
+        break;
       case 'leave': {
         const view = current();
         if (!window.confirm(`'${view.title}' 문집을 펫에서 뺄까요? 문집에서 나가는 건 아니에요.`)) break;
@@ -217,10 +221,30 @@
 
   // ───────── 새 버전 알림 ─────────
   let updateBubble = null;
-  app.onUpdate(({ status, version }) => {
+  let problemShown = null;
+  app.onUpdate(({ status, version, problem }) => {
     if (status !== 'ready') {
       updateBubble?.remove();
       updateBubble = null;
+      // 받지 못한 이유가 있으면 한 번 알린다(같은 이유는 다시 띄우지 않는다)
+      if (problem && problem !== problemShown) {
+        problemShown = problem;
+        const note = document.createElement('div');
+        note.className = 'pet-bubble pet-update problem';
+        const icon = document.createElement('span');
+        icon.className = 'mini update-icon';
+        icon.textContent = '⚠️';
+        const body = document.createElement('div');
+        const title = document.createElement('b');
+        title.textContent = version ? `새 버전 ${version}을 받지 못했어요` : '업데이트를 확인하지 못했어요';
+        const text = document.createElement('p');
+        text.textContent = problem;
+        body.append(title, text);
+        note.append(icon, body);
+        note.addEventListener('click', () => note.remove());
+        bubbles.prepend(note);
+        setTimeout(() => note.remove(), 30000);
+      }
       return;
     }
     if (updateBubble) return;
