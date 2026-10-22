@@ -15,10 +15,10 @@ public final class Avatar {
     static final String[] COLORS = {
             "#FF8A5B", "#7BD389", "#6EC1FF", "#B794F6", "#FFC93C", "#FF6F91", "#4FD1C5", "#F4A261",
             "#FF9EC7", "#7F9CF5"};
-    /** 몸 뒤에 살짝 비껴 까는 같은 색의 진한 그림자. */
-    static final String[] SHADES = {
-            "#F94700", "#39B74D", "#0795FE", "#7129F2", "#E2A300", "#FF0842", "#27A79B", "#EA6D0A",
-            "#FE2A84", "#194EF2"};
+    /** 소품을 두르는 조금 얇은 잉크 선. */
+    private static final String THIN = "stroke=\"" + INK + "\" stroke-width=\"2\" stroke-linejoin=\"round\"";
+    /** 몸을 두르는 잉크 선. */
+    private static final String LINE = "stroke=\"" + INK + "\" stroke-width=\"2.6\" stroke-linejoin=\"round\"";
 
     private Avatar() {
     }
@@ -44,38 +44,27 @@ public final class Avatar {
     }
 
     /**
-     * 플랫한 한 색 몸 + 같은 색 그림자 + 주황 소품 하나. 선은 긋지 않는다.
+     * 한 색 몸에 굵은 잉크 선 한 줄, 그림자 없음. 소품과 볼만 주황(포인트).
      * 얼굴(눈·입)은 따로 묶어 둔다. 화면이 시선을 돌리고(face) 눈을 깜빡이게(blink) 한다.
      */
     public static String svg(AvatarStyle style) {
         StringBuilder svg = new StringBuilder(1600)
                 .append("<svg class=\"avatar-svg\" viewBox=\"0 0 64 64\" xmlns=\"http://www.w3.org/2000/svg\" "
                         + "aria-hidden=\"true\" focusable=\"false\">");
-        svg.append("<g transform=\"translate(2.5 3)\">")
-                .append(body(style.body(), "fill=\"" + SHADES[style.color()] + "\""))
-                .append("</g>");
-        svg.append(body(style.body(), "fill=\"" + COLORS[style.color()] + "\""));
-        // 왼쪽 위의 짧은 광택. 구름·고양이는 몸 윗선이 낮아서 조금 아래에 긋는다.
-        String shine = switch (style.body()) {
-            case 3 -> "M17 37q2-5.5 7.5-7";
-            case 4 -> "M17.5 33q2-5.5 7.5-7";
-            default -> "M19 26q2.5-6.5 9-8";
-        };
-        svg.append("<path d=\"").append(shine).append("\" stroke=\"#fff\" stroke-width=\"3\" "
-                + "stroke-linecap=\"round\" fill=\"none\" opacity=\".55\"/>");
+        svg.append(body(style.body(), "fill=\"" + COLORS[style.color()] + "\" " + LINE));
         svg.append(extra(style.extra()));
         svg.append("<g class=\"face\">");
         svg.append(eyes(style.eyes()));
         svg.append(mouth(style.mouth()));
         svg.append("</g>");
         if (style.cheeks() == 1) {
-            svg.append("<circle cx=\"20.5\" cy=\"43\" r=\"2.8\" fill=\"#fff\" opacity=\".45\"/>"
-                    + "<circle cx=\"43.5\" cy=\"43\" r=\"2.8\" fill=\"#fff\" opacity=\".45\"/>");
+            svg.append("<ellipse cx=\"20.5\" cy=\"43\" rx=\"3\" ry=\"2\" fill=\"" + POINT + "\" opacity=\".55\"/>"
+                    + "<ellipse cx=\"43.5\" cy=\"43\" rx=\"3\" ry=\"2\" fill=\"" + POINT + "\" opacity=\".55\"/>");
         }
         return svg.append("</svg>").toString();
     }
 
-    /** 0: 동그라미, 1: 책, 2: 살짝 기운 네모, 3: 구름, 4: 고양이. paint는 fill 속성. */
+    /** 0: 동그라미, 1: 책, 2: 살짝 기운 네모, 3: 구름, 4: 고양이. paint는 fill·stroke 속성. */
     private static String body(int kind, String paint) {
         return switch (kind) {
             case 1 -> "<rect x=\"13\" y=\"13\" width=\"38\" height=\"44\" rx=\"7\" " + paint + "/>";
@@ -88,17 +77,17 @@ public final class Avatar {
         };
     }
 
-    /** 0: 없음, 1: 책갈피 끈, 2: 베레모, 3: 새싹, 4: 별, 5: 꽃. 모두 주황 한 색. */
+    /** 0: 없음, 1: 책갈피 끈, 2: 베레모, 3: 새싹, 4: 별, 5: 꽃. 모두 주황 한 색, 얇은 잉크 선. */
     private static String extra(int kind) {
         return switch (kind) {
-            case 1 -> "<path d=\"M41 8v15l3.4-3.2 3.4 3.2V8z\" fill=\"" + POINT + "\"/>";
-            case 2 -> "<path d=\"M14 19q3-10 18-10.5q15 .5 18 10.5q-18 4.5-36 0z\" fill=\"" + POINT + "\"/>"
-                    + "<circle cx=\"32\" cy=\"7.5\" r=\"2.4\" fill=\"" + POINT + "\"/>";
+            case 1 -> "<path d=\"M41 8v15l3.4-3.2 3.4 3.2V8z\" fill=\"" + POINT + "\" " + THIN + "/>";
+            case 2 -> "<path d=\"M14 19q3-10 18-10.5q15 .5 18 10.5q-18 4.5-36 0z\" fill=\"" + POINT + "\" " + THIN + "/>"
+                    + "<circle cx=\"32\" cy=\"7.5\" r=\"2.4\" fill=\"" + POINT + "\" " + THIN + "/>";
             case 3 -> "<path d=\"M32 15v-6\" stroke=\"" + POINT + "\" stroke-width=\"2.6\" stroke-linecap=\"round\"/>"
                     + "<path d=\"M32 10c-6-.5-9-5.5-9-5.5c6-1.2 9 2 9 5.5zM32 9.5c5-3 9-2 10 0c-3 3.5-8 3-10 0z\" "
-                    + "fill=\"" + POINT + "\"/>";
+                    + "fill=\"" + POINT + "\" " + THIN + "/>";
             case 4 -> "<path d=\"M50 5l2.1 5 5.4.6-4 3.6 1.1 5.3-4.6-2.7-4.6 2.7 1.1-5.3-4-3.6 5.4-.6z\" fill=\""
-                    + POINT + "\"/>";
+                    + POINT + "\" " + THIN + "/>";
             case 5 -> "<g transform=\"translate(48 12)\" fill=\"" + POINT + "\"><circle cy=\"-4.2\" r=\"3.4\"/>"
                     + "<circle cx=\"4.2\" r=\"3.4\"/><circle cy=\"4.2\" r=\"3.4\"/><circle cx=\"-4.2\" r=\"3.4\"/>"
                     + "<circle r=\"2.6\" fill=\"#FFF3E0\"/></g>";

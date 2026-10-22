@@ -38,9 +38,9 @@ public class AvatarController extends FormSupport {
 
     /**
      * 모양 글자(c3b1e2m0x4k1)로 그린 그림. 같은 글자는 언제나 같은 그림이라 오래 캐시한다.
-     * 그림체를 바꾸면 주소의 판(v2)을 올린다. 예전 주소도 그대로 열린다.
+     * 그림체를 바꾸면 주소의 판(v3)을 올린다. 예전 주소도 그대로 열린다.
      */
-    @GetMapping({"/avatars/v2/{style}.svg", "/avatars/{style}.svg"})
+    @GetMapping({"/avatars/v3/{style}.svg", "/avatars/v2/{style}.svg", "/avatars/{style}.svg"})
     @ResponseBody
     public ResponseEntity<String> preview(@PathVariable String style) {
         return ResponseEntity.ok()

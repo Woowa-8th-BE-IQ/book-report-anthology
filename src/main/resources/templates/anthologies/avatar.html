@@ -21,7 +21,7 @@
 
     <div class="dresser-preview paper tape">
       <div class="dresser-stage">
-        <img id="dresser-image" th:src="@{/avatars/v2/{s}.svg(s=${dressing.current().format()})}" alt="" width="180" height="180">
+        <img id="dresser-image" th:src="@{/avatars/v3/{s}.svg(s=${dressing.current().format()})}" alt="" width="180" height="180">
       </div>
       <p class="dresser-name" th:text="${me.nickname()}">감자</p>
       <div class="dresser-actions">
@@ -36,7 +36,7 @@
         <div class="options">
           <label class="option" th:each="option : ${part.options()}" th:title="${option.name()}">
             <input type="radio" th:name="${part.key()}" th:value="${option.value()}" th:checked="${option.selected()}">
-            <img th:src="@{/avatars/v2/{s}.svg(s=${option.style()})}" alt="" width="52" height="52" loading="lazy">
+            <img th:src="@{/avatars/v3/{s}.svg(s=${option.style()})}" alt="" width="52" height="52" loading="lazy">
             <span th:text="${option.name()}">살구</span>
           </label>
         </div>
