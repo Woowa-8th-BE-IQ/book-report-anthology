@@ -30,7 +30,7 @@
       </div>
     </div>
 
-    <form class="paper tape editor" id="essay-form" method="post"
+    <form class="paper tape editor" id="essay-form" data-typing-sound method="post"
           th:action="@{/anthologies/{code}/essay(code=${anthology.code()})}"
           th:object="${essayForm}" data-once data-guard
           th:attr="data-autosave=@{/anthologies/{code}/essay/autosave(code=${anthology.code()})},
@@ -42,7 +42,7 @@
                    data-body-min=${limits.bodyMin()}">
       <div class="editor-top">
         <p class="card-byline" style="margin:0;font-size:13px;color:var(--muted)" th:text="${me.byline()}">닉네임(실명)</p>
-        <button type="button" class="sound-toggle" id="typing-sound" aria-pressed="false" hidden
+        <button type="button" class="sound-toggle" id="typing-sound" data-typing-sound-toggle aria-pressed="false" hidden
                 title="키를 누를 때 타자 소리를 내요">
           <span aria-hidden="true">⌨</span> <span class="label">타자 소리 꺼짐</span>
         </button>

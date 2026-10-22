@@ -203,3 +203,11 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .mention-pick li { padding: 5px 9px; border-radius: 7px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mention-pick li[aria-selected="true"] { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .pet-avatar.called .pet-face { animation: none; } }
+
+/* 타자 소리 단추(대화창 위 줄) */
+.pet-sound { display: grid; place-items: center; width: 26px; height: 22px; margin-left: auto; padding: 0; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; }
+.pet-sound[hidden] { display: none; }
+.pet-sound .i { width: 16px; height: 16px; }
+.pet-sound:hover { color: var(--ink-soft); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.pet-sound[aria-pressed="true"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.pet-sub { gap: 8px; }

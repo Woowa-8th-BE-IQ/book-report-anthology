@@ -857,3 +857,9 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
   .cta-bar .btn, .cta-bar .btn::after, .spin-stage::before, .sparkles i, .hero-copy h1 .accent { animation: none; }
   .sparkles i { opacity: .7; }
 }
+
+/* 모임방 입력칸 아래: 상태 글자와 타자 소리 단추 */
+.talk-foot { display: flex; align-items: center; gap: 10px; padding: 0 14px 10px; }
+.talk-foot .talk-status { padding: 0; flex: 1; }
+.talk-foot .talk-status:empty { display: block; }
+.talk-foot .sound-toggle { margin-left: auto; }

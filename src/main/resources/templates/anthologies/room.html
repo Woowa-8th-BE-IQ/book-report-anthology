@@ -73,7 +73,7 @@
       <li id="talk-end" aria-hidden="true"></li>
     </ol>
     <p class="typing-line" id="typing-line" aria-live="polite"></p>
-    <form class="talk-form" id="talk-form" method="post"
+    <form class="talk-form" id="talk-form" data-typing-sound method="post"
           th:action="@{/anthologies/{code}/room/messages(code=${a.code()})}">
       <label class="visually-hidden" for="talk-input">말</label>
       <textarea id="talk-input" name="body" rows="1" required th:attr="maxlength=${bodyMax}"
@@ -81,7 +81,12 @@
                 data-mention=".member:not(.me)"></textarea>
       <button class="btn" type="submit">보내기</button>
     </form>
-    <p class="talk-status" id="talk-status" role="status"></p>
+    <div class="talk-foot">
+      <p class="talk-status" id="talk-status" role="status"></p>
+      <button type="button" class="sound-toggle" data-typing-sound-toggle aria-pressed="false" hidden>
+        <span aria-hidden="true">⌨</span> <span class="label">타자 소리 꺼짐</span>
+      </button>
+    </div>
   </section>
 </main>
 
