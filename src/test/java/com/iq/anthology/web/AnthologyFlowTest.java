@@ -291,7 +291,7 @@ class AnthologyFlowTest {
                 .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
                         .isEqualTo("/anthologies/" + code + "/room"));
         assertThat(mvc.perform(get("/anthologies/{code}/room", code).cookie(editor)).andReturn().getResponse()
-                .getContentAsString()).contains("#F2B8C6"); // 8번 색(벚꽃)
+                .getContentAsString()).contains("#FF9EC7"); // 8번 색(연분홍)
         mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor).param("style", "c99b0e0m0x0k0"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(result -> assertThat(result.getFlashMap().get("error")).asString().contains("색"));
