@@ -404,9 +404,14 @@
 
   // 문집 소식: 누가 독후감을 냈다·내 글에 답글·마감했다·마감이 코앞. 누르면 그 화면을 브라우저로 연다.
   const newsIcon = { due: 'i-bell', closed: 'i-flag' };
+  // ✕로 닫은 마감 재촉은 그 마감일에 대해 다시 띄우지 않는다(이 펫에 기억)
+  const dismissed = (key) => { try { return Boolean(key) && localStorage.getItem(`pet-dismiss:${key}`) === '1'; } catch (e) { return false; } };
+  const dismiss = (key) => { try { if (key) localStorage.setItem(`pet-dismiss:${key}`, '1'); } catch (e) { /* 이번만 */ } };
+
   const showNews = (view, news, lineOnly = false) => {
+    if (dismissed(news.dismissKey)) return false;
     logNews(view, news);
-    if (lineOnly) return;
+    if (lineOnly) return true;
     const bubble = document.createElement('div');
     bubble.className = `pet-bubble pet-news ${news.kind}`;
     const template = news.actorId ? faceOf(view, news.actorId) : null;
@@ -432,9 +437,10 @@
     close.className = 'news-close';
     close.setAttribute('aria-label', '닫기');
     close.textContent = '✕';
-    close.addEventListener('click', (event) => { event.stopPropagation(); bubble.remove(); });
+    close.addEventListener('click', (event) => { event.stopPropagation(); dismiss(news.dismissKey); bubble.remove(); });
     bubble.append(mini, body, close);
     bubble.addEventListener('click', () => {
+      dismiss(news.dismissKey);
       bubble.remove();
       if (news.link) window.open(news.link, '_blank', 'noopener');
     });
@@ -442,6 +448,7 @@
     trimBubbles();
     // 마감 재촉과 답글은 누를 때까지, 나머지는 30초 뒤 사라진다
     if (news.kind !== 'due' && news.kind !== 'reply') fadeOut(bubble, 30000);
+    return true;
   };
   // 대화에도 한 줄 남긴다(저장하지 않는 알림 줄)
   const logNews = (view, news) => {
@@ -482,8 +489,7 @@
     source.addEventListener('news', (event) => {
       const data = parse(event);
       if (!data) return;
-      showNews(view, data, !panel.hidden);
-      if (!panel.hidden) return; // 대화창을 보고 있으면 대화에 한 줄만 남긴다
+      if (!showNews(view, data, !panel.hidden) || !panel.hidden) return; // 대화창을 보고 있으면 대화에 한 줄만 남긴다
       app.attention();
       restart(avatar, data.kind === 'due' ? 'called' : 'excited');
     });

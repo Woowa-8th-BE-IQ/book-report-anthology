@@ -238,6 +238,16 @@ class JdbcRepositoryTest {
     }
 
     @Test
+    void 마감_재촉은_하루에_한_번만_남는다() {
+        Long editorId = anthology.editor().id();
+        LocalDate today = LocalDate.of(2026, 11, 29);
+
+        assertThat(roomMessages.markNudged(editorId, today)).isTrue();
+        assertThat(roomMessages.markNudged(editorId, today)).isFalse();
+        assertThat(roomMessages.markNudged(editorId, today.plusDays(1))).isTrue();
+    }
+
+    @Test
     void 마지막_접속은_1분_안에_다시_쓰지_않는다() {
         Long editorId = anthology.editor().id();
         anthologies.touch(editorId, NOW.plusMinutes(10));

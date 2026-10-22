@@ -7,13 +7,11 @@ import com.iq.anthology.essay.EssayEvents;
 import com.iq.anthology.essay.EssayService;
 import com.iq.anthology.essay.Shelf;
 import java.time.Clock;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,11 +41,12 @@ public class RoomNews {
     private final Clock clock;
     /** 방 id → 문집 코드. 들어온 적 있는 방만 마감 재촉을 돌린다. */
     private final Map<Long, String> codes = new ConcurrentHashMap<>();
-    /** 하루에 한 번만 재촉한다: "문집:사람:날짜". */
-    private final Set<String> nudged = ConcurrentHashMap.newKeySet();
+    private final RoomMessageRepository messages;
 
-    public RoomNews(RoomHub hub, AnthologyService anthologyService, EssayService essayService, Clock clock) {
+    public RoomNews(RoomHub hub, AnthologyService anthologyService, EssayService essayService,
+                    RoomMessageRepository messages, Clock clock) {
         this.hub = hub;
+        this.messages = messages;
         this.anthologyService = anthologyService;
         this.essayService = essayService;
         this.clock = clock;
@@ -114,8 +113,6 @@ public class RoomNews {
     /** 켜져 있는 펫에도 하루 한 번 마감을 알린다. */
     @Scheduled(initialDelay = 120_000, fixedDelay = 600_000)
     public void nudgeOnline() {
-        String today = LocalDate.now(clock).toString();
-        nudged.removeIf(key -> !key.endsWith(today)); // 지난 날의 기록은 버린다
         for (Long anthologyId : hub.activeRooms()) {
             String code = codes.get(anthologyId);
             if (code == null) {
@@ -131,7 +128,8 @@ public class RoomNews {
     }
 
     /**
-     * 마감이 오늘이나 내일인데 아직 내지 않은 사람에게, 하루 한 번 낮에만 알린다.
+     * 마감이 오늘이나 내일인데 아직 내지 않은 사람에게, 하루 한 번 낮에만 알린다(그래서 많아야 두 번).
+     * 펫에서 ✕로 닫으면 그 마감일에 대해서는 더 띄우지 않는다.
      *
      * @return 알렸으면 true
      */
@@ -144,20 +142,18 @@ public class RoomNews {
         if (daysLeft < 0 || daysLeft > 1 || now.getHour() < NUDGE_FROM_HOUR || now.getHour() >= NUDGE_UNTIL_HOUR) {
             return false;
         }
-        String key = anthology.id() + ":" + contributor.id() + ":" + now.toLocalDate();
-        if (nudged.contains(key)) {
-            return false;
-        }
         Shelf shelf = essayService.shelf(anthology);
-        if (shelf.hasSubmitted(contributor)) {
-            return false;
+        if (shelf.hasSubmitted(contributor) || !messages.markNudged(contributor.id(), now.toLocalDate())) {
+            return false; // 이미 냈거나, 오늘 이미 알렸다(DB에 남아 서버를 다시 켜도 한 번)
         }
-        nudged.add(key);
         long locked = lockedFor(shelf, contributor);
         String start = shelf.essayOf(contributor).isPresent() ? "쓰던 글을 마저 내면 " : "독후감을 내면 ";
         String text = locked > 0 ? start + locked + "편이 열려요." : "아직 아무도 안 냈어요. 첫 글이 돼 보세요.";
-        hub.sendTo(anthology.id(), contributor.id(), "news",
-                news("due", null, daysLeft == 0 ? "오늘이 마감이에요" : "내일이 마감이에요", text, writePage(anthology)));
+        Map<String, Object> news = news("due", null, daysLeft == 0 ? "오늘이 마감이에요" : "내일이 마감이에요", text,
+                writePage(anthology));
+        // 펫에서 ✕로 닫으면 이 마감일에 대해서는 다시 띄우지 않는다
+        news.put("dismissKey", "due:" + anthology.code() + ":" + anthology.dueDate());
+        hub.sendTo(anthology.id(), contributor.id(), "news", news);
         return true;
     }
 

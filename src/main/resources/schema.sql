@@ -86,3 +86,5 @@ ALTER TABLE contributor ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP;
 ALTER TABLE contributor ADD COLUMN IF NOT EXISTS avatar_style VARCHAR(20);
 -- 모임방에서 어디까지 읽었는지(펫의 안 읽은 수). NULL이면 아직 방에 온 적 없음
 ALTER TABLE contributor ADD COLUMN IF NOT EXISTS last_read_message_id BIGINT;
+-- 마감 재촉을 마지막으로 보낸 날(하루 한 번, 서버를 다시 켜도 이어진다)
+ALTER TABLE contributor ADD COLUMN IF NOT EXISTS nudged_on DATE;

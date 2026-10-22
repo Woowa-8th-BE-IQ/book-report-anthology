@@ -22,4 +22,7 @@ public interface RoomMessageRepository {
 
     /** 내가 읽은 뒤에 남이 한 말 수. */
     int unreadCount(Long anthologyId, Long contributorId);
+
+    /** 오늘 마감 재촉을 보낸 것으로 남긴다. 오늘 이미 보냈으면 false(여러 서버·재시작에도 하루 한 번). */
+    boolean markNudged(Long contributorId, java.time.LocalDate today);
 }

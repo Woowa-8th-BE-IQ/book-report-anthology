@@ -109,4 +109,15 @@ public class JdbcRoomMessageRepository implements RoomMessageRepository {
                 .query(Integer.class)
                 .single();
     }
+
+    @Override
+    public boolean markNudged(Long contributorId, java.time.LocalDate today) {
+        return jdbc.sql("""
+                        UPDATE contributor SET nudged_on = :today
+                         WHERE id = :contributorId AND (nudged_on IS NULL OR nudged_on < :today)
+                        """)
+                .param("contributorId", contributorId)
+                .param("today", today)
+                .update() == 1;
+    }
 }

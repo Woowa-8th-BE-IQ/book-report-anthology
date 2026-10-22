@@ -12,6 +12,7 @@ import com.iq.anthology.fake.FakeActivityLog;
 import com.iq.anthology.fake.FakeAnthologyRepository;
 import com.iq.anthology.fake.FakeEssayRepository;
 import com.iq.anthology.fake.FakeReplyRepository;
+import com.iq.anthology.fake.FakeRoomMessageRepository;
 import com.iq.anthology.fake.SequentialIdentifiers;
 import java.time.Clock;
 import java.time.Instant;
@@ -28,7 +29,7 @@ class RoomNewsTest {
         Clock clock = Clock.fixed(Instant.parse(instant), SEOUL);
         EssayService essays = new EssayService(anthologyService, anthologies, new FakeEssayRepository(),
                 new FakeReplyRepository(), new FakeActivityLog(), clock, event -> { });
-        return new RoomNews(new RoomHub(), anthologyService, essays, clock);
+        return new RoomNews(new RoomHub(), anthologyService, essays, new FakeRoomMessageRepository(), clock);
     }
 
     private record Setup(FakeAnthologyRepository anthologies, AnthologyService service, Admission editor,
@@ -80,7 +81,7 @@ class RoomNewsTest {
         EssayService essays = new EssayService(s.service(), s.anthologies(), new FakeEssayRepository(),
                 new FakeReplyRepository(), new FakeActivityLog(), clock, event -> { });
         essays.save(s.editor().code(), s.potato().token(), "제목", null, LONG_BODY, true);
-        RoomNews news = new RoomNews(new RoomHub(), s.service(), essays, clock);
+        RoomNews news = new RoomNews(new RoomHub(), s.service(), essays, new FakeRoomMessageRepository(), clock);
 
         assertThat(news.nudge(s.anthology(), s.potatoInside())).isFalse();
     }
