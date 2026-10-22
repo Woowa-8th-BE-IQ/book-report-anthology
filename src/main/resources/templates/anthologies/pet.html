@@ -98,14 +98,14 @@
         <button type="button" role="tab" data-mode="join" aria-selected="false">초대받았어요</button>
       </div>
       <form class="create-form" data-form="open" autocomplete="off">
-        <label>문집 이름<input name="title" required maxlength="40" placeholder="예: 겨울꿈은 유난히 차갑다."></label>
+        <label>문집 이름<input name="title" required maxlength="40" placeholder="예: 스무 살의 숲"></label>
         <div class="row">
-          <label>책 제목<input name="bookTitle" required maxlength="80" placeholder="예: 이방인"></label>
-          <label>지은이<input name="bookAuthor" maxlength="40" placeholder="예: 알베르 카뮈"></label>
+          <label>책 제목<input name="bookTitle" required maxlength="80" placeholder="예: 노르웨이의 숲"></label>
+          <label>지은이<input name="bookAuthor" maxlength="40" placeholder="예: 무라카미 하루키"></label>
         </div>
         <div class="row">
           <label>내 닉네임<input name="nickname" required maxlength="12" placeholder="예: 아이큐"></label>
-          <label><span>마감일 <small>· 선택</small></span><input name="dueDate" type="date"></label>
+          <label><span>마감일 <small>· 선택</small></span><input name="dueDate" type="text" inputmode="decimal" placeholder="예: 11.30"></label>
         </div>
         <button type="submit" class="create-go">문집 열기</button>
       </form>

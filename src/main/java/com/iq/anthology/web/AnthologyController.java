@@ -75,7 +75,8 @@ public class AnthologyController extends FormSupport {
         }
         return attempt(redirect, "/anthologies/new", "form", form, () -> {
             Admission admission = anthologyService.open(form.getTitle(), form.getBookTitle(), form.getBookAuthor(),
-                    form.getDueDate(), form.getNickname(), form.getRealName());
+                    com.iq.anthology.support.DueDates.parse(form.getDueDate(), anthologyService.today()),
+                    form.getNickname(), form.getRealName());
             cookies.write(request, response, admission.code(), admission.token());
             redirect.addFlashAttribute("notice", "문집을 열었어요. 초대 링크를 함께 쓸 사람들에게 보내 주세요.");
             return "redirect:/anthologies/" + admission.code();

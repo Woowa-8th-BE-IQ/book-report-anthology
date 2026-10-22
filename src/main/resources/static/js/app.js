@@ -900,4 +900,46 @@
       setTimeout(() => root.classList.remove('theme-changing'), 400);
     });
   }
+
+  // 마감일: "11.30"처럼 월.일만 써도 된다(서버 DueDates와 같은 규칙). 단추로 1주·2주·한 달 뒤를 고른다.
+  document.querySelectorAll('[data-due]').forEach((field) => {
+    const input = field.querySelector('input');
+    const read = field.querySelector('.due-read');
+    const [ty, tm, td] = field.dataset.today.split('-').map(Number);
+    const today = new Date(ty, tm - 1, td);
+    const valid = (y, m, d) => { const date = new Date(y, m - 1, d); return date.getMonth() === m - 1 && date.getDate() === d ? date : null; };
+    const parse = (text) => {
+      const value = text.trim();
+      if (!value) return undefined;
+      let m = /^(\d{2}|\d{4})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})\s*일?\.?$/.exec(value) || /^(\d{4})(\d{2})(\d{2})$/.exec(value);
+      if (m) { const y = Number(m[1]); return valid(y < 100 ? 2000 + y : y, Number(m[2]), Number(m[3])); }
+      m = /^(\d{1,2})\s*[.\-/월]\s*(\d{1,2})\s*일?\.?$/.exec(value) || /^(\d{2})(\d{2})$/.exec(value);
+      if (!m) return null;
+      const date = valid(ty, Number(m[1]), Number(m[2]));
+      if (date && date < today) return valid(ty + 1, Number(m[1]), Number(m[2]));
+      return date;
+    };
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    const show = () => {
+      const date = parse(input.value);
+      field.classList.toggle('invalid', date === null);
+      if (date === undefined) { read.textContent = ''; return; }
+      if (date === null) { read.textContent = '11.30처럼 월.일로 써 주세요'; return; }
+      const left = Math.round((date - today) / 86400000);
+      read.textContent = `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${days[date.getDay()]}요일`
+        + (left < 0 ? ' · 이미 지난 날이에요' : left === 0 ? ' · 오늘' : ` · ${left}일 남음`);
+      field.classList.toggle('invalid', left < 0);
+    };
+    input.addEventListener('input', show);
+    field.querySelectorAll('[data-due-days]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const date = new Date(today);
+        date.setDate(date.getDate() + Number(button.dataset.dueDays));
+        input.value = date.getFullYear() === ty ? `${date.getMonth() + 1}.${date.getDate()}`
+          : `${String(date.getFullYear()).slice(2)}.${date.getMonth() + 1}.${date.getDate()}`;
+        show();
+      });
+    });
+    show();
+  });
 })();

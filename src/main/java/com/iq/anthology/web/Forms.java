@@ -1,7 +1,5 @@
 package com.iq.anthology.web;
 
-import java.time.LocalDate;
-import org.springframework.format.annotation.DateTimeFormat;
 
 /** 화면 폼 바인딩용. 검증은 도메인이 한다. */
 public final class Forms {
@@ -13,8 +11,8 @@ public final class Forms {
         private String title;
         private String bookTitle;
         private String bookAuthor;
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-        private LocalDate dueDate;
+        /** "11.30"처럼 사람이 쓴 그대로. 읽는 건 DueDates가 한다. */
+        private String dueDate;
         private String nickname;
         private String realName;
 
@@ -24,8 +22,8 @@ public final class Forms {
         public void setBookTitle(String bookTitle) { this.bookTitle = bookTitle; }
         public String getBookAuthor() { return bookAuthor; }
         public void setBookAuthor(String bookAuthor) { this.bookAuthor = bookAuthor; }
-        public LocalDate getDueDate() { return dueDate; }
-        public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
+        public String getDueDate() { return dueDate; }
+        public void setDueDate(String dueDate) { this.dueDate = dueDate; }
         public String getNickname() { return nickname; }
         public void setNickname(String nickname) { this.nickname = nickname; }
         public String getRealName() { return realName; }

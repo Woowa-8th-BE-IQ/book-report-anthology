@@ -15,29 +15,38 @@
 
     <form class="paper tape" method="post" th:action="@{/anthologies}" th:object="${form}" data-once>
       <div class="field">
-        <label for="title">문집 제목 <span class="hint">· 그대로 책 제목이 돼요</span></label>
+        <label for="title">문집 제목</label>
         <input id="title" type="text" th:field="*{title}" maxlength="40" required
-               placeholder="예: 일단 나부터 읽어 봅니다" data-count="title-count" data-max="40">
+               placeholder="예: 스무 살의 숲" data-count="title-count" data-max="40">
         <span class="counter" id="title-count"></span>
       </div>
       <div class="field-row">
         <div class="field">
           <label for="bookTitle">함께 읽을 책</label>
-          <input id="bookTitle" type="text" th:field="*{bookTitle}" maxlength="100" required placeholder="리팩터링">
+          <input id="bookTitle" type="text" th:field="*{bookTitle}" maxlength="100" required placeholder="노르웨이의 숲">
         </div>
         <div class="field">
           <label for="bookAuthor">지은이 <span class="hint">· 선택</span></label>
-          <input id="bookAuthor" type="text" th:field="*{bookAuthor}" maxlength="50" placeholder="마틴 파울러">
+          <input id="bookAuthor" type="text" th:field="*{bookAuthor}" maxlength="50" placeholder="무라카미 하루키">
         </div>
       </div>
       <div class="field">
-        <label for="dueDate">마감일 <span class="hint">· 선택, 마감은 엮은이가 직접 눌러요</span></label>
-        <input id="dueDate" type="date" th:field="*{dueDate}" th:min="${today}">
+        <label for="dueDate">마감일 <span class="hint">· 선택</span></label>
+        <div class="due-field" data-due th:attr="data-today=${today}">
+          <input id="dueDate" type="text" th:field="*{dueDate}" inputmode="decimal" autocomplete="off"
+                 placeholder="예: 11.30" aria-describedby="due-read">
+          <div class="due-quick" role="group" aria-label="빠르게 고르기">
+            <button type="button" data-due-days="7">1주 뒤</button>
+            <button type="button" data-due-days="14">2주 뒤</button>
+            <button type="button" data-due-days="30">한 달 뒤</button>
+          </div>
+          <span class="due-read" id="due-read" aria-live="polite"></span>
+        </div>
       </div>
       <div class="field-row">
         <div class="field">
           <label for="nickname">내 닉네임</label>
-          <input id="nickname" type="text" th:field="*{nickname}" maxlength="12" required placeholder="레오">
+          <input id="nickname" type="text" th:field="*{nickname}" maxlength="12" required placeholder="아이큐">
         </div>
         <div class="field">
           <label for="realName">실명 <span class="hint">· 선택, 책에 "닉네임(실명)"으로 실려요</span></label>

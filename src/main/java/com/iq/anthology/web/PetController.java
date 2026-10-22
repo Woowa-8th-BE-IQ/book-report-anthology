@@ -58,14 +58,7 @@ public class PetController {
                                                     @RequestParam(required = false) String realName,
                                                     HttpServletRequest request, HttpServletResponse response) {
         try {
-            java.time.LocalDate due = null;
-            if (dueDate != null && !dueDate.isBlank()) {
-                try {
-                    due = java.time.LocalDate.parse(dueDate.strip());
-                } catch (java.time.format.DateTimeParseException e) {
-                    throw DomainException.rule("마감일 형식이 올바르지 않아요.");
-                }
-            }
+            java.time.LocalDate due = com.iq.anthology.support.DueDates.parse(dueDate, anthologyService.today());
             var admission = anthologyService.open(title, bookTitle, bookAuthor, due, nickname, realName);
             cookies.write(request, response, admission.code(), admission.token());
             return ResponseEntity.ok(admitted(admission.code(), admission.token(), false));
