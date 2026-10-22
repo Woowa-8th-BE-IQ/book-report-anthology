@@ -4,6 +4,14 @@
   --line: #D8C9B4; --accent: #B8571A; --good: #4F6B3A;
   --sans: "SUIT Variable", "SUIT", system-ui, sans-serif; --hand: "Nanum Pen Script", cursive;
 }
+/* 밤의 서재: 컴퓨터가 다크 모드면 펫도 따라간다 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #16110C; --card: #211913; --ink: #F1E7D8; --ink-soft: #D9C7AF; --muted: #A38F76;
+    --line: #3B2F24; --accent: #E38544; --good: #93B574;
+    color-scheme: dark;
+  }
+}
 html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
 body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-user-select: none; }
 
@@ -173,7 +181,7 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 }
 
 /* ───────── 문집 소식·부르기 ───────── */
-.pet-badge.called, .pet-tab-badge.called, .pet-menu-badge.called { background: var(--ink); }
+.pet-badge.called, .pet-tab-badge.called, .pet-menu-badge.called { background: var(--ink); color: var(--card); }
 .pet-avatar.called .pet-face { animation: called-hop .5s ease-out 3; }
 @keyframes called-hop { 20% { translate: 0 -20px; rotate: -8deg; } 45% { translate: 0 0; rotate: 0deg; } 65% { translate: 0 -8px; rotate: 6deg; } }
 .pet-bubble.called { border-color: var(--ink); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 12%, transparent), 0 8px 20px rgba(26,18,8,.18); }

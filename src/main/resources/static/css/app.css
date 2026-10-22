@@ -12,6 +12,10 @@
   --accent: #B8571A;
   --accent-bright: #D2691E;
   --good: #4F6B3A;
+  --danger: #B3261E;
+  /* 어두운 바탕(주황 단추·나무 책상·가림막) 위 글자. 테마가 바뀌어도 그대로 */
+  --cream: #FFFDF8;
+  --scrim: rgba(26, 18, 8, .55);
 
   --sans: "SUIT Variable", "SUIT", "Pretendard", system-ui, sans-serif;
   --serif: "Noto Serif KR", serif;
@@ -20,6 +24,46 @@
   --radius: 6px;
   --shadow: 0 1px 0 rgba(74, 48, 32, .06), 0 10px 24px -14px rgba(74, 48, 32, .35);
   --wrap: 1040px;
+}
+
+/* ───────── 밤의 서재(다크 모드) ─────────
+   기기 설정을 따르고, 머리말의 달·해 단추로 바꾸면 그쪽이 이긴다(data-theme). */
+:root { color-scheme: light; }
+:root[data-theme="dark"] {
+  --paper: #16110C;
+  --paper-deep: #100C08;
+  --card: #211913;
+  --ink: #F1E7D8;
+  --ink-soft: #D9C7AF;
+  --muted: #A38F76;
+  --line: #3B2F24;
+  --tape: #6B5642;
+  --accent: #E38544;
+  --accent-bright: #F29A57;
+  --good: #93B574;
+  --danger: #FF7A6B;
+  --scrim: rgba(5, 3, 1, .7);
+  --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 12px 28px -14px rgba(0, 0, 0, .75);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  --paper: #16110C;
+  --paper-deep: #100C08;
+  --card: #211913;
+  --ink: #F1E7D8;
+  --ink-soft: #D9C7AF;
+  --muted: #A38F76;
+  --line: #3B2F24;
+  --tape: #6B5642;
+  --accent: #E38544;
+  --accent-bright: #F29A57;
+  --good: #93B574;
+  --danger: #FF7A6B;
+  --scrim: rgba(5, 3, 1, .7);
+  --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 12px 28px -14px rgba(0, 0, 0, .75);
+  color-scheme: dark;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -307,12 +351,12 @@ textarea { resize: vertical; line-height: 1.7; }
 textarea.serif { font-family: var(--serif); }
 input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
 .counter { justify-self: end; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.counter.over { color: #B3261E; font-weight: 700; }
+.counter.over { color: var(--danger); font-weight: 700; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   padding: 13px 26px; border: 1px solid var(--accent); border-radius: 3px;
-  background: var(--accent); color: var(--card); font: inherit; font-size: 15px; font-weight: 700;
+  background: var(--accent); color: var(--cream); font: inherit; font-size: 15px; font-weight: 700;
   text-decoration: none; cursor: pointer; transition: transform .15s, background .2s, box-shadow .2s;
   box-shadow: 0 6px 16px -10px var(--accent);
 }
@@ -333,8 +377,8 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); box-sh
 .flash .hand { font-size: 22px; line-height: 1; white-space: nowrap; }
 .flash.notice { background: color-mix(in srgb, var(--good) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--good) 30%, transparent); }
 .flash.notice .hand { color: var(--good); }
-.flash.error { background: color-mix(in srgb, #B3261E 7%, var(--card)); border: 1px solid color-mix(in srgb, #B3261E 30%, transparent); }
-.flash.error .hand { color: #B3261E; }
+.flash.error { background: color-mix(in srgb, var(--danger) 7%, var(--card)); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); }
+.flash.error .hand { color: var(--danger); }
 
 /* ───────── 문집 화면 상단 ───────── */
 
@@ -443,17 +487,17 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); box-sh
 
 .save-bar .status.saving { color: var(--accent); }
 .save-bar .status.saved { color: var(--good); }
-.save-bar .status.failed { color: #B3261E; }
+.save-bar .status.failed { color: var(--danger); }
 #submit-button[aria-disabled="true"] { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* 제출 전 미리보기 */
 .preview-dialog { width: min(640px, 100% - 24px); max-height: calc(100vh - 40px); padding: 0; border: 0; background: transparent; overflow: visible; }
-.preview-dialog::backdrop { background: color-mix(in srgb, var(--ink) 55%, transparent); backdrop-filter: blur(2px); }
+.preview-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(2px); }
 .preview-dialog[open] .preview-page { animation: page-in .45s cubic-bezier(.2, .8, .2, 1); }
 .preview-page { max-height: calc(100vh - 170px); overflow: auto; }
 .preview-page p { text-indent: 1em; }
 .preview-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 14px; }
-.preview-actions .hand { margin: 0 auto 0 4px; font-size: 22px; color: var(--card); }
+.preview-actions .hand { margin: 0 auto 0 4px; font-size: 22px; color: var(--cream); }
 @keyframes page-in { from { opacity: 0; transform: translateY(18px) rotate(-1deg); } to { opacity: 1; transform: none; } }
 
 /* ───────── 2차: 읽기 ───────── */
@@ -513,7 +557,7 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .people li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 14px; }
 .people li > span { margin-right: auto; }
 .link-button { border: 0; background: none; padding: 0; font: inherit; font-size: 12.5px; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.link-button.danger { color: #B3261E; }
+.link-button.danger { color: var(--danger); }
 
 .reissued { padding: 22px 26px; margin-top: 18px; border-color: color-mix(in srgb, var(--good) 40%, var(--line)); }
 .reissued .hand { font-size: 24px; color: var(--good); }
@@ -586,10 +630,10 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .table-scene .ring { position: relative; aspect-ratio: 1; margin: 0; padding: 0; list-style: none; }
 .table-top { position: absolute; aspect-ratio: 1; width: 46cqi; left: 27cqi; top: 27cqi; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #D9B48A, #B88A5E 70%, #9C7049); box-shadow: inset 0 -10px 24px rgba(74,48,32,.25), 0 18px 40px rgba(74,48,32,.18); display: grid; place-items: center; z-index: 0; pointer-events: none; }
 .table-scene.crowd .table-top { width: 36cqi; left: 32cqi; top: 32cqi; }
-.table-book { position: absolute; width: 22%; height: 15%; left: 24%; top: 30%; background: var(--card); border-radius: 2px; box-shadow: 2px 2px 0 rgba(0,0,0,.12); transform: rotate(-14deg); }
+.table-book { position: absolute; width: 22%; height: 15%; left: 24%; top: 30%; background: var(--cream); border-radius: 2px; box-shadow: 2px 2px 0 rgba(0,0,0,.12); transform: rotate(-14deg); }
 .table-book::after { content: ""; position: absolute; inset: 0 50% 0 auto; width: 1px; background: var(--line); }
-.table-cup { position: absolute; width: 11%; aspect-ratio: 1; right: 26%; top: 34%; border-radius: 50%; background: radial-gradient(circle, #5A3A22 52%, var(--card) 55%); box-shadow: 1px 2px 0 rgba(0,0,0,.12); }
-.table-count { position: absolute; bottom: 22%; margin: 0; font-size: 22px; color: var(--card); text-shadow: 0 1px 0 rgba(0,0,0,.2); }
+.table-cup { position: absolute; width: 11%; aspect-ratio: 1; right: 26%; top: 34%; border-radius: 50%; background: radial-gradient(circle, #5A3A22 52%, var(--cream) 55%); box-shadow: 1px 2px 0 rgba(0,0,0,.12); }
+.table-count { position: absolute; bottom: 22%; margin: 0; font-size: 22px; color: var(--cream); text-shadow: 0 1px 0 rgba(0,0,0,.2); }
 
 /* 방 바닥: 아바타는 (--x, --y) 비율 자리에 선다. 걸어갈 때는 left/top이 천천히 바뀐다. */
 .floor { outline: none; border-radius: 24px; }
@@ -676,7 +720,7 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 
 .dresser { width: min(980px, 100% - 40px); margin-inline: auto; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
 .dresser-preview { position: sticky; top: 90px; padding: 30px 24px; text-align: center; }
-.dresser-stage { width: 200px; height: 200px; margin: 0 auto; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--paper) 60%, #fff), var(--paper)); }
+.dresser-stage { width: 200px; height: 200px; margin: 0 auto; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--paper) 60%, var(--card)), var(--paper)); }
 .dresser-stage img { width: 180px; height: 180px; transform-origin: 50% 88%; animation: breathe 3.6s ease-in-out infinite; filter: drop-shadow(0 8px 8px rgba(26,18,8,.15)); }
 .dresser-stage img.pop { animation: pop .35s ease-out, breathe 3.6s ease-in-out .35s infinite; }
 @keyframes pop { 40% { transform: scale(1.12) translateY(-6px); } }
@@ -739,3 +783,27 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .mention-pick[hidden] { display: none; }
 .mention-pick li { padding: 6px 10px; border-radius: 7px; cursor: pointer; white-space: nowrap; }
 .mention-pick li[aria-selected="true"] { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; }
+
+/* ───────── 테마 단추와 밤에만 다른 것 ───────── */
+.theme-toggle { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid transparent; border-radius: 50%; background: transparent; color: var(--ink-soft); cursor: pointer; transition: background .2s, color .2s, transform .3s; }
+.theme-toggle:hover { background: color-mix(in srgb, var(--ink) 7%, transparent); color: var(--accent); transform: rotate(-12deg); }
+.theme-toggle:focus-visible { outline: 2px dashed var(--accent); outline-offset: 2px; }
+.theme-toggle svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.theme-toggle .sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .moon { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-toggle .sun { display: block; }
+  :root:not([data-theme="light"]) .theme-toggle .moon { display: none; }
+}
+/* 밤에는 로고의 검은 타일이 바탕에 묻히지 않게 테두리를 두르고, 종이 결은 거의 지운다 */
+:root[data-theme="dark"] .brand-mark svg > rect:first-child { stroke: var(--line); stroke-width: 1.2; }
+:root[data-theme="dark"] body { background-image: none; }
+:root[data-theme="dark"] .table-top { filter: brightness(.82) saturate(.9); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brand-mark svg > rect:first-child { stroke: var(--line); stroke-width: 1.2; }
+  :root:not([data-theme="light"]) body { background-image: none; }
+  :root:not([data-theme="light"]) .table-top { filter: brightness(.82) saturate(.9); }
+}
+/* 바꿀 때 한 번 부드럽게 */
+:root.theme-changing, :root.theme-changing * { transition: background-color .35s ease, color .35s ease, border-color .35s ease !important; }

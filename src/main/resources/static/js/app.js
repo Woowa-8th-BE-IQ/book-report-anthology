@@ -881,4 +881,23 @@
       if (original) apply(original);
     });
   }
+
+  // 밤·낮 바꾸기. 고르면 이 기기에 기억하고, 고른 적 없으면 기기 설정을 따른다.
+  const toggle = document.querySelector('[data-theme-toggle]');
+  if (toggle) {
+    const root = document.documentElement;
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+    const isDark = () => (root.dataset.theme ? root.dataset.theme === 'dark' : systemDark.matches);
+    const label = () => toggle.setAttribute('aria-label', isDark() ? '낮의 서재로 바꾸기' : '밤의 서재로 바꾸기');
+    label();
+    systemDark.addEventListener?.('change', label);
+    toggle.addEventListener('click', () => {
+      const next = isDark() ? 'light' : 'dark';
+      root.classList.add('theme-changing');
+      root.dataset.theme = next;
+      try { localStorage.setItem('theme', next); } catch (e) { /* 저장 못 해도 이번 화면은 바뀐다 */ }
+      label();
+      setTimeout(() => root.classList.remove('theme-changing'), 400);
+    });
+  }
 })();

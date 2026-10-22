@@ -2,10 +2,11 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head th:fragment="head(title)">
   <meta charset="UTF-8">
-  <script>document.documentElement.classList.add('js')</script>
+  <script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t}catch(e){}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="same-origin">
-  <meta name="theme-color" content="#F6F1E9">
+  <meta name="theme-color" content="#F6F1E9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16110C" media="(prefers-color-scheme: dark)">
   <title th:text="${title} + ' · 덕후감'">덕후감</title>
   <meta name="description" th:content="${ogDescription} ?: '같은 책을 읽은 사람들의 독후감을 한 권으로. 내 글을 내면 남의 글이 열려요.'">
   <!-- 카톡·슬랙 공유 미리보기 -->
@@ -41,6 +42,10 @@
       <a th:href="@{/#faq}">자주 묻는 질문</a>
     </nav>
     <span class="spacer"></span>
+    <button type="button" class="theme-toggle" data-theme-toggle aria-label="밤의 서재로 바꾸기" title="밤·낮 바꾸기">
+      <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.2A7.8 7.8 0 0 1 9.8 4.5a7.8 7.8 0 1 0 9.7 9.7z"/><path d="M16.2 4.2v2.6M14.9 5.5h2.6"/></svg>
+      <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5L7 7M17 17l1.5 1.5M5.5 18.5L7 17M17 7l1.5-1.5"/></svg>
+    </button>
     <a class="header-cta" th:href="@{/anthologies/new}">문집 열기</a>
   </div>
 </header>
