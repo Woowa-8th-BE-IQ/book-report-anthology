@@ -242,11 +242,30 @@
     if ((event.buttons & 1) === 0) { release(); return; } // 버튼이 이미 떼어져 있다: 붙어 다니지 않게
     const dx = event.screenX - press.x;
     const dy = event.screenY - press.y;
+    // 창 밖에서 들어온 이상한 좌표(무한대·엄청 큰 값)는 버린다. 앱이 창을 옮기다 오류를 냈다.
+    if (!Number.isFinite(dx) || !Number.isFinite(dy) || Math.abs(dx) > 400 || Math.abs(dy) > 400) {
+      press.x = event.screenX;
+      press.y = event.screenY;
+      return;
+    }
     if (!press.moved && Math.hypot(dx, dy) < 4) return;
     press.moved = true;
-    app.dragBy(dx, dy);
+    // 한 화면 그리기마다 한 번만 옮긴다(움직임을 모아서): 덜 끊기고 앱에 보내는 신호도 줄어든다
+    press.pendingX = (press.pendingX || 0) + dx;
+    press.pendingY = (press.pendingY || 0) + dy;
     press.x = event.screenX;
     press.y = event.screenY;
+    if (!press.frame) {
+      const current = press;
+      current.frame = requestAnimationFrame(() => {
+        current.frame = 0;
+        const mx = Math.round(current.pendingX || 0);
+        const my = Math.round(current.pendingY || 0);
+        current.pendingX -= mx;
+        current.pendingY -= my;
+        if (mx || my) app.dragBy(mx, my);
+      });
+    }
   });
   avatar.addEventListener('pointerup', (event) => {
     const was = press;

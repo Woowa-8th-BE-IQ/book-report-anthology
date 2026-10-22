@@ -5,6 +5,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const updater = require('./updater');
 
+// 메인 프로세스에서 예상 못 한 오류가 나도 무서운 오류 창을 띄우지 않고 기록만 한다
+process.on('uncaughtException', (error) => console.error('펫 오류', error));
+
 const BASE = new URL(process.env.PET_BASE_URL || 'https://book-report-anthology.onrender.com');
 const SIZE = { collapsed: { width: 260, height: 300 }, expanded: { width: 340, height: 560 } };
 const WALK_SPEED = 70; // px/s
@@ -218,8 +221,24 @@ ipcMain.on('pet:drag', (event, dx, dy) => {
   if (!pet || event.sender !== pet.webContents) return;
   dragging = true;
   stopWalk();
+  const mx = Number(dx);
+  const my = Number(dy);
+  if (!Number.isFinite(mx) || !Number.isFinite(my) || Math.abs(mx) > 400 || Math.abs(my) > 400) return;
   const [x, y] = pet.getPosition();
-  pet.setPosition(Math.round(x + Number(dx || 0)), Math.round(y + Number(dy || 0)));
+  // 화면 밖으로 멀리 나가지 않게 모든 화면을 합친 범위 안에 둔다
+  const area = screen.getAllDisplays().reduce((box, display) => {
+    const b = display.bounds;
+    return { left: Math.min(box.left, b.x), top: Math.min(box.top, b.y),
+      right: Math.max(box.right, b.x + b.width), bottom: Math.max(box.bottom, b.y + b.height) };
+  }, { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
+  const [width, height] = pet.getSize();
+  const nx = Math.round(Math.min(Math.max(x + mx, area.left - width / 2), area.right - width / 2));
+  const ny = Math.round(Math.min(Math.max(y + my, area.top), area.bottom - height / 2));
+  try {
+    pet.setPosition(nx, ny);
+  } catch (error) {
+    console.error('펫을 옮기지 못했어요', error); // 한 번 실패해도 오류 창을 띄우지 않는다
+  }
 });
 
 ipcMain.on('pet:drag-end', (event) => {
