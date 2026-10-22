@@ -13,6 +13,15 @@ spring:
   h2:
     console:
       enabled: false
+  web:
+    resources:
+      # css·js 주소에 내용 해시를 붙인다(/css/pet.css → /css/pet-3f2a….css). 바뀌면 주소가 바뀌어
+      # 브라우저·펫이 예전 파일을 붙들고 있지 않는다.
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: /css/**,/js/**
 
 server:
   servlet:

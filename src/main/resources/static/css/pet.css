@@ -205,9 +205,12 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 @media (prefers-reduced-motion: reduce) { .pet-avatar.called .pet-face { animation: none; } }
 
 /* 타자 소리 단추(대화창 위 줄) */
-.pet-sound { display: grid; place-items: center; width: 26px; height: 22px; margin-left: auto; padding: 0; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; }
+/* 꺼짐: 흐린 아이콘에 빗금. 켜짐: 주황 바탕에 흰 아이콘. 한눈에 구분되게 */
+.pet-sound { position: relative; display: grid; place-items: center; width: 28px; height: 22px; margin-left: auto; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--muted); opacity: .6; cursor: pointer; -webkit-appearance: none; appearance: none; transition: background .15s, color .15s, opacity .15s; }
 .pet-sound[hidden] { display: none; }
 .pet-sound .i { width: 16px; height: 16px; }
-.pet-sound:hover { color: var(--ink-soft); background: color-mix(in srgb, var(--ink) 6%, transparent); }
-.pet-sound[aria-pressed="true"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.pet-sound::after { content: ""; position: absolute; left: 6px; right: 6px; top: 50%; height: 1.6px; border-radius: 1px; background: currentColor; transform: rotate(-35deg); }
+.pet-sound:hover { opacity: 1; color: var(--ink-soft); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.pet-sound[aria-pressed="true"] { opacity: 1; color: #fff; background: var(--accent); }
+.pet-sound[aria-pressed="true"]::after { display: none; }
 .pet-sub { gap: 8px; }

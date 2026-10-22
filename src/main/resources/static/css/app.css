@@ -310,9 +310,9 @@ a.essay-card:hover { transform: translateY(-3px); rotate: 0deg; box-shadow: 0 1p
 .editor .quote-input { font-family: var(--serif); background: color-mix(in srgb, var(--paper) 70%, transparent); border: 0; border-left: 3px solid var(--accent); border-radius: 0; }
 .save-bar { position: sticky; bottom: 0; z-index: 20; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 0; margin-top: 24px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--card) 94%, transparent); backdrop-filter: blur(6px); }
 .editor-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
-.sound-toggle { font: inherit; font-size: 12px; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; cursor: pointer; transition: color .2s, border-color .2s, background .2s; }
+.sound-toggle { -webkit-appearance: none; appearance: none; font: inherit; font-size: 12px; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; cursor: pointer; transition: color .2s, border-color .2s, background .2s; }
 .sound-toggle:hover { color: var(--ink-soft); border-color: var(--tape); }
-.sound-toggle[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.sound-toggle[aria-pressed="true"] { color: var(--cream); border-color: var(--accent); background: var(--accent); }
 .save-bar .spacer { flex: 1; }
 .save-bar .status { font-size: 13px; color: var(--muted); }
 
