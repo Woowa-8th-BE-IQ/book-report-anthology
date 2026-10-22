@@ -9,14 +9,21 @@
 
   // 투명한 곳은 클릭이 뒤의 앱으로 지나가고, 아바타·말풍선·창·메뉴 위에서만 창이 클릭을 받는다.
   let interactive = null;
+  let pressing = () => false; // 아바타를 끄는 중이면 창이 클릭을 놓지 않게(아래에서 채운다)
   document.addEventListener('mousemove', (event) => {
-    const hit = Boolean(event.target.closest('[data-interactive], .pet-bubble'));
+    // 끄는 동안 창이 커서보다 늦게 따라오면 커서가 잠깐 아바타 밖으로 나간다. 그때 클릭을 놓으면
+    // 손을 뗀 신호(mouseup)를 못 받아 펫이 마우스에 붙어 다녔다. 끄는 중에는 계속 붙잡는다.
+    const hit = pressing() || Boolean(event.target.closest('[data-interactive], .pet-bubble'));
     if (hit !== interactive) {
       interactive = hit;
       app.setInteractive(hit);
     }
   });
-  document.addEventListener('mouseleave', () => { interactive = false; app.setInteractive(false); });
+  document.addEventListener('mouseleave', () => {
+    if (pressing()) return; // 끄는 중에 커서가 창 밖으로 나가도 놓지 않는다(손을 떼면 그 신호가 이 창으로 온다)
+    interactive = false;
+    app.setInteractive(false);
+  });
   document.querySelector('[data-pet="relink"]')?.addEventListener('click', () => (app.addAnthology || app.relink)());
 
   const stage = document.getElementById('pet-stage');
@@ -218,6 +225,13 @@
 
   // ───────── 아바타: 끌면 창이 따라오고, 그냥 누르면 대화창 ─────────
   let press = null;
+  pressing = () => press !== null;
+  // 손을 뗀 신호를 놓쳤을 때 끄기를 끝낸다(움직였으면 자리를 저장)
+  const release = () => {
+    const was = press;
+    press = null;
+    if (was?.moved) app.dragEnd();
+  };
   avatar.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || event.ctrlKey) return; // 맥의 Ctrl+클릭은 우클릭이다
     press = { x: event.screenX, y: event.screenY, moved: false };
@@ -225,6 +239,7 @@
   });
   avatar.addEventListener('pointermove', (event) => {
     if (!press) return;
+    if ((event.buttons & 1) === 0) { release(); return; } // 버튼이 이미 떼어져 있다: 붙어 다니지 않게
     const dx = event.screenX - press.x;
     const dy = event.screenY - press.y;
     if (!press.moved && Math.hypot(dx, dy) < 4) return;
@@ -240,6 +255,9 @@
     if (!was.moved) expand(panel.hidden);
     else app.dragEnd();
   });
+  avatar.addEventListener('pointercancel', release);
+  avatar.addEventListener('lostpointercapture', () => { if (press) release(); });
+  window.addEventListener('blur', () => { if (press) release(); });
   avatar.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
