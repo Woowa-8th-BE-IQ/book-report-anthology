@@ -110,7 +110,7 @@ room_message(id, anthology_id, contributor_id, body, created_at)        -- 모�
 | POST | `/anthologies/{code}/room/read` | 여기까지 읽었다 `upTo=말 id` (뒤로 가지 않음) |
 | GET | `/anthologies/{code}/avatar` | 캐릭터 꾸미기 |
 | POST | `/anthologies/{code}/avatar` | 캐릭터 저장. `X-Room` 헤더면 JSON |
-| GET | `/avatars/{style}.svg` | 모양 글자로 그린 아바타 (오래 캐시) |
+| GET | `/avatars/v2/{style}.svg` | 모양 글자로 그린 아바타 (오래 캐시, 그림체를 바꾸면 판을 올림) |
 | GET | `/pet` | 데스크톱 펫 화면 (출입증의 모든 문집) |
 | POST | `/pet/leave` | 펫에서 문집 빼기 (출입증만 지움) |
 | POST | `/pet/anthologies` | 펫에서 문집 열기. JSON(초대 링크·개인 링크) |

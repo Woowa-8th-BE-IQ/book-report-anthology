@@ -36,8 +36,11 @@ public class AvatarController extends FormSupport {
         this.cookies = cookies;
     }
 
-    /** 모양 글자(c3b1e2m0x4k1)로 그린 그림. 같은 글자는 언제나 같은 그림이라 오래 캐시한다. */
-    @GetMapping("/avatars/{style}.svg")
+    /**
+     * 모양 글자(c3b1e2m0x4k1)로 그린 그림. 같은 글자는 언제나 같은 그림이라 오래 캐시한다.
+     * 그림체를 바꾸면 주소의 판(v2)을 올린다. 예전 주소도 그대로 열린다.
+     */
+    @GetMapping({"/avatars/v2/{style}.svg", "/avatars/{style}.svg"})
     @ResponseBody
     public ResponseEntity<String> preview(@PathVariable String style) {
         return ResponseEntity.ok()
@@ -67,7 +70,7 @@ public class AvatarController extends FormSupport {
                 part("body", "몸", AvatarStyle.BODIES, current, AvatarStyle::body, AvatarStyle::withBody,
                         "동그라미", "책", "네모", "구름", "고양이"),
                 part("eyes", "눈", AvatarStyle.EYES, current, AvatarStyle::eyes, AvatarStyle::withEyes,
-                        "점", "웃는 눈", "안경", "윙크"),
+                        "콩", "웃는 눈", "안경", "윙크"),
                 part("mouth", "입", AvatarStyle.MOUTHS, current, AvatarStyle::mouth, AvatarStyle::withMouth,
                         "미소", "오", "일자", "활짝"),
                 part("extra", "소품", AvatarStyle.EXTRAS, current, AvatarStyle::extra, AvatarStyle::withExtra,
@@ -107,7 +110,7 @@ public class AvatarController extends FormSupport {
                 part("body", "몸", AvatarStyle.BODIES, any, AvatarStyle::body, AvatarStyle::withBody,
                         "동그라미", "책", "네모", "구름", "고양이"),
                 part("eyes", "눈", AvatarStyle.EYES, any, AvatarStyle::eyes, AvatarStyle::withEyes,
-                        "점", "웃는 눈", "안경", "윙크"),
+                        "콩", "웃는 눈", "안경", "윙크"),
                 part("mouth", "입", AvatarStyle.MOUTHS, any, AvatarStyle::mouth, AvatarStyle::withMouth,
                         "미소", "오", "일자", "활짝"),
                 part("extra", "소품", AvatarStyle.EXTRAS, any, AvatarStyle::extra, AvatarStyle::withExtra,

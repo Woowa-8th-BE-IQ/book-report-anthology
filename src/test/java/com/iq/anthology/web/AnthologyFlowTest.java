@@ -284,7 +284,7 @@ class AnthologyFlowTest {
         mvc.perform(get("/avatars/{style}.svg", "nope")).andExpect(status().isUnprocessableEntity());
         assertThat(mvc.perform(get("/anthologies/{code}/avatar", code).cookie(editor))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString())
-                .contains("내 캐릭터", "고양이", "/avatars/c");
+                .contains("내 캐릭터", "고양이", "/avatars/v2/c");
         mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor)
                         .param("style", "c8b4e2m3x5k1").param("back", "room"))
                 .andExpect(status().is3xxRedirection())
