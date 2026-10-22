@@ -129,12 +129,20 @@ public class PetController {
         tabs.sort(Comparator.comparing(Tab::anthologyId));
         String selected = tabs.stream().map(Tab::code).filter(code -> code.equals(focus)).findFirst()
                 .orElse(tabs.isEmpty() ? null : tabs.get(0).code());
+        model.addAttribute("build", com.iq.anthology.room.RoomHub.BUILD);
         model.addAttribute("tabs", tabs);
         model.addAttribute("selected", selected);
         model.addAttribute("history", PET_HISTORY);
         model.addAttribute("bodyMax", RoomMessage.BODY_MAX);
         model.addAttribute("parts", AvatarController.partNames());
         return "anthologies/pet";
+    }
+
+    /** 지금 서버 판. 펫 앱이 화면을 새로 고칠지 정할 때 본다. */
+    @GetMapping(path = "/pet/build", produces = "text/plain")
+    @ResponseBody
+    public String build() {
+        return com.iq.anthology.room.RoomHub.BUILD;
     }
 
     /** 예전 펫 주소. 지금은 모든 문집을 한 화면에 띄운다. */

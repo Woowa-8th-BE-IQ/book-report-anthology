@@ -574,6 +574,15 @@
       });
       room.classList.toggle('can-walk', data.online.includes(me));
       status.textContent = '';
+      // 서버가 새로 배포됐으면 쓰던 말이 없을 때 새로 고친다
+      if (data.build && room.dataset.build && data.build !== room.dataset.build && !room.dataset.refreshing) {
+        room.dataset.refreshing = '1';
+        const timer = setInterval(() => {
+          if (input.value.trim()) return;
+          clearInterval(timer);
+          window.location.reload();
+        }, 3000);
+      }
     });
     source.addEventListener('presence', (event) => { const data = parse(event); if (data) setOnline(data.online); });
     // 누가 캐릭터를 바꾸면 자리와 대화의 얼굴을 바로 바꾼다(서버가 그린 SVG, 사용자 글자 없음)

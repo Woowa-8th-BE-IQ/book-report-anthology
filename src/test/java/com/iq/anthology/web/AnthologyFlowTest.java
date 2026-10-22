@@ -215,6 +215,8 @@ class AnthologyFlowTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
                         .isEqualTo("/pet?focus=" + code));
+        assertThat(mvc.perform(get("/pet/build")).andExpect(status().isOk()).andReturn().getResponse()
+                .getContentAsString()).isEqualTo(com.iq.anthology.room.RoomHub.BUILD);
         assertThat(mvc.perform(get("/pet").cookie(editor))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString())

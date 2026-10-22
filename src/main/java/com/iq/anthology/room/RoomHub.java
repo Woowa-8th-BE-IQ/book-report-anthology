@@ -24,6 +24,14 @@ public class RoomHub {
 
     static final Duration CONNECTION_TTL = Duration.ofMinutes(15);
 
+    /**
+     * 지금 떠 있는 서버 판. 배포하면 바뀐다(Render는 커밋을, 그 밖에서는 켠 시각을 쓴다).
+     * 펫·모임방 화면은 다시 붙었을 때 이 값이 다르면 스스로 새로 고친다.
+     */
+    public static final String BUILD = java.util.Optional.ofNullable(System.getenv("RENDER_GIT_COMMIT"))
+            .filter(commit -> !commit.isBlank())
+            .orElseGet(() -> Long.toString(System.currentTimeMillis(), 36));
+
     private final Map<Long, List<Connection>> rooms = new ConcurrentHashMap<>();
     /** 방 안에서 걸어간 자리. 방을 완전히 나가면 지워지고 다시 들어오면 제자리에서 시작한다. */
     private final Map<Long, Map<Long, Position>> positions = new ConcurrentHashMap<>();
@@ -46,7 +54,7 @@ public class RoomHub {
         emitter.onError(error -> leave.run());
 
         send(anthologyId, connection, "hello", Map.of("online", online(anthologyId),
-                "positions", positionsOf(anthologyId)));
+                "positions", positionsOf(anthologyId), "build", BUILD));
         broadcast(anthologyId, "presence", Map.of("online", online(anthologyId)));
         return emitter;
     }

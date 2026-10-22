@@ -55,6 +55,8 @@
 
 바로 받고 싶으면 메뉴 막대 아이콘의 **업데이트 확인**을 누르거나 껐다 켜요.
 
+사이트(서버)가 새로 배포되면 펫 화면은 스스로 새로 고쳐요. 쓰던 말이 있거나 메뉴를 열어 두었으면 끝날 때까지 기다려요. 그래서 껐다 켤 일은 앱 자체가 바뀔 때뿐이에요.
+
 ```bash
 pkill -x BookReportPet; sleep 2; open /Applications/BookReportPet.app
 ```

@@ -480,10 +480,35 @@
     restart(avatar, called ? 'called' : 'excited');
   };
 
+  // 서버가 새로 배포되면(다시 붙은 연결의 판이 다르면) 화면을 새로 고친다.
+  // 쓰던 말이 있거나 메뉴·꾸미기를 보고 있으면 끝날 때까지 기다린다.
+  let refreshing = null;
+  const busy = () => !menu.hidden || !dresser.hidden || !creator.hidden
+    || [...views.values()].some((view) => view.element.querySelector('.pet-form textarea')?.value.trim());
+  function refreshWhenIdle() {
+    if (refreshing) return;
+    const tryNow = () => {
+      if (busy()) return;
+      clearInterval(refreshing);
+      const open = !panel.hidden;
+      const url = new URL('/pet', window.location.origin);
+      if (selected) url.searchParams.set('focus', selected);
+      if (open) url.searchParams.set('open', '1');
+      window.location.replace(url.toString());
+    };
+    refreshing = setInterval(tryNow, 3000);
+    tryNow();
+  }
+
   views.forEach((view) => {
     const source = new EventSource(view.element.dataset.stream);
     const online = (event) => { const data = parse(event); if (data) view.online.textContent = data.online.length; };
-    source.addEventListener('hello', (event) => { online(event); view.status.textContent = ''; });
+    source.addEventListener('hello', (event) => {
+      online(event);
+      view.status.textContent = '';
+      const data = parse(event);
+      if (data?.build && stage.dataset.build && data.build !== stage.dataset.build) refreshWhenIdle();
+    });
     source.addEventListener('presence', online);
     source.addEventListener('message', (event) => { const data = parse(event); if (data) receive(view, data); });
     source.addEventListener('news', (event) => {
@@ -725,4 +750,6 @@
 
   select(selected);
   renderBadges();
+  // 새로 고치기 전에 대화창을 열어 두었으면 다시 연다
+  if (new URLSearchParams(window.location.search).get('open') === '1') expand(true);
 })();

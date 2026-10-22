@@ -1,6 +1,6 @@
 // 덕후감 펫: 모임방의 내 아바타를 바탕화면 위에 띄운다.
 // 창은 투명하고 항상 위에 있으며, 아바타·말풍선·대화창이 아닌 곳의 클릭은 뒤의 앱으로 지나간다.
-const { app, BrowserWindow, Tray, Menu, ipcMain, screen, shell, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, screen, shell, nativeImage, net } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const updater = require('./updater');
@@ -120,6 +120,23 @@ function openPet(link) {
   pet.on('closed', () => { pet = null; stopWalk(); });
   expanded = false;
   scheduleWander();
+}
+
+// ───────── 서버가 새로 배포되면 화면을 새로 고친다 ─────────
+// 펫 화면(웹)이 스스로 새로 고치지만, 화면 스크립트가 예전 것이어도 바뀌도록 앱에서도 한 번 더 본다.
+let lastBuild = null;
+async function watchBuild() {
+  try {
+    const response = await net.fetch(new URL('/pet/build', BASE).toString(), { cache: 'no-store' });
+    if (!response.ok) return;
+    const build = (await response.text()).trim();
+    if (lastBuild && build && build !== lastBuild && pet && !pet.isDestroyed() && !expanded && !pet.isFocused()) {
+      pet.webContents.reload(); // 접힌 채로 쉬고 있을 때만(쓰던 말을 잃지 않게)
+    }
+    if (build) lastBuild = build;
+  } catch {
+    // 서버가 잠들었거나 인터넷이 끊겼으면 다음에 다시 본다
+  }
 }
 
 // ───────── 걷기 ─────────
@@ -353,6 +370,8 @@ if (!app.requestSingleInstanceLock()) {
     if (process.platform === 'darwin' && app.dock) app.dock.hide();
     buildTray();
     updater.start((state) => { refreshTray(); sendUpdate(state); });
+    watchBuild();
+    setInterval(watchBuild, 5 * 60 * 1000);
     const links = linksOf(readConfig());
     if (links.length) openPet(links.at(-1)); else openSetup();
   });

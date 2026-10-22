@@ -21,7 +21,7 @@
                data-typing=@{/anthologies/{code}/room/typing(code=${a.code()})},
                data-position=@{/anthologies/{code}/room/position(code=${a.code()})},
                data-read=@{/anthologies/{code}/room/read(code=${a.code()})},
-               data-me=${room.meId()}">
+               data-me=${room.meId()}, data-build=${build}">
 
   <!-- 책상: 참여자가 둘러앉는다 -->
   <section class="table-scene" aria-label="모임방에 있는 사람"
