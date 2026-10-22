@@ -30,6 +30,7 @@
   const menu = document.getElementById('pet-menu');
   const dresser = document.getElementById('pet-dresser');
   const creator = document.getElementById('pet-create');
+  const soundPanel = document.getElementById('pet-sounds');
   const avatarBase = stage.dataset.avatarBase;
   const parse = (event) => { try { return JSON.parse(event.data); } catch (e) { return null; } };
   const restart = (element, className) => {
@@ -116,7 +117,7 @@
     if (!views.has(code)) return;
     selected = code;
     views.forEach((view) => {
-      view.element.hidden = view.code !== code || !dresser.hidden || !creator.hidden;
+      view.element.hidden = view.code !== code || !dresser.hidden || !creator.hidden || !soundPanel.hidden;
       view.tab?.setAttribute('aria-selected', String(view.code === code));
     });
     menu.querySelectorAll('[data-menu="focus"]').forEach((item) => {
@@ -143,6 +144,7 @@
     } else {
       closeDresser();
       closeCreator();
+      closeSounds();
     }
   };
   document.querySelector('[data-pet="collapse"]').addEventListener('click', () => expand(false));
@@ -179,10 +181,11 @@
   menu.addEventListener('click', async (event) => {
     const item = event.target.closest('[data-menu]');
     if (!item) return;
-    closeMenu({ keepSize: ['focus', 'dress', 'add'].includes(item.dataset.menu) });
+    closeMenu({ keepSize: ['focus', 'dress', 'add', 'sound'].includes(item.dataset.menu) });
     switch (item.dataset.menu) {
       case 'dress': expand(true); openDresser(); break;
-      case 'focus': select(item.dataset.code); expand(true); closeDresser(); closeCreator(); break;
+      case 'sound': expand(true); openSounds(); break;
+      case 'focus': select(item.dataset.code); expand(true); closeDresser(); closeCreator(); closeSounds(); break;
       case 'add': expand(true); openCreator(); break;
       case 'quit':
         // 새 펫 앱은 완전히 끈다. 예전 펫 앱은 창을 닫는다(메뉴 막대 아이콘은 남는다).
@@ -202,6 +205,7 @@
     if (event.key !== 'Escape') return;
     if (!menu.hidden) closeMenu();
     else if (!dresser.hidden) closeDresser();
+    else if (!soundPanel.hidden) closeSounds();
     else if (!creator.hidden) closeCreator();
     else expand(false);
   });
@@ -483,7 +487,7 @@
   // 서버가 새로 배포되면(다시 붙은 연결의 판이 다르면) 화면을 새로 고친다.
   // 쓰던 말이 있거나 메뉴·꾸미기를 보고 있으면 끝날 때까지 기다린다.
   let refreshing = null;
-  const busy = () => !menu.hidden || !dresser.hidden || !creator.hidden
+  const busy = () => !menu.hidden || !dresser.hidden || !creator.hidden || !soundPanel.hidden
     || [...views.values()].some((view) => view.element.querySelector('.pet-form textarea')?.value.trim());
   function refreshWhenIdle() {
     if (refreshing) return;
@@ -613,6 +617,7 @@
   };
   function openDresser() {
     closeCreator();
+    closeSounds();
     const view = current();
     draft = toStyle(view.element.dataset.style) || toStyle(view.element.dataset.original);
     if (!draft) return;
@@ -688,6 +693,7 @@
   };
   function openCreator() {
     closeDresser();
+    closeSounds();
     views.forEach((each) => { each.element.hidden = true; });
     creator.hidden = false;
     done.hidden = true;
@@ -757,6 +763,92 @@
   done.querySelector('.done-go').addEventListener('click', () => {
     if (createdCode) window.location.replace(`/pet?focus=${encodeURIComponent(createdCode)}`);
   });
+
+  // ───────── 배경음 (ambience.js) ─────────
+  const ambience = window.Ambience;
+  const soundStatus = soundPanel.querySelector('.sound-status');
+  function openSounds() {
+    if (!ambience) return;
+    closeDresser();
+    closeCreator();
+    views.forEach((each) => { each.element.hidden = true; });
+    soundPanel.hidden = false;
+  }
+  function closeSounds() {
+    if (soundPanel.hidden) return;
+    soundPanel.hidden = true;
+    views.forEach((view) => { view.element.hidden = view.code !== selected || !dresser.hidden || !creator.hidden; });
+  }
+  document.querySelector('[data-pet="sound"]').addEventListener('click', () => {
+    if (soundPanel.hidden) openSounds(); else closeSounds();
+  });
+  if (!ambience) {
+    document.querySelector('[data-pet="sound"]').hidden = true;
+    menu.querySelector('[data-menu="sound"]').hidden = true;
+  } else {
+    const grid = soundPanel.querySelector('.sound-grid');
+    const scenes = soundPanel.querySelector('.sound-scenes');
+    const master = soundPanel.querySelector('[data-sound="master"]');
+    ambience.scenes.forEach((scene) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'sound-scene';
+      chip.textContent = scene.name;
+      chip.addEventListener('click', () => ambience.scene(scene.mix));
+      scenes.append(chip);
+    });
+    const tiles = new Map();
+    ambience.sounds.forEach((sound) => {
+      const tile = document.createElement('div');
+      tile.className = 'sound-tile';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'sound-pick';
+      button.innerHTML = `<svg class="i"><use href="#${sound.icon}"/></svg>`;
+      const name = document.createElement('span');
+      name.textContent = sound.name;
+      button.append(name);
+      button.addEventListener('click', () => ambience.toggle(sound.id));
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.min = '0.05';
+      slider.max = '1';
+      slider.step = '0.01';
+      slider.setAttribute('aria-label', `${sound.name} 음량`);
+      slider.addEventListener('input', () => ambience.volume(sound.id, Number(slider.value)));
+      tile.append(button, slider);
+      grid.append(tile);
+      tiles.set(sound.id, { tile, button, slider });
+    });
+    master.addEventListener('input', () => ambience.setMaster(Number(master.value)));
+    soundPanel.querySelector('[data-sound="play"]').addEventListener('click', () => ambience.play());
+    soundPanel.querySelector('[data-sound="clear"]').addEventListener('click', () => ambience.clear());
+
+    ambience.subscribe((now) => {
+      const playing = now.playing && now.any;
+      soundPanel.classList.toggle('playing', playing);
+      soundPanel.querySelector('[data-sound="play"]').setAttribute('aria-label', playing ? '멈추기' : '재생');
+      soundPanel.querySelector('[data-sound="play"]').disabled = !now.any;
+      if (document.activeElement !== master) master.value = String(now.master);
+      tiles.forEach(({ tile, button, slider }, id) => {
+        const on = now.mix[id] > 0;
+        tile.classList.toggle('on', on);
+        tile.classList.toggle('loading', now.loading.includes(id));
+        button.setAttribute('aria-pressed', String(on));
+        if (on && document.activeElement !== slider) slider.value = String(now.mix[id]);
+      });
+      const names = ambience.sounds.filter((sound) => now.mix[sound.id] > 0).map((sound) => sound.name);
+      soundStatus.textContent = names.length === 0 ? '들을 소리를 골라 보세요'
+        : (playing ? '' : '멈춤 · ') + names.slice(0, 3).join(' · ') + (names.length > 3 ? ` 외 ${names.length - 3}` : '');
+      scenes.querySelectorAll('.sound-scene').forEach((chip, index) => {
+        const mix = ambience.scenes[index].mix;
+        const same = Object.keys(mix).length === names.length && Object.keys(mix).every((id) => now.mix[id] > 0);
+        chip.classList.toggle('on', same);
+      });
+      avatar.classList.toggle('listening', playing);
+      document.querySelector('[data-pet="sound"]').classList.toggle('on', playing);
+    });
+  }
 
   select(selected);
   renderBadges();
