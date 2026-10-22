@@ -13,6 +13,8 @@
   <script th:src="@{/js/typing-sound.js}" defer></script>
 </head>
 <body class="pet-body">
+<!-- 캐릭터 조각: 꾸미기에서 서버에 묻지 않고 바로 그린다(Avatar.parts) -->
+<script th:inline="javascript">window.AVATAR_PARTS = /*[[${avatarParts}]]*/ null;</script>
   <!-- 선 아이콘 (24×24, 둥근 선, 색은 currentColor) -->
   <svg class="icon-sprite" aria-hidden="true" style="display:none">
     <symbol id="i-chat" viewBox="0 0 24 24"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.2a.5.5 0 0 1-.8-.4V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5z"/><path d="M8 10.5h8M8 13.5h5"/></symbol>

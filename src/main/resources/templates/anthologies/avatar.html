@@ -13,6 +13,8 @@
 
 <div th:replace="~{fragments/layout :: flash}"></div>
 
+<!-- 캐릭터 조각: 꾸미기에서 서버에 묻지 않고 바로 그린다(Avatar.parts) -->
+<script th:inline="javascript">window.AVATAR_PARTS = /*[[${avatarParts}]]*/ null;</script>
 <main class="section" style="padding-top:20px">
   <form class="dresser" id="dresser" method="post" th:action="@{/anthologies/{code}/avatar(code=${a.code()})}" data-once
         th:attr="data-original=${dressing.original().format()}">

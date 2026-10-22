@@ -48,20 +48,47 @@ public final class Avatar {
      * 얼굴(눈·입)은 따로 묶어 둔다. 화면이 시선을 돌리고(face) 눈을 깜빡이게(blink) 한다.
      */
     public static String svg(AvatarStyle style) {
-        StringBuilder svg = new StringBuilder(1600)
-                .append("<svg class=\"avatar-svg\" viewBox=\"0 0 64 64\" xmlns=\"http://www.w3.org/2000/svg\" "
-                        + "aria-hidden=\"true\" focusable=\"false\">");
-        svg.append(body(style.body(), "fill=\"" + COLORS[style.color()] + "\" " + LINE));
-        svg.append(extra(style.extra()));
-        svg.append("<g class=\"face\">");
-        svg.append(eyes(style.eyes()));
-        svg.append(mouth(style.mouth()));
-        svg.append("</g>");
-        if (style.cheeks() == 1) {
-            svg.append("<ellipse cx=\"20.5\" cy=\"43\" rx=\"3\" ry=\"2\" fill=\"" + POINT + "\" opacity=\".55\"/>"
-                    + "<ellipse cx=\"43.5\" cy=\"43\" rx=\"3\" ry=\"2\" fill=\"" + POINT + "\" opacity=\".55\"/>");
-        }
-        return svg.append("</svg>").toString();
+        return OPEN + body(style.body(), paint(style.color())) + extra(style.extra())
+                + "<g class=\"face\">" + eyes(style.eyes()) + mouth(style.mouth()) + "</g>"
+                + (style.cheeks() == 1 ? CHEEKS : "") + CLOSE;
+    }
+
+    private static final String OPEN = "<svg class=\"avatar-svg\" viewBox=\"0 0 64 64\" "
+            + "xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\" focusable=\"false\">";
+    private static final String CLOSE = "</svg>";
+    private static final String CHEEKS = "<ellipse cx=\"20.5\" cy=\"43\" rx=\"3\" ry=\"2\" fill=\"" + POINT
+            + "\" opacity=\".55\"/><ellipse cx=\"43.5\" cy=\"43\" rx=\"3\" ry=\"2\" fill=\"" + POINT
+            + "\" opacity=\".55\"/>";
+
+    private static String paint(int color) {
+        return "fill=\"" + COLORS[color] + "\" " + LINE;
+    }
+
+    /**
+     * 꾸미기 화면이 서버에 묻지 않고 바로 그리도록 조각을 통째로 넘긴다.
+     * 브라우저는 {@link #svg(AvatarStyle)}와 똑같은 순서로 이어 붙인다:
+     * open + bodies[몸](paints[색]) + extras[소품] + face(eyes[눈] + mouths[입]) + (볼이면 cheeks) + close.
+     * 몸 조각의 "{paint}" 자리에 paints[색]을 넣는다.
+     */
+    public static java.util.Map<String, Object> parts() {
+        return java.util.Map.of(
+                "open", OPEN, "close", CLOSE, "cheeks", CHEEKS,
+                "paints", java.util.stream.IntStream.range(0, AvatarStyle.COLORS).mapToObj(Avatar::paint).toList(),
+                "bodies", java.util.stream.IntStream.range(0, AvatarStyle.BODIES).mapToObj(k -> body(k, "{paint}")).toList(),
+                "eyes", java.util.stream.IntStream.range(0, AvatarStyle.EYES).mapToObj(Avatar::eyes).toList(),
+                "mouths", java.util.stream.IntStream.range(0, AvatarStyle.MOUTHS).mapToObj(Avatar::mouth).toList(),
+                "extras", java.util.stream.IntStream.range(0, AvatarStyle.EXTRAS).mapToObj(Avatar::extra).toList());
+    }
+
+    /** {@link #parts()}로 브라우저처럼 이어 붙인다(테스트에서 둘이 같은지 본다). */
+    static String assemble(java.util.Map<String, Object> parts, AvatarStyle style) {
+        @SuppressWarnings("unchecked")
+        java.util.function.Function<String, java.util.List<String>> list = key -> (java.util.List<String>) parts.get(key);
+        return parts.get("open")
+                + list.apply("bodies").get(style.body()).replace("{paint}", list.apply("paints").get(style.color()))
+                + list.apply("extras").get(style.extra())
+                + "<g class=\"face\">" + list.apply("eyes").get(style.eyes()) + list.apply("mouths").get(style.mouth())
+                + "</g>" + (style.cheeks() == 1 ? parts.get("cheeks") : "") + parts.get("close");
     }
 
     /** 0: 동그라미, 1: 책, 2: 살짝 기운 네모, 3: 구름, 4: 고양이. paint는 fill·stroke 속성. */

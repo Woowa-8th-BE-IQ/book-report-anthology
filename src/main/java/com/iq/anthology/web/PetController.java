@@ -135,6 +135,7 @@ public class PetController {
         model.addAttribute("history", PET_HISTORY);
         model.addAttribute("bodyMax", RoomMessage.BODY_MAX);
         model.addAttribute("parts", AvatarController.partNames());
+        model.addAttribute("avatarParts", Avatar.parts());
         return "anthologies/pet";
     }
 

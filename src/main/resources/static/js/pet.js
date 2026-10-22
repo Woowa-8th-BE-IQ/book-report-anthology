@@ -590,13 +590,23 @@
   const dressStatus = dresser.querySelector('.dress-status');
   let draft = null;
 
+  // 캐릭터 그림을 브라우저에서 바로 만든다(서버 Avatar.svg와 같은 순서로 조각을 잇는다). 조각이 없으면 null.
+  const drawAvatar = (style) => {
+    const parts = window.AVATAR_PARTS;
+    if (!parts || !style) return null;
+    const svg = parts.open + parts.bodies[style.body].replace('{paint}', parts.paints[style.color])
+      + parts.extras[style.extra] + '<g class="face">' + parts.eyes[style.eyes] + parts.mouths[style.mouth] + '</g>'
+      + (style.cheeks === 1 ? parts.cheeks : '') + parts.close;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  };
+  const art = (style) => drawAvatar(style) || avatarBase + format(style) + '.svg';
   const renderDresser = () => {
-    preview.src = avatarBase + format(draft) + '.svg';
+    preview.src = art(draft);
     dresser.querySelectorAll('.dress-part').forEach((row) => {
       const part = row.dataset.part;
       row.querySelectorAll('.dress-option').forEach((option) => {
         const value = Number(option.dataset.value);
-        option.querySelector('img').src = avatarBase + format({ ...draft, [part]: value }) + '.svg';
+        option.querySelector('img').src = art({ ...draft, [part]: value });
         option.setAttribute('aria-pressed', String(draft[part] === value));
       });
     });

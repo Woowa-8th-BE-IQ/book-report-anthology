@@ -754,10 +754,20 @@
       return match ? Object.fromEntries(order.map((part, i) => [part, Number(match[i + 1])])) : null;
     };
 
+    // 캐릭터 그림을 브라우저에서 바로 만든다(서버 Avatar.svg와 같은 순서로 조각을 잇는다). 조각이 없으면 null.
+    const drawAvatar = (style) => {
+      const parts = window.AVATAR_PARTS;
+      if (!parts || !style) return null;
+      const svg = parts.open + parts.bodies[style.body].replace('{paint}', parts.paints[style.color])
+        + parts.extras[style.extra] + '<g class="face">' + parts.eyes[style.eyes] + parts.mouths[style.mouth] + '</g>'
+        + (style.cheeks === 1 ? parts.cheeks : '') + parts.close;
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    };
+    const art = (style) => drawAvatar(style) || base + format(style) + '.svg';
     const render = (pop) => {
       const style = current();
       hidden.value = format(style);
-      image.src = base + hidden.value + '.svg';
+      image.src = art(style);
       if (pop) {
         image.classList.remove('pop');
         void image.offsetWidth;
@@ -768,7 +778,7 @@
         const part = fieldset.dataset.part;
         fieldset.querySelectorAll('.option').forEach((option) => {
           const value = Number(option.querySelector('input').value);
-          option.querySelector('img').src = base + format({ ...style, [part]: value }) + '.svg';
+          option.querySelector('img').src = art({ ...style, [part]: value });
         });
       });
     };

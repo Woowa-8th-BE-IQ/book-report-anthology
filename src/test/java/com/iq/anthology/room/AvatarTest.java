@@ -40,6 +40,18 @@ class AvatarTest {
         assertThat(distinct).isGreaterThan(20);
     }
 
+    @Test
+    void 브라우저가_조각으로_그린_그림과_서버_그림이_같다() {
+        var parts = Avatar.parts();
+        for (int color = 0; color < AvatarStyle.COLORS; color++) {
+            for (int body = 0; body < AvatarStyle.BODIES; body++) {
+                AvatarStyle style = new AvatarStyle(color, body, (color + body) % AvatarStyle.EYES,
+                        body % AvatarStyle.MOUTHS, color % AvatarStyle.EXTRAS, body % 2);
+                assertThat(Avatar.assemble(parts, style)).isEqualTo(Avatar.svg(style));
+            }
+        }
+    }
+
     private static String color(String svg) {
         int start = svg.indexOf("fill=\"#") + 6;
         return svg.substring(start, start + 7);

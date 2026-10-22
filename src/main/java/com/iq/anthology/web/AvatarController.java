@@ -64,6 +64,7 @@ public class AvatarController extends FormSupport {
         AvatarStyle current = dressing.current();
         model.addAttribute("dressing", dressing);
         model.addAttribute("back", "room".equals(back) ? "room" : "home");
+        model.addAttribute("avatarParts", Avatar.parts());
         model.addAttribute("parts", List.of(
                 part("color", "색", AvatarStyle.COLORS, current, AvatarStyle::color, AvatarStyle::withColor,
                         "살구", "쑥", "하늘", "라벤더", "겨자", "산호", "민트", "모래", "벚꽃", "먹구름"),
