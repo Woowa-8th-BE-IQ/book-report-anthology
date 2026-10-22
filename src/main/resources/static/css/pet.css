@@ -258,3 +258,8 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-avatar.listening .pet-listening { display: block; animation: note-float 2.4s ease-in-out infinite; }
 @keyframes note-float { 0%, 100% { transform: translateY(0) rotate(-8deg); opacity: .65; } 50% { transform: translateY(-6px) rotate(8deg); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .pet-avatar.listening .pet-listening, .sound-tile.loading .sound-pick .i { animation: none; } }
+
+/* @부르기 칩 */
+.mention { display: inline-block; padding: 0 5px; margin: 0 1px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 700; white-space: nowrap; }
+.mention.me { background: var(--accent); color: #fff; }
+.mention.everyone { background: color-mix(in srgb, var(--ink) 85%, transparent); color: var(--card); }

@@ -368,6 +368,7 @@
     name.textContent = faceOf(view, message.contributorId)?.dataset.name || '';
     const text = document.createElement('span');
     text.textContent = message.body;
+    window.MentionMarkup?.decorate(text, view.element);
     line.append(name, text);
     view.log.append(line);
     while (view.log.children.length > 120) view.log.firstElementChild.remove();
@@ -398,6 +399,7 @@
       + (called ? '님이 나를 불렀어요' : '');
     const text = document.createElement('p');
     text.textContent = message.body;
+    window.MentionMarkup?.decorate(text, view.element);
     body.append(name, text);
     bubble.append(mini, body);
     bubble.addEventListener('click', () => { bubble.remove(); select(view.code); expand(true); });
@@ -794,7 +796,8 @@
       chip.type = 'button';
       chip.className = 'sound-scene';
       chip.textContent = scene.name;
-      chip.addEventListener('click', () => ambience.scene(scene.mix));
+      // 이미 켜진 장면을 다시 누르면 그 장면을 통째로 끈다
+      chip.addEventListener('click', () => (chip.classList.contains('on') ? ambience.clear() : ambience.scene(scene.mix)));
       scenes.append(chip);
     });
     const tiles = new Map();

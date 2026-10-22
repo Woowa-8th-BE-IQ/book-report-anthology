@@ -455,6 +455,7 @@
       who.append(name, ' ', time);
       const text = document.createElement('p');
       text.textContent = message.body;
+      window.MentionMarkup?.decorate(text, document);
       body.append(who, text);
       line.append(avatar, body);
       talk.insertBefore(line, end);

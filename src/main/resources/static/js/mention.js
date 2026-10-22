@@ -80,4 +80,33 @@
   };
 
   document.querySelectorAll('textarea[data-mention]').forEach(attach);
+
+  // 말 속의 "@닉네임"·"@모두"를 칩으로 그린다. 나를 부른 건 더 진하게.
+  // scope 안의 [data-name] 요소가 참여자 이름표다(펫은 얼굴 템플릿, 모임방은 자리).
+  const decorate = (element, scope = element.closest('.pet-view') || document) => {
+    const text = element.textContent;
+    if (!text || text.indexOf('@') < 0) return;
+    const names = [...new Set([...scope.querySelectorAll('[data-name]')].map((each) => each.dataset.name).filter(Boolean))]
+      .sort((a, b) => b.length - a.length);
+    const mine = scope.querySelector('template[data-me="true"][data-name], .member.me[data-name]')?.dataset.name;
+    const parts = [];
+    let cursor = 0;
+    for (let at = text.indexOf('@'); at >= 0; at = text.indexOf('@', at + 1)) {
+      const rest = text.slice(at + 1);
+      const name = names.find((each) => rest.startsWith(each)) || (rest.startsWith(EVERYONE) ? EVERYONE : null);
+      if (!name || at < cursor) continue;
+      parts.push(document.createTextNode(text.slice(cursor, at)));
+      const chip = document.createElement('span');
+      chip.className = 'mention' + (name === EVERYONE ? ' everyone' : '') + (name === mine || name === EVERYONE ? ' me' : '');
+      chip.textContent = '@' + name;
+      parts.push(chip);
+      cursor = at + 1 + name.length;
+    }
+    if (parts.length === 0) return;
+    parts.push(document.createTextNode(text.slice(cursor)));
+    element.replaceChildren(...parts);
+  };
+  window.MentionMarkup = { decorate };
+  // 처음 그려진 대화(서버가 그린 줄)도 칩으로
+  document.querySelectorAll('.pet-line:not(.news) > span, .talk-line .talk-body > p').forEach((element) => decorate(element));
 })();
