@@ -942,3 +942,9 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 /* 설명 글 속 바깥 링크: 밑줄만 살짝 */
 .text-link { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent); text-underline-offset: 3px; text-decoration-thickness: 1.5px; transition: color .15s; }
 .text-link:hover { color: var(--accent); }
+/* 첫 화면 차례 예시: 여백은 줄이고 글자는 키운다. 끝의 설명은 선으로 떼어 둔다 */
+.toc-page { padding: 44px clamp(24px, 5vw, 56px) 40px; font-size: 18px; }
+.toc-page .kicker { font-size: 14px; }
+.toc-page .toc { gap: 18px; margin-top: 22px; }
+.toc-page .toc .toc-byline { font-size: 17px; }
+.toc-page .toc-foot { margin-top: 34px; padding-top: 16px; border-top: 1px dashed var(--line); font-size: 14.5px; }
