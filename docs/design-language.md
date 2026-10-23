@@ -18,7 +18,7 @@
 | `--accent-bright` | `#D2691E` | 손글씨 표시 |
 | `--good` | `#4F6B3A` | 제출·완료 |
 
-글꼴: 본문 SUIT, 독후감 본문·인용 Noto Serif KR, 손글씨 표시 Nanum Pen Script.
+글꼴: 본문 SUIT, 독후감 본문·인용 고운바탕(Gowun Batang), 제목·브랜드는 손글씨 Nanum Pen Script — 독후감 노트에 펜으로 제목을 적은 느낌. 굵은 강조가 필요한 곳만 Noto Serif KR 900.
 
 ## 밤의 서재 (다크 모드)
 

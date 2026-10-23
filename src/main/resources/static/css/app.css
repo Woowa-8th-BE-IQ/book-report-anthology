@@ -18,7 +18,9 @@
   --scrim: rgba(26, 18, 8, .55);
 
   --sans: "SUIT Variable", "SUIT", "Pretendard", system-ui, sans-serif;
-  --serif: "Noto Serif KR", serif;
+  --serif: "Gowun Batang", "Noto Serif KR", serif;
+  /* 제목은 손으로 쓴 독서 노트처럼(나눔손글씨 펜). 본문은 바탕체, 화면 글씨는 고딕 */
+  --display: "Nanum Pen Script", cursive;
   --hand: "Nanum Pen Script", cursive;
 
   --radius: 6px;
@@ -907,3 +909,17 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .consent b { font-size: 14px; }
 .consent p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { .mark-btn.pop .i { animation: none; } }
+
+/* ───────── 펜으로 쓴 제목(브랜딩) ─────────
+   손글씨는 획이 가늘고 글자가 작게 보여서, 고딕보다 크게·보통 굵기·자간 0으로 쓴다. */
+.brand, .hero-copy h1, .section-title, .page-hero h1, .reading h1, .essay-card h3, .step h3, .dresser-name {
+  font-family: var(--display); font-weight: 400; letter-spacing: 0;
+}
+.brand { font-size: 26px; }
+.hero-copy h1 { font-size: clamp(40px, 5.6vw, 62px); line-height: 1.08; }
+.section-title { font-size: clamp(36px, 4.6vw, 48px); line-height: 1.15; }
+.page-hero h1 { font-size: clamp(40px, 5.4vw, 56px); line-height: 1.1; }
+.reading h1 { font-size: clamp(36px, 4.8vw, 46px); line-height: 1.2; }
+.essay-card h3 { font-size: 26px; line-height: 1.25; }
+.step h3 { font-size: 27px; line-height: 1.2; }
+.dresser-name { font-size: 26px; }
