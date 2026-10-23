@@ -868,3 +868,12 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .mention { display: inline-block; padding: 0 6px; margin: 0 1px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 700; white-space: nowrap; }
 .mention.me { background: var(--accent); color: var(--cream); }
 .mention.everyone { background: var(--ink); color: var(--card); }
+
+/* 대화 속 링크와 바깥 링크 안내 */
+.chat-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+.talk-line.mine .chat-link { color: inherit; }
+.out-page { text-align: center; padding: 40px 0 80px; }
+.out-page .out-host { margin: 6px 0 0; font-size: 20px; font-weight: 800; }
+.out-page .out-url { word-break: break-all; color: var(--ink-soft); }
+.out-page .btn { margin: 18px 0 14px; }
+.out-page .hint { font-size: 13px; color: var(--muted); }

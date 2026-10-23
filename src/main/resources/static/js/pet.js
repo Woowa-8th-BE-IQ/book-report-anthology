@@ -803,6 +803,18 @@
     if (createdCode) window.location.replace(`/pet?focus=${encodeURIComponent(createdCode)}`);
   });
 
+  // ───────── 대화 속 링크: 기본 브라우저로 연다 ─────────
+  // 새 펫 앱은 바로 연다. 예전 펫 앱은 이 서비스 주소만 밖으로 열 수 있어서, 한 번 거쳐 가는 안내 화면(/out)으로 연다.
+  document.addEventListener('click', (event) => {
+    const link = event.target.closest('a.chat-link');
+    if (!link) return;
+    event.preventDefault();
+    event.stopPropagation(); // 말풍선을 눌러 대화창이 열리지 않게
+    if (window.petApp?.openLink) window.petApp.openLink(link.href);
+    else if (new URL(link.href).origin === window.location.origin) window.open(link.href, '_blank');
+    else window.open(`/out?url=${encodeURIComponent(link.href)}`, '_blank');
+  }, true);
+
   // ───────── 배경음 (ambience.js) ─────────
   const ambience = window.Ambience;
   const soundStatus = soundPanel.querySelector('.sound-status');

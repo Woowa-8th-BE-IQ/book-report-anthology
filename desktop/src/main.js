@@ -65,10 +65,18 @@ function guard(win) {
     if (!sameOrigin(target) && !target.startsWith('file://')) event.preventDefault();
   });
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (sameOrigin(url)) shell.openExternal(url);
+    if (sameOrigin(url) || webLink(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
 }
+
+// 대화에 붙은 웹 주소(http·https)만 기본 브라우저로 연다. 파일·앱 주소 같은 건 열지 않는다.
+const webLink = (target) => {
+  try { return ['http:', 'https:'].includes(new URL(target).protocol); } catch { return false; }
+};
+ipcMain.on('pet:open-link', (event, url) => {
+  if (pet && event.sender === pet.webContents && webLink(url)) shell.openExternal(url);
+});
 
 function openSetup(message) {
   if (setup) { setup.show(); app.focus({ steal: true }); setup.focus(); return; }

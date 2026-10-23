@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('바깥 링크')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="section">
+  <div class="narrow out-page">
+    <p class="kicker">대화에 붙은 링크</p>
+    <h1 class="section-title">바깥 사이트로 가요</h1>
+    <p class="out-host" th:text="${host}">example.com</p>
+    <p class="lead out-url" th:text="${target}">https://example.com</p>
+    <a class="btn" th:href="${target}" rel="noopener noreferrer">이 링크 열기</a>
+    <p class="hint">덕후감 밖의 사이트예요. 모르는 링크라면 열기 전에 주소를 한 번 더 확인해 주세요.</p>
+  </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

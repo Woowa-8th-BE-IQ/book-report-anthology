@@ -215,6 +215,11 @@ class AnthologyFlowTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
                         .isEqualTo("/pet?focus=" + code));
+        // 대화 속 바깥 링크는 안내 화면을 거쳐 사람이 눌러서 간다(http·https만)
+        assertThat(mvc.perform(get("/out").param("url", "https://example.com/a?b=1")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString())
+                .contains("바깥 사이트로 가요", "example.com", "href=\"https://example.com/a?b=1\"");
+        mvc.perform(get("/out").param("url", "javascript:alert(1)")).andExpect(status().isUnprocessableEntity());
         assertThat(mvc.perform(get("/pet/build")).andExpect(status().isOk()).andReturn().getResponse()
                 .getContentAsString()).isEqualTo(com.iq.anthology.room.RoomHub.BUILD);
         assertThat(mvc.perform(get("/pet").cookie(editor))

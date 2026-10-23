@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('petApp', {
   addAnthology: () => ipcRenderer.send('pet:add'),
   hide: () => ipcRenderer.send('pet:hide'),
   quit: () => ipcRenderer.send('pet:quit'),
+  openLink: (url) => ipcRenderer.send('pet:open-link', String(url || '')),
   onCommand: (callback) => ipcRenderer.on('pet:command', (event, name) => callback(String(name || ''))),
   onWalk: (callback) => ipcRenderer.on('pet:walk', (event, state) => callback({
     walking: Boolean(state && state.walking),

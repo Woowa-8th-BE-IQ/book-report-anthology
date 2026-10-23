@@ -139,6 +139,27 @@ public class PetController {
         return "anthologies/pet";
     }
 
+    /**
+     * 대화 속 바깥 링크를 여는 안내 화면. 예전 펫 앱은 이 서비스 주소만 브라우저로 열 수 있어서 한 번 거쳐 간다.
+     * 저절로 넘기지 않고 사람이 눌러서 간다(아무 주소로나 보내 주는 통로가 되지 않게).
+     */
+    @GetMapping("/out")
+    public String out(@RequestParam(required = false) String url, Model model) {
+        java.net.URI target;
+        try {
+            target = java.net.URI.create(url == null ? "" : url.strip());
+        } catch (IllegalArgumentException e) {
+            throw DomainException.rule("열 수 없는 주소예요.");
+        }
+        String scheme = target.getScheme() == null ? "" : target.getScheme().toLowerCase(java.util.Locale.ROOT);
+        if (!(scheme.equals("http") || scheme.equals("https")) || target.getHost() == null) {
+            throw DomainException.rule("열 수 없는 주소예요.");
+        }
+        model.addAttribute("target", target.toString());
+        model.addAttribute("host", target.getHost());
+        return "out";
+    }
+
     /** 지금 서버 판. 펫 앱이 화면을 새로 고칠지 정할 때 본다. */
     @GetMapping(path = "/pet/build", produces = "text/plain")
     @ResponseBody

@@ -83,7 +83,7 @@
 
   // 말 속의 "@닉네임"·"@모두"를 칩으로 그린다. 나를 부른 건 더 진하게.
   // scope 안의 [data-name] 요소가 참여자 이름표다(펫은 얼굴 템플릿, 모임방은 자리).
-  const decorate = (element, scope = element.closest('.pet-view') || document) => {
+  const mentions = (element, scope) => {
     const text = element.textContent;
     if (!text || text.indexOf('@') < 0) return;
     const names = [...new Set([...scope.querySelectorAll('[data-name]')].map((each) => each.dataset.name).filter(Boolean))]
@@ -105,6 +105,52 @@
     if (parts.length === 0) return;
     parts.push(document.createTextNode(text.slice(cursor)));
     element.replaceChildren(...parts);
+  };
+
+  // 말 속의 주소(https://…, www.…)를 누를 수 있는 링크로. 끝에 붙은 문장부호는 빼고, 길면 줄여 보여 준다.
+  const URL_PATTERN = /(https?:\/\/[^\s<>"'`]+|www\.[^\s<>"'`]+)/gi;
+  const links = (element) => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => (node.parentElement?.closest('.mention, a') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach((node) => {
+      const text = node.nodeValue;
+      URL_PATTERN.lastIndex = 0;
+      if (!URL_PATTERN.test(text)) return;
+      URL_PATTERN.lastIndex = 0;
+      const parts = [];
+      let cursor = 0;
+      for (let match = URL_PATTERN.exec(text); match; match = URL_PATTERN.exec(text)) {
+        let raw = match[0];
+        const trail = /[.,!?;:)\]}'"’”。、]+$/.exec(raw);
+        if (trail) raw = raw.slice(0, -trail[0].length);
+        const href = /^https?:/i.test(raw) ? raw : `https://${raw}`;
+        let url;
+        try { url = new URL(href); } catch (e) { continue; }
+        if (!/^https?:$/.test(url.protocol)) continue;
+        parts.push(document.createTextNode(text.slice(cursor, match.index)));
+        const link = document.createElement('a');
+        link.className = 'chat-link';
+        link.href = url.href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.title = url.href;
+        const shown = raw.replace(/^https?:\/\//i, '');
+        link.textContent = shown.length > 42 ? `${shown.slice(0, 40)}…` : shown;
+        parts.push(link);
+        cursor = match.index + raw.length;
+      }
+      if (parts.length === 0) return;
+      parts.push(document.createTextNode(text.slice(cursor)));
+      node.replaceWith(...parts);
+    });
+  };
+
+  const decorate = (element, scope = element.closest('.pet-view') || document) => {
+    mentions(element, scope);
+    links(element);
   };
   window.MentionMarkup = { decorate };
   // 처음 그려진 대화(서버가 그린 줄)도 칩으로
