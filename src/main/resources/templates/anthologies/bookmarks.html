@@ -7,7 +7,7 @@
 <section class="page-hero narrow" style="padding-bottom:8px">
   <a class="kicker" th:href="@{/anthologies/{code}/room(code=${a.code()})}" th:text="'← ' + ${a.title()} + ' 모임방'">← 모임방</a>
   <h1 data-reveal>책갈피 모음</h1>
-  <p class="lead">모임방에서 서로 책갈피를 남긴 말이에요<br>마감하면 이 말들이 책 뒤 <b>함께 나눈 이야기</b>에 실려요</p>
+  <p class="lead">마감하면 이 말들이 책 뒤 <b>함께 나눈 이야기</b>에 실려요</p>
 </section>
 
 <main class="narrow bookmarks" th:attr="data-bookmark=@{/anthologies/{code}/room/messages/(code=${a.code()})}">
