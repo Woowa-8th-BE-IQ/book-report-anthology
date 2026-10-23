@@ -831,22 +831,12 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 }
 @keyframes cta-sheen { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
 
-/* 히어로: 가운데 도장 뒤로 따뜻한 빛, 주변에 반짝이는 별 */
+/* 히어로: 가운데 도장 뒤로 따뜻한 빛 */
 .spin-stage::before { content: ""; position: absolute; inset: 18%; border-radius: 50%; z-index: 0; pointer-events: none;
   background: radial-gradient(circle, color-mix(in srgb, var(--accent-bright) 26%, transparent) 0%, color-mix(in srgb, var(--accent-bright) 8%, transparent) 45%, transparent 70%);
   animation: core-glow 4s ease-in-out infinite; }
 @keyframes core-glow { 0%, 100% { opacity: .7; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.04); } }
 .spin-core { box-shadow: 0 0 0 10px color-mix(in srgb, var(--paper) 70%, transparent), 0 0 42px color-mix(in srgb, var(--accent-bright) 30%, transparent); }
-.sparkles { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
-.sparkles i { position: absolute; width: 22px; height: 22px; color: var(--accent-bright); opacity: 0; animation: twinkle 3.6s ease-in-out infinite; }
-.sparkles i::before { content: ""; position: absolute; inset: 0; background: currentColor;
-  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); filter: drop-shadow(0 0 4px currentColor); }
-.sparkles i:nth-child(1) { left: 12%; top: 18%; animation-delay: .2s; }
-.sparkles i:nth-child(2) { right: 10%; top: 26%; width: 16px; height: 16px; animation-delay: 1.1s; }
-.sparkles i:nth-child(3) { left: 20%; bottom: 14%; width: 14px; height: 14px; animation-delay: 2s; }
-.sparkles i:nth-child(4) { right: 18%; bottom: 20%; animation-delay: 2.7s; }
-.sparkles i:nth-child(5) { left: 47%; top: 4%; width: 13px; height: 13px; animation-delay: 1.6s; }
-@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4) rotate(0deg); } 45% { opacity: 1; transform: scale(1) rotate(45deg); } 60% { opacity: .9; } }
 
 /* "무슨 생각"이 은은하게 빛난다(글자를 한 자씩 띄우는 효과와 함께 쓰려고 글자 그림자로) */
 .hero-copy h1 .accent { animation: ink-glow 3.6s ease-in-out infinite; }
@@ -856,8 +846,7 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cta-bar .btn, .cta-bar .btn::after, .spin-stage::before, .sparkles i, .hero-copy h1 .accent { animation: none; }
-  .sparkles i { opacity: .7; }
+  .cta-bar .btn, .cta-bar .btn::after, .spin-stage::before, .hero-copy h1 .accent { animation: none; }
 }
 
 /* 모임방 입력칸 아래: 상태 글자와 타자 소리 단추 */
