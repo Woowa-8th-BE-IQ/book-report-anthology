@@ -47,11 +47,11 @@
   <form class="paper consent" method="post" th:action="@{/anthologies/{code}/room/chat-in-book(code=${a.code()})}">
     <div>
       <b>내 말을 책에 싣기</b>
-      <p th:text="${view.chatInBook()} ? '책갈피를 받은 내 말이 책에 실려요. 끄면 내 말은 빠져요.' : '지금은 내 말이 책에 실리지 않아요.'">책갈피를 받은 내 말이 책에 실려요.</p>
+      <p><th:block th:if="${view.chatInBook()}">책갈피를 받은 내 말이 책에 실려요<br>원하지 않으면 빼 둘 수 있어요</th:block><th:block th:unless="${view.chatInBook()}">지금은 내 말이 책에 실리지 않아요</th:block></p>
     </div>
     <input type="hidden" name="include" th:value="${!view.chatInBook()}">
     <button class="btn small" type="submit" th:classappend="${view.chatInBook()} ? 'ghost' : ''"
-            th:text="${view.chatInBook()} ? '내 말은 빼기' : '다시 싣기'">내 말은 빼기</button>
+            th:text="${view.chatInBook()} ? '빼기' : '다시 싣기'">빼기</button>
   </form>
 </main>
 
