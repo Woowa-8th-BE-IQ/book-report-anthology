@@ -25,6 +25,13 @@ class AnthologyFlowTest {
     private MockMvc mvc;
 
     @Test
+    void 첫_화면_탭_이름은_서비스_이름이_먼저다() throws Exception {
+        mvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("<title>덕후감 | 책 덕후들의 독후감</title>")));
+    }
+
+    @Test
     void 독후감을_모아_한_권으로_엮는다() throws Exception {
         // 엮은이가 문집을 연다
         MvcResult opened = mvc.perform(post("/anthologies")
