@@ -923,3 +923,17 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .essay-card h3 { font-size: 26px; line-height: 1.25; }
 .step h3 { font-size: 27px; line-height: 1.2; }
 .dresser-name { font-size: 26px; }
+/* 차례·책 속 제목도 펜 손글씨로 */
+.toc .toc-title, .book-page.title h1, .book-page h2, .bind-cover strong {
+  font-family: var(--display); font-weight: 400; letter-spacing: 0;
+}
+.toc .toc-title { font-size: 1.9em; line-height: 1.1; }
+.book-page.title h1 { font-size: 46px; line-height: 1.15; }
+.book-page h2 { font-size: 32px; line-height: 1.2; }
+.bind-cover strong { font-size: 27px; line-height: 1.15; }
+/* 좁은 화면: 이름 한 줄, 제목 한 줄. 점선은 뺀다 */
+@media (max-width: 640px) {
+  .toc li { flex-wrap: wrap; gap: 2px 10px; }
+  .toc .toc-dots { display: none; }
+  .toc .toc-title { flex: 1 1 100%; max-width: none; font-size: 1.6em; line-height: 1.2; text-align: left; word-break: keep-all; }
+}
