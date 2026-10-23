@@ -49,6 +49,7 @@ public class RoomController {
         }
         model.addAttribute("room", RoomView.of(room, essayService.shelf(room.anthology()), roomService.now()));
         model.addAttribute("bodyMax", RoomMessage.BODY_MAX);
+        model.addAttribute("history", RoomService.HISTORY);
         model.addAttribute("build", com.iq.anthology.room.RoomHub.BUILD);
         model.addAttribute("personalUrl", org.springframework.web.servlet.support.ServletUriComponentsBuilder
                 .fromCurrentContextPath().path("/me/" + room.me().token()).toUriString());

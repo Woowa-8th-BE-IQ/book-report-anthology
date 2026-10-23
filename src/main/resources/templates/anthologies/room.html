@@ -23,7 +23,7 @@
                data-position=@{/anthologies/{code}/room/position(code=${a.code()})},
                data-read=@{/anthologies/{code}/room/read(code=${a.code()})},
                data-bookmark=@{/anthologies/{code}/room/messages/(code=${a.code()})},
-               data-more=${room.lines().size() >= T(com.iq.anthology.room.RoomService).HISTORY},
+               data-more=${room.lines().size() >= history},
                data-me=${room.meId()}, data-build=${build}">
 
   <!-- 책상: 참여자가 둘러앉는다 -->
