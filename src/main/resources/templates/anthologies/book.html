@@ -21,8 +21,8 @@
 <section class="page-hero narrow">
   <a class="kicker" th:href="@{/anthologies/{code}(code=${a.code()})}" th:text="'← ' + ${a.title()}">← 문집</a>
   <h1 data-reveal>원고 미리보기</h1>
-  <p class="lead">이 순서로 책에 실려요. 내 글 중 빼고 싶은 게 있으면 지금 고르세요.
-    <th:block th:if="${view.isEditor()}">엮은이는 차례의 순서를 바꾸고 부록을 붙일 수 있어요.</th:block></p>
+  <p class="lead">이 순서로 책에 실려요<br>내 글 중 빼고 싶은 게 있으면 지금 고르세요
+    <th:block th:if="${view.isEditor()}"><br>엮은이는 차례의 순서를 바꾸고 부록을 붙일 수 있어요</th:block></p>
 </section>
 
 <div th:replace="~{fragments/layout :: flash}"></div>

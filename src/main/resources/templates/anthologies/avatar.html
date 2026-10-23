@@ -8,7 +8,7 @@
   <a class="kicker" th:href="${back == 'room'} ? @{/anthologies/{code}/room(code=${a.code()})} : @{/anthologies/{code}(code=${a.code()})}"
      th:text="'← ' + (${back == 'room'} ? '모임방' : ${a.title()})">← 문집</a>
   <h1 data-reveal>내 캐릭터</h1>
-  <p class="lead">조각을 골라 꾸미거나, 새 캐릭터를 뽑아요. 바꾸면 모임방과 바탕화면 펫에 바로 보여요.</p>
+  <p class="lead">조각을 골라 꾸미거나, 새 캐릭터를 뽑아요<br>바꾸면 모임방과 바탕화면 펫에 바로 보여요</p>
 </section>
 
 <div th:replace="~{fragments/layout :: flash}"></div>
