@@ -939,3 +939,6 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 }
 /* 폼의 마지막 버튼: 입력 칸과 같은 너비로 */
 .btn-wide { display: flex; width: 100%; justify-content: center; margin-top: 8px; padding-top: 18px; padding-bottom: 18px; font-size: 17px; }
+/* 설명 글 속 바깥 링크: 밑줄만 살짝 */
+.text-link { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent); text-underline-offset: 3px; text-decoration-thickness: 1.5px; transition: color .15s; }
+.text-link:hover { color: var(--accent); }
