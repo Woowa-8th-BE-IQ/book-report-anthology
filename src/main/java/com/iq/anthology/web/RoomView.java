@@ -46,8 +46,9 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
             String day = message.createdAt().format(DAY);
             boolean callsMe = com.iq.anthology.room.Mentions.find(message.body(), contributors, message.contributorId())
                     .contains(room.me().id());
+            List<Long> markers = room.marks().getOrDefault(message.id(), List.of());
             lines.add(new Line(message.id(), author, message.body(), message.createdAt().format(TIME),
-                    day.equals(lastDay) ? null : day, callsMe));
+                    day.equals(lastDay) ? null : day, callsMe, markers.size(), markers.contains(room.me().id())));
             lastDay = day;
         }
         return new RoomView(anthology, room.me().id(), members, lines, room.online().size(), room.unread(),
@@ -99,7 +100,9 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
     }
 
     /** day는 날짜가 바뀌는 첫 말에만 있다. callsMe는 이 말이 "@내 닉네임"으로 나를 불렀는지. */
-    public record Line(Long id, Member author, String body, String at, String day, boolean callsMe) {
+    /** marks는 책갈피 수, marked는 내가 책갈피를 남겼는지. */
+    public record Line(Long id, Member author, String body, String at, String day, boolean callsMe, int marks,
+                       boolean marked) {
 
         public boolean mine(Long meId) {
             return author.id().equals(meId);

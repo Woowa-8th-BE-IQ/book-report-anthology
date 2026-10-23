@@ -238,6 +238,34 @@ class JdbcRepositoryTest {
     }
 
     @Test
+    void 책갈피는_켜고_끄며_받은_말과_남긴_사람을_모은다() {
+        Contributor potato = anthology.join("감자", null, "token-potato", NOW);
+        anthologies.addContributor(anthology.id(), potato);
+        Long editorId = anthology.editor().id();
+        RoomMessage first = roomMessages.save(RoomMessage.say(anthology.id(), editorId, "첫 말", NOW));
+        RoomMessage second = roomMessages.save(RoomMessage.say(anthology.id(), potato.id(), "둘째 말", NOW.plusMinutes(1)));
+        roomMessages.save(RoomMessage.say(anthology.id(), editorId, "셋째 말", NOW.plusMinutes(2)));
+
+        assertThat(roomMessages.toggleBookmark(second.id(), editorId, NOW)).isTrue();
+        assertThat(roomMessages.toggleBookmark(second.id(), potato.id(), NOW.plusSeconds(1))).isTrue();
+        assertThat(roomMessages.toggleBookmark(first.id(), potato.id(), NOW)).isTrue();
+        assertThat(roomMessages.toggleBookmark(first.id(), potato.id(), NOW)).isFalse(); // 다시 누르면 거둔다
+
+        assertThat(roomMessages.bookmarked(anthology.id())).extracting(RoomMessage::body).containsExactly("둘째 말");
+        assertThat(roomMessages.bookmarkers(List.of(first.id(), second.id())))
+                .containsOnlyKeys(second.id())
+                .containsEntry(second.id(), List.of(editorId, potato.id()));
+        assertThat(roomMessages.before(anthology.id(), second.id() + 1, 10)).extracting(RoomMessage::body)
+                .containsExactly("첫 말", "둘째 말");
+
+        roomMessages.setChatInBook(potato.id(), false);
+        assertThat(roomMessages.chatOptOuts(anthology.id())).containsExactly(potato.id());
+
+        roomMessages.deleteByContributor(potato.id()); // 내보내면 그 사람 말에 달린 책갈피도 지운다
+        assertThat(roomMessages.bookmarked(anthology.id())).isEmpty();
+    }
+
+    @Test
     void 마감_재촉은_하루에_한_번만_남는다() {
         Long editorId = anthology.editor().id();
         LocalDate today = LocalDate.of(2026, 11, 29);

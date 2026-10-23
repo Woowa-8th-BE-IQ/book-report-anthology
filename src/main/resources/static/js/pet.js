@@ -192,6 +192,7 @@
     switch (item.dataset.menu) {
       case 'dress': expand(true); openDresser(); break;
       case 'sound': expand(true); openSounds(); break;
+      case 'bookmarks': window.open(current().element.dataset.bookmarks, '_blank'); break;
       case 'focus': select(item.dataset.code); expand(true); closeDresser(); closeCreator(); closeSounds(); break;
       case 'add': expand(true); openCreator(); break;
       case 'quit':
@@ -396,6 +397,79 @@
   });
 
   // ───────── 말 ─────────
+  // 책갈피 단추: 마음에 든 말에 남긴다(서버가 그린 줄과 같은 모양)
+  function markButton(message) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pet-mark' + (message.marked ? ' on' : '') + (message.marks > 0 ? ' has' : '');
+    button.dataset.mark = message.id;
+    button.title = '책갈피';
+    button.setAttribute('aria-pressed', String(Boolean(message.marked)));
+    button.innerHTML = '<svg class="i"><use href="#i-mark"/></svg><em></em>';
+    button.querySelector('em').textContent = message.marks > 0 ? message.marks : '';
+    return button;
+  }
+  const paintMark = (button, marks, marked) => {
+    button.querySelector('em').textContent = marks > 0 ? marks : '';
+    button.classList.toggle('has', marks > 0);
+    if (marked !== undefined) {
+      button.classList.toggle('on', marked);
+      button.setAttribute('aria-pressed', String(marked));
+    }
+  };
+  document.addEventListener('click', async (event) => {
+    const button = event.target.closest('.pet-mark[data-mark]');
+    const base = button?.closest('[data-bookmark]')?.dataset.bookmark;
+    if (!button || !base || button.disabled) return;
+    event.stopPropagation();
+    button.disabled = true;
+    try {
+      const response = await fetch(`${base}${button.dataset.mark}/bookmark`, { method: 'POST', credentials: 'same-origin' });
+      if (!response.ok) return;
+      const result = await response.json();
+      paintMark(button, result.marks, result.marked);
+      if (result.marked) restart(button, 'pop');
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  // 이전 대화 더 보기: 대화창 위에 붙인다
+  const loadOlder = async (view, button) => {
+    const ids = [...view.log.querySelectorAll('.pet-line[data-id]')].map((line) => Number(line.dataset.id));
+    if (!ids.length) return;
+    button.disabled = true;
+    button.textContent = '불러오는 중…';
+    try {
+      const response = await fetch(`${view.element.dataset.say}?before=${Math.min(...ids)}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+      const result = await response.json();
+      const before = view.log.scrollHeight;
+      const fragment = document.createDocumentFragment();
+      result.messages.forEach((message) => {
+        if (view.seen.has(message.id)) return;
+        view.seen.add(message.id);
+        const line = document.createElement('li');
+        line.className = 'pet-line' + (message.contributorId === view.me ? ' mine' : '') + ((message.mentions || []).includes(view.me) ? ' calls-me' : '');
+        line.dataset.id = message.id;
+        const name = document.createElement('b');
+        name.textContent = faceOf(view, message.contributorId)?.dataset.name || '';
+        const text = document.createElement('span');
+        text.textContent = message.body;
+        window.MentionMarkup?.decorate(text, view.element);
+        line.append(name, text, markButton(message));
+        fragment.append(line);
+      });
+      view.log.querySelector('.pet-more').after(fragment);
+      view.log.scrollTop += view.log.scrollHeight - before;
+      view.log.querySelector('.pet-more').hidden = !result.more;
+    } catch (error) {
+      view.status.textContent = '이전 대화를 불러오지 못했어요.';
+    } finally {
+      button.disabled = false;
+      button.textContent = '이전 대화 더 보기';
+    }
+  };
+
   const addLine = (view, message) => {
     const line = document.createElement('li');
     const callsMe = (message.mentions || []).includes(view.me);
@@ -406,9 +480,9 @@
     const text = document.createElement('span');
     text.textContent = message.body;
     window.MentionMarkup?.decorate(text, view.element);
-    line.append(name, text);
+    line.append(name, text, markButton(message));
     view.log.append(line);
-    while (view.log.children.length > 120) view.log.firstElementChild.remove();
+    while (view.log.querySelectorAll('.pet-line').length > 400) view.log.querySelector('.pet-line').remove();
     if (view.code === selected) scrollLog(view);
   };
 
@@ -554,6 +628,16 @@
     });
     source.addEventListener('presence', online);
     source.addEventListener('message', (event) => { const data = parse(event); if (data) receive(view, data); });
+    source.addEventListener('bookmark', (event) => {
+      const data = parse(event);
+      if (!data) return;
+      view.log.querySelectorAll(`.pet-mark[data-mark="${data.messageId}"]`).forEach((button) => paintMark(button, data.marks));
+    });
+    const more = view.log.querySelector('.pet-more');
+    if (more) {
+      more.hidden = view.element.dataset.more !== 'true';
+      more.querySelector('[data-older]').addEventListener('click', (event) => loadOlder(view, event.currentTarget));
+    }
     source.addEventListener('news', (event) => {
       const data = parse(event);
       if (!data) return;

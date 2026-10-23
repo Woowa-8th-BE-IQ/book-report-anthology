@@ -16,6 +16,11 @@ public final class ManuscriptFactory {
     }
 
     public static Manuscript compose(Shelf shelf) {
+        return compose(shelf, List.of());
+    }
+
+    /** talks: 모임방에서 책갈피를 받아 책에 싣는 말(날짜별). */
+    public static Manuscript compose(Shelf shelf, List<Manuscript.TalkDay> talks) {
         Anthology anthology = shelf.anthology();
         if (!anthology.isClosed()) {
             throw DomainException.rule("마감한 문집만 책으로 만들 수 있어요.");
@@ -32,7 +37,7 @@ public final class ManuscriptFactory {
         }
         return new Manuscript(identifierOf(anthology), anthology.title(), anthology.citation(),
                 anthology.readLine(), anthology.introduction(), anthology.closedAt().toLocalDate(), pieces,
-                anthology.prompts(), anthology.appendix());
+                anthology.prompts(), anthology.appendix(), talks);
     }
 
     /** 같은 문집은 다시 내려받아도 같은 식별자를 갖는다. */

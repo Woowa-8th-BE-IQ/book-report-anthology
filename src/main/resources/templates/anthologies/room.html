@@ -8,6 +8,7 @@
   <a class="kicker" th:href="@{/anthologies/{code}(code=${a.code()})}" th:text="'← ' + ${a.title()}">← 문집</a>
   <h1 data-reveal>모임방</h1>
   <p class="lead">같은 책을 읽은 사람들이 둘러앉는 곳이에요. 불이 켜진 얼굴이 지금 들어와 있는 사람이에요.</p>
+  <a class="room-dress" th:href="@{/anthologies/{code}/room/bookmarks(code=${room.anthology().code()})}"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15l-5-3.6-5 3.6z"/></svg> 책갈피 모음</a>
   <a class="room-dress" th:href="@{/anthologies/{code}/avatar(code=${room.anthology().code()}, back='room')}"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4.5l5 5-7.8 7.8-5-5z"/><path d="M6.7 12.3c-2.2.3-3 2-3 3.7 0 1.6-.7 2.6-1.2 3 2.6.6 6.2.2 7.7-1.7.9-1.1.8-2.4.2-3.3"/></svg> 내 캐릭터 꾸미기</a>
   <details class="pet-link">
     <summary><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="11.5" rx="1.8"/><path d="M9 20h6M12 16v4"/><circle cx="12" cy="10.2" r="2.4"/></svg> 바탕화면 펫에 연결하기</summary>
@@ -21,6 +22,8 @@
                data-typing=@{/anthologies/{code}/room/typing(code=${a.code()})},
                data-position=@{/anthologies/{code}/room/position(code=${a.code()})},
                data-read=@{/anthologies/{code}/room/read(code=${a.code()})},
+               data-bookmark=@{/anthologies/{code}/room/messages/(code=${a.code()})},
+               data-more=${room.lines().size() >= T(com.iq.anthology.room.RoomService).HISTORY},
                data-me=${room.meId()}, data-build=${build}">
 
   <!-- 책상: 참여자가 둘러앉는다 -->
@@ -58,6 +61,7 @@
       아직 독후감을 내지 않은 사람이 <b th:text="${room.notSubmittedCount()}">2</b>명 있어요. 남의 글 내용은 조금만 아껴 주세요.
     </p>
     <ol class="talk" id="talk" aria-live="polite">
+      <li class="talk-more" hidden><button type="button" class="chip" data-older>이전 대화 더 보기</button></li>
       <li class="talk-empty" th:if="${room.lines().isEmpty()}">아직 조용해요. 첫마디를 건네 보세요.</li>
       <th:block th:each="line : ${room.lines()}">
         <li class="talk-day" th:if="${line.day() != null}"><span th:text="${line.day()}">10월 21일</span></li>
@@ -67,6 +71,8 @@
           <div class="talk-body">
             <span class="talk-who"><b th:text="${line.author().nickname()}">감자</b> <time th:text="${line.at()}">11:20</time></span>
             <p th:text="${line.body()}">말</p>
+            <button type="button" class="mark-btn" th:classappend="${(line.marked() ? 'on ' : '') + (line.marks() > 0 ? 'has' : '')}"
+                    th:attr="aria-pressed=${line.marked()}, data-mark=${line.id()}" title="책갈피"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15l-5-3.6-5 3.6z"/></svg><span class="mark-count" th:text="${line.marks() > 0} ? ${line.marks()} : ''"></span></button>
           </div>
         </li>
       </th:block>

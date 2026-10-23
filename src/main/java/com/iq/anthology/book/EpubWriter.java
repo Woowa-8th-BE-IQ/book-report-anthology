@@ -41,6 +41,9 @@ public final class EpubWriter {
             for (Manuscript.Piece piece : manuscript.pieces()) {
                 put(zip, "OEBPS/" + pieceFile(piece), pieceXhtml(manuscript, piece));
             }
+            if (manuscript.hasTalks()) {
+                put(zip, "OEBPS/talks.xhtml", talksXhtml(manuscript));
+            }
             if (manuscript.hasAppendix()) {
                 put(zip, "OEBPS/appendix.xhtml", appendixXhtml(manuscript));
             }
@@ -89,6 +92,9 @@ public final class EpubWriter {
         page(manifest, spine, "nav", "nav.xhtml", "nav");
         for (Manuscript.Piece piece : manuscript.pieces()) {
             page(manifest, spine, "essay-" + piece.number(), pieceFile(piece), null);
+        }
+        if (manuscript.hasTalks()) {
+            page(manifest, spine, "talks", "talks.xhtml", null);
         }
         if (manuscript.hasAppendix()) {
             page(manifest, spine, "appendix", "appendix.xhtml", null);
@@ -179,6 +185,23 @@ public final class EpubWriter {
         return xhtml("도서 소개", body.toString());
     }
 
+    /** 모임방에서 책갈피를 받은 말을 날짜별 대화로. */
+    private static String talksXhtml(Manuscript manuscript) {
+        StringBuilder body = new StringBuilder();
+        body.append("  <section class=\"talks\" epub:type=\"chapter\">\n");
+        body.append("    <h1>함께 나눈 이야기</h1>\n");
+        body.append("    <p class=\"talks-note\">모임방에서 서로 책갈피를 남긴 말을 모았어요.</p>\n");
+        for (Manuscript.TalkDay day : manuscript.talks()) {
+            body.append("    <h2 class=\"talk-day\">").append(escape(day.day())).append("</h2>\n");
+            for (Manuscript.TalkLine line : day.lines()) {
+                body.append("    <p class=\"talk\"><span class=\"talk-who\">").append(escape(line.speaker()))
+                        .append("</span> ").append(escape(line.body())).append("</p>\n");
+            }
+        }
+        body.append("  </section>\n");
+        return xhtml("함께 나눈 이야기", body.toString());
+    }
+
     private static String appendixXhtml(Manuscript manuscript) {
         StringBuilder body = new StringBuilder();
         body.append("  <section class=\"appendix\" epub:type=\"appendix\">\n");
@@ -198,6 +221,9 @@ public final class EpubWriter {
                     .append("<span class=\"toc-byline\">").append(escape(piece.byline())).append("</span> ")
                     .append("<span class=\"toc-title\">").append(escape(piece.title())).append("</span>")
                     .append("</a></li>\n");
+        }
+        if (manuscript.hasTalks()) {
+            items.append("        <li><a href=\"talks.xhtml\">함께 나눈 이야기</a></li>\n");
         }
         if (manuscript.hasAppendix()) {
             items.append("        <li><a href=\"appendix.xhtml\">부록</a></li>\n");
@@ -348,5 +374,9 @@ public final class EpubWriter {
             .prompts li { margin: 0 0 0.6em; }
             .authors { list-style: none; padding: 0; columns: 2; }
             .note { font-size: 0.8em; color: #8a7660; margin-top: 2em; }
+            .talks-note { font-size: 0.85em; color: #8a7660; }
+            .talk-day { font-size: 0.9em; color: #b8571a; margin: 1.8em 0 0.8em; }
+            .talk { text-align: left; margin: 0 0 0.8em; }
+            .talk-who { font-weight: bold; font-size: 0.85em; color: #4a3020; margin-right: 0.5em; }
             """;
 }

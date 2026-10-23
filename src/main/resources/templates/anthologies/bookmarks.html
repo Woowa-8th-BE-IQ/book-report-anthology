@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${view.anthology().title()} + ' 책갈피 모음')}"></head>
+<body class="room-page" th:with="a=${view.anthology()}">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<section class="page-hero narrow" style="padding-bottom:8px">
+  <a class="kicker" th:href="@{/anthologies/{code}/room(code=${a.code()})}" th:text="'← ' + ${a.title()} + ' 모임방'">← 모임방</a>
+  <h1 data-reveal>책갈피 모음</h1>
+  <p class="lead">모임방에서 서로 책갈피를 남긴 말이에요. 마감하면 이 말들이 책 뒤 <b>함께 나눈 이야기</b>에 실려요.</p>
+</section>
+
+<main class="narrow bookmarks" th:attr="data-bookmark=@{/anthologies/{code}/room/messages/(code=${a.code()})}">
+  <nav class="chips bookmark-tabs" aria-label="보기">
+    <a class="chip" th:href="@{/anthologies/{code}/room/bookmarks(code=${a.code()})}"
+       th:attr="aria-current=${show == 'all'} ? 'page' : null">모두</a>
+    <a class="chip" th:href="@{/anthologies/{code}/room/bookmarks(code=${a.code()}, show='mine')}"
+       th:attr="aria-current=${show == 'mine'} ? 'page' : null">내가 남긴 책갈피</a>
+  </nav>
+
+  <section class="paper talk-panel bookmark-list">
+    <p class="talk-empty" th:if="${view.total() == 0}"
+       th:text="${show == 'mine'} ? '아직 남긴 책갈피가 없어요. 모임방에서 마음에 든 말 옆 책갈피를 눌러 보세요.' : '아직 책갈피를 받은 말이 없어요. 모임방에서 마음에 든 말 옆 책갈피를 눌러 보세요.'">비어 있어요</p>
+    <ol class="talk" th:unless="${view.total() == 0}">
+      <th:block th:each="day : ${view.days()}">
+        <li class="talk-day"><span th:text="${day.day()}">10월 21일</span></li>
+        <li class="talk-line" th:each="entry : ${day.entries()}" th:classappend="${entry.mine()} ? 'mine' : ''"
+            th:attr="data-id=${entry.id()}">
+          <span class="avatar small" aria-hidden="true" th:utext="${entry.avatar()}"></span>
+          <div class="talk-body">
+            <span class="talk-who"><b th:text="${entry.author()}">파도</b> <time th:text="${entry.at()}">21:20</time></span>
+            <p th:text="${entry.body()}">말</p>
+            <span class="bookmark-by">
+              <button type="button" class="mark-btn" th:classappend="${entry.marked()} ? 'on' : ''"
+                      th:attr="aria-pressed=${entry.marked()}, data-mark=${entry.id()}" title="책갈피">
+                <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15l-5-3.6-5 3.6z"/></svg>
+                <span class="mark-count" th:text="${entry.markers().size()}">2</span>
+              </button>
+              <small th:text="${entry.markerLine()}">아이큐 · 아나키</small>
+            </span>
+          </div>
+        </li>
+      </th:block>
+    </ol>
+  </section>
+
+  <form class="paper consent" method="post" th:action="@{/anthologies/{code}/room/chat-in-book(code=${a.code()})}">
+    <div>
+      <b>내 말을 책에 싣기</b>
+      <p th:text="${view.chatInBook()} ? '책갈피를 받은 내 말이 책에 실려요. 끄면 내 말은 빠져요.' : '지금은 내 말이 책에 실리지 않아요.'">책갈피를 받은 내 말이 책에 실려요.</p>
+    </div>
+    <input type="hidden" name="include" th:value="${!view.chatInBook()}">
+    <button class="btn small" type="submit" th:classappend="${view.chatInBook()} ? 'ghost' : ''"
+            th:text="${view.chatInBook()} ? '내 말은 빼기' : '다시 싣기'">내 말은 빼기</button>
+  </form>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/mention.js}" defer></script>
+</body>
+</html>

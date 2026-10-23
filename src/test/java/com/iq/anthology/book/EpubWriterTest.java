@@ -108,6 +108,22 @@ class EpubWriterTest {
         assertThat(EpubWriter.fileName(manuscript)).isEqualTo("일단 나부터 읽어 봅니다.epub");
     }
 
+    @Test
+    void 책갈피를_받은_대화는_함께_나눈_이야기_장으로_차례에_들어간다() throws IOException {
+        Manuscript withTalks = new Manuscript(manuscript.identifier(), manuscript.title(), manuscript.citation(),
+                manuscript.readLine(), manuscript.introduction(), manuscript.closedOn(), manuscript.pieces(),
+                List.of(), null, List.of(new Manuscript.TalkDay("10월 21일", List.of(
+                        new Manuscript.TalkLine("파도(이수연)", "걷는 장면이 <제일> 오래 남았어요", 2)))));
+        Map<String, String> files = unzip(EpubWriter.write(withTalks));
+
+        assertThat(files.get("OEBPS/talks.xhtml")).contains("함께 나눈 이야기", "10월 21일", "파도(이수연)",
+                "&lt;제일&gt;");
+        assertThat(files.get("OEBPS/nav.xhtml")).contains("talks.xhtml");
+        assertThat(files.get("OEBPS/content.opf")).contains("talks.xhtml");
+        assertThat(unzip(EpubWriter.write(manuscript))).doesNotContainKey("OEBPS/talks.xhtml");
+        assertThatCode(() -> PdfBook.write(withTalks)).doesNotThrowAnyException();
+    }
+
     private static Map<String, String> unzip(byte[] epub) throws IOException {
         Map<String, String> files = new LinkedHashMap<>();
         try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(epub))) {

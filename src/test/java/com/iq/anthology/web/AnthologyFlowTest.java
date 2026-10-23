@@ -215,6 +215,25 @@ class AnthologyFlowTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
                         .isEqualTo("/pet?focus=" + code));
+        // 책갈피: 남기고, 모음에서 보고, 이전 대화를 불러온다
+        String said = mvc.perform(post("/anthologies/{code}/room/messages", code).cookie(editor).header("X-Room", "1")
+                        .param("body", "걷는 장면이 오래 남았어요"))
+                .andReturn().getResponse().getContentAsString();
+        String saidId = said.replaceAll(".*\"id\":(\\d+).*", "$1");
+        mvc.perform(post("/anthologies/{code}/room/messages/{id}/bookmark", code, saidId).cookie(editor))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"marked\":true")));
+        mvc.perform(post("/anthologies/{code}/room/messages/{id}/bookmark", code, saidId))
+                .andExpect(status().isForbidden());
+        assertThat(mvc.perform(get("/anthologies/{code}/room/bookmarks", code).cookie(editor)).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString()).contains("책갈피 모음", "걷는 장면이 오래 남았어요");
+        mvc.perform(get("/anthologies/{code}/room/messages", code).cookie(editor).param("before", saidId)
+                        .accept(org.springframework.http.MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"more\":false")));
+        mvc.perform(post("/anthologies/{code}/room/chat-in-book", code).cookie(editor).param("include", "false"))
+                .andExpect(status().is3xxRedirection());
+
         // 대화 속 바깥 링크는 안내 화면을 거쳐 사람이 눌러서 간다(http·https만)
         assertThat(mvc.perform(get("/out").param("url", "https://example.com/a?b=1")).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString())

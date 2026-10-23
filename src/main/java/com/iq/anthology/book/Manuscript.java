@@ -16,13 +16,20 @@ import java.util.Objects;
  * @param pieces       실리는 독후감, 책 순서
  * @param prompts      엮은이의 글감 질문 (없을 수 있다)
  * @param appendix     부록 (없을 수 있다)
+ * @param talks        모임방에서 책갈피를 받은 말, 날짜별 (없을 수 있다)
  */
 public record Manuscript(String identifier, String title, String citation, String readLine, String introduction,
-                         LocalDate closedOn, List<Piece> pieces, List<String> prompts, String appendix) {
+                         LocalDate closedOn, List<Piece> pieces, List<String> prompts, String appendix,
+                         List<TalkDay> talks) {
 
     public Manuscript(String identifier, String title, String citation, String readLine, String introduction,
                       LocalDate closedOn, List<Piece> pieces) {
-        this(identifier, title, citation, readLine, introduction, closedOn, pieces, List.of(), null);
+        this(identifier, title, citation, readLine, introduction, closedOn, pieces, List.of(), null, List.of());
+    }
+
+    public Manuscript(String identifier, String title, String citation, String readLine, String introduction,
+                      LocalDate closedOn, List<Piece> pieces, List<String> prompts, String appendix) {
+        this(identifier, title, citation, readLine, introduction, closedOn, pieces, prompts, appendix, List.of());
     }
 
     public Manuscript {
@@ -33,6 +40,12 @@ public record Manuscript(String identifier, String title, String citation, Strin
         Objects.requireNonNull(closedOn);
         pieces = List.copyOf(pieces);
         prompts = prompts == null ? List.of() : List.copyOf(prompts);
+        talks = talks == null ? List.of() : List.copyOf(talks);
+    }
+
+    /** "함께 나눈 이야기" 장을 만들지. */
+    public boolean hasTalks() {
+        return !talks.isEmpty();
     }
 
     public boolean hasPrompts() {
@@ -54,6 +67,24 @@ public record Manuscript(String identifier, String title, String citation, Strin
 
     public boolean hasIntroduction() {
         return introduction != null;
+    }
+
+    /** 하루치 대화. day는 "10월 21일" 꼴. */
+    public record TalkDay(String day, List<TalkLine> lines) {
+
+        public TalkDay {
+            Objects.requireNonNull(day);
+            lines = List.copyOf(lines);
+        }
+    }
+
+    /** 책갈피를 받은 말 한 마디. marks는 책갈피 수. */
+    public record TalkLine(String speaker, String body, int marks) {
+
+        public TalkLine {
+            Objects.requireNonNull(speaker);
+            Objects.requireNonNull(body);
+        }
     }
 
     /**

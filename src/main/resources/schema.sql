@@ -88,3 +88,12 @@ ALTER TABLE contributor ADD COLUMN IF NOT EXISTS avatar_style VARCHAR(20);
 ALTER TABLE contributor ADD COLUMN IF NOT EXISTS last_read_message_id BIGINT;
 -- 마감 재촉을 마지막으로 보낸 날(하루 한 번, 서버를 다시 켜도 이어진다)
 ALTER TABLE contributor ADD COLUMN IF NOT EXISTS nudged_on DATE;
+-- 모임방 책갈피: 마음에 든 말에 남긴다. 책갈피를 받은 말은 마감하면 책의 "함께 나눈 이야기"에 실린다.
+CREATE TABLE IF NOT EXISTS room_bookmark (
+    message_id     BIGINT    NOT NULL,
+    contributor_id BIGINT    NOT NULL,
+    created_at     TIMESTAMP NOT NULL,
+    PRIMARY KEY (message_id, contributor_id)
+);
+-- 내 말을 책에 싣지 않기(FALSE). NULL·TRUE는 싣는다.
+ALTER TABLE contributor ADD COLUMN IF NOT EXISTS chat_in_book BOOLEAN;

@@ -43,6 +43,7 @@
     <symbol id="i-city" viewBox="0 0 24 24"><path d="M3.5 20.5h17M5 20.5V10h5v10.5M10 20.5V5h6v15.5M16 20.5v-7h3.5v7"/><path d="M12.3 8.5h1.4M12.3 12h1.4M7 13h1"/></symbol>
     <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M15.5 4.5l4 4L9 19l-5 1 1-5z"/><path d="M13.5 6.5l4 4"/></symbol>
     <symbol id="i-noise" viewBox="0 0 24 24"><path d="M3 12h2l1.5-4 2 8 2-11 2 14 2-9 2 5 1.5-3H21"/></symbol>
+    <symbol id="i-mark" viewBox="0 0 24 24"><path d="M7 4.5h10v15l-5-3.6-5 3.6z"/></symbol>
     <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 2h-14z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></symbol>
     <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 20.5V4.5"/><path d="M6 5h11l-2.5 4L17 13H6"/></symbol>
     <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 15.5H3z"/><path d="M12 10v4"/><circle cx="12" cy="16.8" r=".6" fill="currentColor"/></symbol>
@@ -82,6 +83,9 @@
                   data-say=@{/anthologies/{code}/room/messages(code=${tab.code()})},
                   data-avatar=@{/anthologies/{code}/avatar(code=${tab.code()})},
                   data-read=@{/anthologies/{code}/room/read(code=${tab.code()})},
+                  data-bookmark=@{/anthologies/{code}/room/messages/(code=${tab.code()})},
+                  data-bookmarks=@{/anthologies/{code}/room/bookmarks(code=${tab.code()})},
+                  data-more=${tab.lines().size() >= history},
                   data-unread=${room.unread()}, data-called=${room.calledWhileAway()},
                   data-me=${room.meId()}, data-style=${tab.meStyle()}, data-original=${tab.originalStyle()}">
       <div class="pet-sub">
@@ -90,11 +94,14 @@
         <a class="pet-open" th:href="@{/anthologies/{code}/room(code=${tab.code()})}" target="_blank" rel="noopener">방 열기 ↗</a>
       </div>
       <ol class="pet-log">
+        <li class="pet-more" hidden><button type="button" data-older>이전 대화 더 보기</button></li>
         <li class="pet-line" th:each="line : ${tab.lines()}"
             th:classappend="${(line.mine(room.meId()) ? 'mine ' : '') + (line.callsMe() ? 'calls-me' : '')}"
             th:attr="data-id=${line.id()}">
           <b th:text="${line.author().nickname()}">감자</b>
           <span th:text="${line.body()}">말</span>
+          <button type="button" class="pet-mark" th:classappend="${(line.marked() ? 'on ' : '') + (line.marks() > 0 ? 'has' : '')}"
+                  th:attr="aria-pressed=${line.marked()}, data-mark=${line.id()}" title="책갈피"><svg class="i"><use href="#i-mark"/></svg><em th:text="${line.marks() > 0} ? ${line.marks()} : ''"></em></button>
         </li>
       </ol>
       <form class="pet-form" autocomplete="off" data-typing-sound>
@@ -212,6 +219,7 @@
     <hr>
     <button type="button" role="menuitem" data-menu="dress"><svg class="i"><use href="#i-brush"/></svg><span>캐릭터 바꾸기</span></button>
     <button type="button" role="menuitem" data-menu="sound"><svg class="i"><use href="#i-headphones"/></svg><span>배경음</span></button>
+    <button type="button" role="menuitem" data-menu="bookmarks"><svg class="i"><use href="#i-mark"/></svg><span>책갈피 모음</span></button>
     <hr>
     <button type="button" role="menuitem" data-menu="quit" class="quiet"><svg class="i"><use href="#i-power"/></svg><span>펫 끄기</span></button>
   </div>

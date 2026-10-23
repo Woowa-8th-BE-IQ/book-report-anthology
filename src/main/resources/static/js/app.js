@@ -424,6 +424,84 @@
         : names.length === 1 ? `${names[0]}님이 쓰는 중…` : `${names.length}명이 쓰는 중…`;
     };
 
+    // 책갈피 단추(서버가 그린 줄과 같은 모양)
+    const markButton = (message) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'mark-btn' + (message.marked ? ' on' : '') + (message.marks > 0 ? ' has' : '');
+      button.dataset.mark = message.id;
+      button.title = '책갈피';
+      button.setAttribute('aria-pressed', String(Boolean(message.marked)));
+      button.innerHTML = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15l-5-3.6-5 3.6z"/></svg><span class="mark-count"></span>';
+      button.querySelector('.mark-count').textContent = message.marks > 0 ? message.marks : '';
+      return button;
+    };
+
+    // 이전 대화 더 보기: 위로 붙인다. 보던 자리가 튀지 않게 스크롤을 맞춘다.
+    const more = talk.querySelector('.talk-more');
+    more.hidden = room.dataset.more !== 'true';
+    const oldestId = () => Math.min(...[...talk.querySelectorAll('.talk-line[data-id]')].map((line) => Number(line.dataset.id)));
+    more.querySelector('[data-older]').addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = '불러오는 중…';
+      try {
+        const response = await fetch(`${room.dataset.say}?before=${oldestId()}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+        const result = await response.json();
+        const before = talk.scrollHeight;
+        const anchor = more.nextElementSibling;
+        // 맨 위 날짜 줄이 새로 붙는 줄과 같은 날이면 지운다(날짜가 두 번 나오지 않게)
+        let lastDay = null;
+        const fragment = document.createDocumentFragment();
+        result.messages.forEach((message) => {
+          if (seen.has(message.id)) return;
+          seen.add(message.id);
+          const member = memberOf(message.contributorId);
+          if (!member) return;
+          if (message.day !== lastDay) {
+            const day = document.createElement('li');
+            day.className = 'talk-day';
+            day.innerHTML = '<span></span>';
+            day.firstChild.textContent = message.day;
+            fragment.append(day);
+            lastDay = message.day;
+          }
+          const line = document.createElement('li');
+          line.className = 'talk-line' + (message.contributorId === me ? ' mine' : '') + ((message.mentions || []).includes(me) ? ' calls-me' : '');
+          line.dataset.id = message.id;
+          line.dataset.author = message.contributorId;
+          const avatar = document.createElement('span');
+          avatar.className = 'avatar small';
+          avatar.innerHTML = member.querySelector('.avatar').innerHTML;
+          const body = document.createElement('div');
+          body.className = 'talk-body';
+          const who = document.createElement('span');
+          who.className = 'talk-who';
+          const name = document.createElement('b');
+          name.textContent = member.dataset.name;
+          const time = document.createElement('time');
+          time.textContent = message.at;
+          who.append(name, ' ', time);
+          const text = document.createElement('p');
+          text.textContent = message.body;
+          window.MentionMarkup?.decorate(text, document);
+          body.append(who, text, markButton(message));
+          line.append(avatar, body);
+          fragment.append(line);
+        });
+        const firstDay = anchor?.classList.contains('talk-day') ? anchor : null;
+        if (firstDay && firstDay.textContent.trim() === lastDay) firstDay.remove();
+        more.after(fragment);
+        talk.scrollTop += talk.scrollHeight - before;
+        more.hidden = !result.more;
+      } catch (error) {
+        status.textContent = '이전 대화를 불러오지 못했어요.';
+      } finally {
+        button.disabled = false;
+        button.textContent = '이전 대화 더 보기';
+      }
+    });
+
     const append = (message) => {
       if (seen.has(message.id)) {
         return;
@@ -456,7 +534,7 @@
       const text = document.createElement('p');
       text.textContent = message.body;
       window.MentionMarkup?.decorate(text, document);
-      body.append(who, text);
+      body.append(who, text, markButton(message));
       line.append(avatar, body);
       talk.insertBefore(line, end);
       if (stick) {
@@ -610,6 +688,15 @@
     });
     source.addEventListener('message', (event) => { const data = parse(event); if (data) append(data); });
     source.addEventListener('news', (event) => { const data = parse(event); if (data) appendNews(data); });
+    // 누가 책갈피를 남기거나 거두면 수를 바꾼다(내가 남겼는지는 그대로)
+    source.addEventListener('bookmark', (event) => {
+      const data = parse(event);
+      if (!data) return;
+      talk.querySelectorAll(`.mark-btn[data-mark="${data.messageId}"]`).forEach((button) => {
+        button.querySelector('.mark-count').textContent = data.marks > 0 ? data.marks : '';
+        button.classList.toggle('has', data.marks > 0);
+      });
+    });
     source.addEventListener('typing', (event) => {
       const data = parse(event);
       if (!data || data.contributorId === me) {
@@ -866,5 +953,29 @@
       });
     });
     show();
+  });
+
+  // 책갈피: 모임방·책갈피 모음에서 말 옆 책갈피를 누르면 남기거나 거둔다
+  document.addEventListener('click', async (event) => {
+    const button = event.target.closest('.mark-btn[data-mark]');
+    const base = button?.closest('[data-bookmark]')?.dataset.bookmark;
+    if (!button || !base || button.disabled) return;
+    button.disabled = true;
+    try {
+      const response = await fetch(`${base}${button.dataset.mark}/bookmark`, { method: 'POST', credentials: 'same-origin' });
+      if (!response.ok) return;
+      const result = await response.json();
+      button.classList.toggle('on', result.marked);
+      button.classList.toggle('has', result.marks > 0);
+      button.setAttribute('aria-pressed', String(result.marked));
+      button.querySelector('.mark-count').textContent = result.marks > 0 ? result.marks : '';
+      if (result.marked) {
+        button.classList.remove('pop');
+        void button.offsetWidth;
+        button.classList.add('pop');
+      }
+    } finally {
+      button.disabled = false;
+    }
   });
 })();

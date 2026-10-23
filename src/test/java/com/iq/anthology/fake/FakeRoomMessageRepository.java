@@ -53,4 +53,38 @@ public class FakeRoomMessageRepository implements RoomMessageRepository {
     public int unreadCount(Long anthologyId, Long contributorId) {
         return 0;
     }
+
+    @Override
+    public List<RoomMessage> before(Long anthologyId, Long beforeId, int limit) {
+        return List.of();
+    }
+
+    @Override
+    public java.util.Optional<RoomMessage> findById(Long messageId) {
+        return java.util.Optional.empty();
+    }
+
+    @Override
+    public boolean toggleBookmark(Long messageId, Long contributorId, java.time.LocalDateTime now) {
+        return false;
+    }
+
+    @Override
+    public Map<Long, List<Long>> bookmarkers(java.util.Collection<Long> messageIds) {
+        return Map.of();
+    }
+
+    @Override
+    public List<RoomMessage> bookmarked(Long anthologyId) {
+        return List.of();
+    }
+
+    @Override
+    public java.util.Set<Long> chatOptOuts(Long anthologyId) {
+        return java.util.Set.of();
+    }
+
+    @Override
+    public void setChatInBook(Long contributorId, boolean include) {
+    }
 }

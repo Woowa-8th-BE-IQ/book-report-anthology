@@ -19,11 +19,36 @@ public class BookService {
     private final AnthologyService anthologyService;
     private final EssayService essayService;
     private final ActivityLog activityLog;
+    private final com.iq.anthology.room.RoomMessageRepository talks;
 
-    public BookService(AnthologyService anthologyService, EssayService essayService, ActivityLog activityLog) {
+    public BookService(AnthologyService anthologyService, EssayService essayService, ActivityLog activityLog,
+                       com.iq.anthology.room.RoomMessageRepository talks) {
         this.anthologyService = anthologyService;
         this.essayService = essayService;
         this.activityLog = activityLog;
+        this.talks = talks;
+    }
+
+    private static final java.time.format.DateTimeFormatter DAY = java.time.format.DateTimeFormatter.ofPattern("M월 d일");
+
+    /** 책의 "함께 나눈 이야기": 모임방에서 책갈피를 받은 말 중, 싣기를 거절하지 않은 사람의 말을 날짜별로. */
+    java.util.List<Manuscript.TalkDay> talksOf(Anthology anthology) {
+        java.util.Set<Long> optOuts = talks.chatOptOuts(anthology.id());
+        java.util.Map<Long, Contributor> people = new java.util.HashMap<>();
+        anthology.contributors().forEach(contributor -> people.put(contributor.id(), contributor));
+        var marked = talks.bookmarked(anthology.id());
+        var marks = talks.bookmarkers(marked.stream().map(com.iq.anthology.room.RoomMessage::id).toList());
+        java.util.Map<String, java.util.List<Manuscript.TalkLine>> days = new java.util.LinkedHashMap<>();
+        for (var message : marked) {
+            Contributor speaker = people.get(message.contributorId());
+            if (speaker == null || optOuts.contains(speaker.id())) {
+                continue;
+            }
+            days.computeIfAbsent(message.createdAt().format(DAY), day -> new java.util.ArrayList<>())
+                    .add(new Manuscript.TalkLine(speaker.byline(), message.body(),
+                            marks.getOrDefault(message.id(), java.util.List.of()).size()));
+        }
+        return days.entrySet().stream().map(day -> new Manuscript.TalkDay(day.getKey(), day.getValue())).toList();
     }
 
     /** 원고 전문은 참여자만 본다. 밖에는 공개 소개 페이지(목차와 동의한 맛보기 한 편)만 보인다. */
@@ -31,7 +56,7 @@ public class BookService {
     public Manuscript manuscript(String code, String token) {
         Anthology anthology = anthologyService.get(code);
         AnthologyService.requireContributor(anthology, token);
-        return ManuscriptFactory.compose(essayService.shelf(anthology));
+        return ManuscriptFactory.compose(essayService.shelf(anthology), talksOf(anthology));
     }
 
     /** 공개 소개 페이지. 목차와, 쓴 사람이 동의한 맛보기 한 편. 방문을 기록한다. */
@@ -71,7 +96,7 @@ public class BookService {
     private Download download(String code, String token, ActivityType type) {
         Anthology anthology = anthologyService.get(code);
         Contributor reader = AnthologyService.requireContributor(anthology, token);
-        Manuscript manuscript = ManuscriptFactory.compose(essayService.shelf(anthology));
+        Manuscript manuscript = ManuscriptFactory.compose(essayService.shelf(anthology), talksOf(anthology));
         activityLog.record(anthology.id(), reader.id(), type, null);
         return new Download(manuscript);
     }

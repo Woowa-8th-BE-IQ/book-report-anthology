@@ -83,6 +83,10 @@ public final class PdfBook {
                 startPages.put(piece.number(), writer.getPageNumber());
                 piece(document, manuscript, piece, fonts);
             }
+            if (manuscript.hasTalks()) {
+                document.newPage();
+                talks(document, manuscript, fonts);
+            }
             if (manuscript.hasAppendix()) {
                 document.newPage();
                 heading(document, "부록", fonts);
@@ -111,6 +115,28 @@ public final class PdfBook {
         Paragraph count = paragraph(manuscript.pieces().size() + "명이 쓴 독후감", fonts.small, Element.ALIGN_CENTER);
         count.setSpacingBefore(90);
         document.add(count);
+    }
+
+    /** 함께 나눈 이야기: 날짜를 작은 머리글로, 말은 "이름  말" 한 단락씩. */
+    private static void talks(Document document, Manuscript manuscript, Fonts fonts) {
+        heading(document, "함께 나눈 이야기", fonts);
+        Paragraph note = paragraph("모임방에서 서로 책갈피를 남긴 말을 모았어요.", fonts.small, Element.ALIGN_LEFT);
+        note.setSpacingAfter(14);
+        document.add(note);
+        for (Manuscript.TalkDay day : manuscript.talks()) {
+            Paragraph label = paragraph(day.day(), fonts.kicker, Element.ALIGN_LEFT);
+            label.setSpacingBefore(12);
+            label.setSpacingAfter(8);
+            document.add(label);
+            for (Manuscript.TalkLine line : day.lines()) {
+                Paragraph talk = new Paragraph();
+                talk.add(chunk(line.speaker() + "   ", fonts.small));
+                talk.add(chunk(line.body(), fonts.body));
+                talk.setLeading(0, 1.6f);
+                talk.setSpacingAfter(7);
+                document.add(talk);
+            }
+        }
     }
 
     private static void frontMatter(Document document, Manuscript manuscript, Fonts fonts) {
