@@ -43,15 +43,9 @@
           <span class="due-read" id="due-read" aria-live="polite"></span>
         </div>
       </div>
-      <div class="field-row">
-        <div class="field">
-          <label for="nickname">내 닉네임</label>
-          <input id="nickname" type="text" th:field="*{nickname}" maxlength="12" required placeholder="아이큐">
-        </div>
-        <div class="field">
-          <label for="realName">실명 <span class="hint">· 선택, 책에 "닉네임(실명)"으로 실려요</span></label>
-          <input id="realName" type="text" th:field="*{realName}" maxlength="20" placeholder="한동희">
-        </div>
+      <div class="field">
+        <label for="nickname">내 닉네임 <span class="hint">· 책에도 이 이름으로 실려요</span></label>
+        <input id="nickname" type="text" th:field="*{nickname}" maxlength="12" required placeholder="아이큐">
       </div>
       <button class="btn" type="submit">문집 열고 초대 링크 받기</button>
     </form>

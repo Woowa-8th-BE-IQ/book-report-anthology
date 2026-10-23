@@ -45,15 +45,9 @@
           <b th:text="${a.editor().nickname()}">엮은이</b>님이 『<span th:text="${a.bookTitle()}">책</span>』 독후감 문집에 초대했어요.
           들어와서 내 독후감을 제출하면, 다른 사람들이 쓴 글이 열려요.
         </p>
-        <div class="field-row">
-          <div class="field">
-            <label for="nickname">닉네임</label>
-            <input id="nickname" type="text" th:field="*{nickname}" maxlength="12" required placeholder="감자">
-          </div>
-          <div class="field">
-            <label for="realName">실명 <span class="hint">· 선택</span></label>
-            <input id="realName" type="text" th:field="*{realName}" maxlength="20" placeholder="김주하">
-          </div>
+        <div class="field">
+          <label for="nickname">닉네임 <span class="hint">· 책에도 이 이름으로 실려요</span></label>
+          <input id="nickname" type="text" th:field="*{nickname}" maxlength="12" required placeholder="감자">
         </div>
         <button class="btn" type="submit">들어가기</button>
       </form>
