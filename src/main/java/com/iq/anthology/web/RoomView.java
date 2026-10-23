@@ -64,11 +64,6 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
         return lines.subList(Math.max(0, lines.size() - count), lines.size());
     }
 
-    /** 아직 독후감을 내지 않은 사람이 있으면 방에 조심스럽게 알린다. */
-    public long notSubmittedCount() {
-        return members.stream().filter(member -> !member.submitted()).count();
-    }
-
     /**
      * 책상 둘레의 제자리. 14명까지는 한 바퀴, 넘으면 바깥에 한 바퀴 더(20자리). 그보다 많으면 바깥 바퀴에 겹쳐 앉는다.
      * 값은 방 너비·높이에 대한 비율(0~1)이다.

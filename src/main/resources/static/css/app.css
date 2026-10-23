@@ -632,12 +632,66 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 
 .table-scene { container-type: inline-size; position: sticky; top: 90px; }
 .table-scene .ring { position: relative; aspect-ratio: 1; margin: 0; padding: 0; list-style: none; }
-.table-top { position: absolute; aspect-ratio: 1; width: 46cqi; left: 27cqi; top: 27cqi; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #D9B48A, #B88A5E 70%, #9C7049); box-shadow: inset 0 -10px 24px rgba(74,48,32,.25), 0 18px 40px rgba(74,48,32,.18); display: grid; place-items: center; z-index: 0; pointer-events: none; }
+/* 책상: 위에서 내려다본 나무 원탁. 나이테·테두리 두께·광택, 위에는 펼친 책·쌓인 책·연필·김 나는 머그 */
+.table-top { position: absolute; aspect-ratio: 1; width: 46cqi; left: 27cqi; top: 27cqi; border-radius: 50%; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 238, 210, .38), transparent 42%),
+    repeating-radial-gradient(circle at 47% 55%, transparent 0 7px, rgba(92, 56, 26, .07) 7px 8px, transparent 8px 15px, rgba(92, 56, 26, .045) 15px 16px),
+    radial-gradient(circle at 50% 50%, #D2A676 0%, #BD8A5A 60%, #A3703F 100%);
+  box-shadow:
+    inset 0 0 0 5px #A06C3E, inset 0 0 0 6.5px rgba(255, 232, 200, .35),
+    inset 0 -16px 30px rgba(60, 34, 14, .26),
+    0 7px 0 #7A4F2C, 0 9px 0 rgba(0, 0, 0, .08), 0 30px 48px -6px rgba(74, 48, 32, .3); }
+/* 나뭇결: 결 방향으로 길게 늘인 잡음 */
+.table-top::before { content: ""; position: absolute; inset: 0; border-radius: 50%; opacity: .22; mix-blend-mode: multiply;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.32' numOctaves='3' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .2 0 0 0 0 .08 0 0 0 1.4 -.35'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E") center / cover; }
 .table-scene.crowd .table-top { width: 36cqi; left: 32cqi; top: 32cqi; }
-.table-book { position: absolute; width: 22%; height: 15%; left: 24%; top: 30%; background: var(--cream); border-radius: 2px; box-shadow: 2px 2px 0 rgba(0,0,0,.12); transform: rotate(-14deg); }
-.table-book::after { content: ""; position: absolute; inset: 0 50% 0 auto; width: 1px; background: var(--line); }
-.table-cup { position: absolute; width: 11%; aspect-ratio: 1; right: 26%; top: 34%; border-radius: 50%; background: radial-gradient(circle, #5A3A22 52%, var(--cream) 55%); box-shadow: 1px 2px 0 rgba(0,0,0,.12); }
-.table-count { position: absolute; bottom: 22%; margin: 0; font-size: 22px; color: var(--cream); text-shadow: 0 1px 0 rgba(0,0,0,.2); }
+/* 바닥 러그: 책상과 자리를 한 덩어리로 묶는다 */
+.room-rug { position: absolute; aspect-ratio: 1; width: 90cqi; left: 5cqi; top: 5cqi; border-radius: 50%; z-index: 0; pointer-events: none;
+  background:
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--ink) 2.2%, transparent) 0 2px, transparent 2px 7px),
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ink) 2.2%, transparent) 0 2px, transparent 2px 7px),
+    radial-gradient(circle, color-mix(in srgb, var(--accent) 5%, transparent), color-mix(in srgb, var(--accent) 9%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 7%, transparent), inset 0 0 0 12px color-mix(in srgb, var(--accent) 6%, transparent); }
+.room-rug::after { content: ""; position: absolute; inset: 5%; border-radius: 50%; border: 1.5px dashed color-mix(in srgb, var(--accent) 22%, transparent); }
+.table-scene.crowd .room-rug { width: 98cqi; left: 1cqi; top: 1cqi; }
+
+/* 펼친 책: 가운데 접힌 골, 줄글, 아래로 늘어진 갈피끈 */
+.table-book { position: absolute; width: 34%; height: 23%; left: 15%; top: 23%; border-radius: 3px; transform: rotate(-13deg);
+  background:
+    linear-gradient(90deg, transparent 47%, rgba(74, 48, 32, .16) 50%, transparent 53%),
+    repeating-linear-gradient(180deg, transparent 0 14%, rgba(74, 48, 32, .18) 14% 16%) 9% 22% / 34% 62% no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 14%, rgba(74, 48, 32, .18) 14% 16%) 91% 22% / 34% 62% no-repeat,
+    linear-gradient(90deg, #FFFDF8 0 30%, #F1E7D6 48%, #EADFCB 50%, #F1E7D6 52%, #FFFDF8 70%);
+  box-shadow: 0 2px 0 #E6D9C3, 0 4px 0 #D9C8AC, 4px 8px 12px rgba(50, 28, 10, .25); }
+.table-book .ribbon { position: absolute; left: 51%; top: 92%; width: 6%; height: 34%; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); transform: rotate(8deg); transform-origin: top; }
+/* 쌓아 둔 책 두 권: 아래는 붉은 책, 위는 초록 책(제목 띠) */
+.table-stack { position: absolute; width: 25%; height: 17%; right: 13%; bottom: 31%; transform: rotate(9deg); }
+.table-stack::before, .table-stack::after { content: ""; position: absolute; inset: 0; border-radius: 2px 4px 4px 2px; }
+.table-stack::before { transform: translate(-10%, 18%) rotate(-12deg);
+  background: linear-gradient(90deg, rgba(0, 0, 0, .22) 0 9%, transparent 9%), #9A4528; box-shadow: 0 2px 0 #E9DEC9, 2px 5px 8px rgba(50, 28, 10, .2); }
+.table-stack::after {
+  background: linear-gradient(rgba(255, 246, 228, .85), rgba(255, 246, 228, .85)) 62% 45% / 48% 22% no-repeat, linear-gradient(90deg, rgba(0, 0, 0, .22) 0 9%, transparent 9%), #3F5B48;
+  box-shadow: 0 2px 0 #E9DEC9, 0 3px 0 #2E4334, 3px 6px 10px rgba(50, 28, 10, .25); }
+/* 연필 */
+.table-pencil { position: absolute; width: 26%; height: 2.6%; left: 22%; bottom: 38%; transform: rotate(-16deg); border-radius: 0 2px 2px 0;
+  background: linear-gradient(90deg, #2A211A 0 3%, #EBCB9F 3% 11%, #E9A93A 11% 86%, #C9C3B8 86% 91%, #E39A8F 91%);
+  clip-path: polygon(0 50%, 11% 0, 100% 0, 100% 100%, 11% 100%); box-shadow: 1px 2px 0 rgba(0, 0, 0, .15); }
+/* 머그: 받침 접시, 손잡이, 커피, 피어오르는 김 */
+.table-mug { position: absolute; width: 14%; aspect-ratio: 1; right: 20%; top: 22%; border-radius: 50%;
+  background: radial-gradient(circle, #6B4024 0 46%, #4A2A15 56%, #FFFDF8 58% 72%, #E9DFCF 74%);
+  box-shadow: 0 0 0 9px rgba(255, 251, 242, .55), 0 0 0 10px rgba(74, 48, 32, .12), 3px 6px 10px rgba(50, 28, 10, .25); }
+.table-mug::after { content: ""; position: absolute; width: 38%; height: 30%; right: -30%; top: 35%; border: 3.5px solid #FFFDF8; border-left: 0; border-radius: 0 10px 10px 0; box-sizing: border-box; }
+.table-mug .steam { position: absolute; left: 30%; top: -40%; width: 22%; height: 60%; border-radius: 50%; border-left: 2px solid rgba(255, 253, 248, .75); opacity: 0; filter: blur(.4px); }
+.table-mug .steam + .steam { left: 54%; animation-delay: 1.4s; }
+.js .table-mug .steam { animation: steam 2.8s ease-in-out infinite; }
+@keyframes steam { 0% { opacity: 0; transform: translateY(6px) scaleY(.7); } 35% { opacity: .9; } 100% { opacity: 0; transform: translateY(-12px) scaleY(1.1) skewX(-12deg); } }
+/* 지금 있는 사람 수: 책상 위 작은 쪽지 */
+.table-count { position: absolute; left: 50%; bottom: 12%; margin: 0; padding: .1em .65em .15em; transform: translateX(-50%) rotate(-3deg); white-space: nowrap;
+  font-size: clamp(15px, 4.2cqi, 22px); line-height: 1.2; color: #3A2716; background: #FFF8EA; border-radius: 2px; box-shadow: 0 1px 0 #E8DCC6, 2px 4px 8px rgba(50, 28, 10, .22); }
+.table-count::before { content: ""; position: absolute; left: 50%; top: -6px; width: 30%; height: 9px; transform: translateX(-50%) rotate(2deg); background: rgba(216, 201, 180, .75); }
+.table-scene.crowd .table-count { font-size: clamp(13px, 3.4cqi, 18px); }
+@media (prefers-reduced-motion: reduce) { .js .table-mug .steam { animation: none; opacity: .5; } }
 
 /* 방 바닥: 아바타는 (--x, --y) 비율 자리에 선다. 걸어갈 때는 left/top이 천천히 바뀐다. */
 .floor { outline: none; border-radius: 24px; }
@@ -685,7 +739,6 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 
 
 .talk-panel { padding: 0; display: flex; flex-direction: column; height: min(72vh, 720px); }
-.room-note { margin: 0; padding: 12px 18px; font-size: 12.5px; color: var(--ink-soft); background: color-mix(in srgb, var(--accent) 7%, var(--card)); border-bottom: 1px solid var(--line); }
 .talk { flex: 1; overflow-y: auto; margin: 0; padding: 18px; list-style: none; display: flex; flex-direction: column; gap: 12px; overscroll-behavior: contain; }
 .talk-empty { margin: auto; font-family: var(--hand); font-size: 22px; color: var(--muted); }
 .talk-day { text-align: center; font-size: 11.5px; color: var(--muted); }
@@ -937,3 +990,8 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .toc-page .toc { gap: 18px; margin-top: 22px; }
 .toc-page .toc .toc-byline { font-size: 17px; }
 .toc-page .toc-foot { margin-top: 34px; padding-top: 16px; border-top: 1px dashed var(--line); font-size: 14.5px; }
+/* 앉은 자리 그림자: 바닥에 닿아 있는 느낌 */
+.member::before { content: ""; position: absolute; top: 52px; left: 50%; width: 54px; height: 12px; translate: -50% 0; border-radius: 50%; z-index: 0;
+  background: radial-gradient(closest-side, rgba(60, 36, 16, .22), transparent); }
+.table-scene.crowd .member::before { top: 38px; width: 40px; height: 9px; }
+@media (max-width: 860px) { .member::before { top: 38px; width: 40px; height: 9px; } }
