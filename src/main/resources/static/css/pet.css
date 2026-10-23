@@ -4,14 +4,21 @@
   --line: #D8C9B4; --accent: #B8571A; --good: #4F6B3A;
   --sans: "SUIT Variable", "SUIT", system-ui, sans-serif; --hand: "Nanum Pen Script", cursive;
 }
-/* 밤의 서재: 컴퓨터가 다크 모드면 펫도 따라간다 */
+/* 밤의 서재: 기본은 컴퓨터의 다크 모드를 따라가고, 메뉴의 '화면 밝기'로 밝게·어둡게를 고정할 수 있다 */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper: #16110C; --card: #211913; --ink: #F1E7D8; --ink-soft: #D9C7AF; --muted: #A38F76;
     --line: #3B2F24; --accent: #E38544; --good: #93B574;
     color-scheme: dark;
   }
 }
+:root[data-theme="dark"] {
+  --paper: #16110C; --card: #211913; --ink: #F1E7D8; --ink-soft: #D9C7AF; --muted: #A38F76;
+  --line: #3B2F24; --accent: #E38544; --good: #93B574;
+  color-scheme: dark;
+}
+:root[data-theme="light"] { color-scheme: light; }
+.pet-menu .theme-label { font-weight: 700; color: var(--accent); }
 html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
 body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-user-select: none; }
 

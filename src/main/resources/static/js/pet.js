@@ -185,6 +185,24 @@
   document.addEventListener('pointerdown', (event) => {
     if (!menu.hidden && !event.target.closest('#pet-menu') && event.button === 0) closeMenu();
   });
+  // ───────── 화면 밝기: 자동 → 밝게 → 어둡게 ─────────
+  // 펫 창은 브라우저와 저장소가 따로라 사이트의 밤·낮 설정을 읽을 수 없다. 그래서 펫에서 따로 고른다.
+  const THEMES = [['auto', '자동'], ['light', '밝게'], ['dark', '어둡게']];
+  const themeNow = () => { try { return localStorage.getItem('pet-theme') || 'auto'; } catch (e) { return 'auto'; } };
+  const applyTheme = (theme) => {
+    if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+    else delete document.documentElement.dataset.theme;
+    const label = menu.querySelector('.theme-label');
+    if (label) label.textContent = THEMES.find(([id]) => id === theme)?.[1] || '자동';
+  };
+  const cycleTheme = () => {
+    const index = THEMES.findIndex(([id]) => id === themeNow());
+    const next = THEMES[(index + 1) % THEMES.length][0];
+    try { if (next === 'auto') localStorage.removeItem('pet-theme'); else localStorage.setItem('pet-theme', next); } catch (e) { /* 이번만 */ }
+    applyTheme(next);
+  };
+  applyTheme(themeNow());
+
   menu.addEventListener('click', async (event) => {
     const item = event.target.closest('[data-menu]');
     if (!item) return;
@@ -193,6 +211,7 @@
       case 'dress': expand(true); openDresser(); break;
       case 'sound': expand(true); openSounds(); break;
       case 'bookmarks': window.open(current().element.dataset.bookmarks, '_blank'); break;
+      case 'theme': cycleTheme(); break;
       case 'focus': select(item.dataset.code); expand(true); closeDresser(); closeCreator(); closeSounds(); break;
       case 'add': expand(true); openCreator(); break;
       case 'quit':
