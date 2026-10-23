@@ -49,7 +49,7 @@
           <label for="nickname">닉네임 <span class="hint">· 책에도 이 이름으로 실려요</span></label>
           <input id="nickname" type="text" th:field="*{nickname}" maxlength="12" required placeholder="감자">
         </div>
-        <button class="btn" type="submit">들어가기</button>
+        <button class="btn btn-wide" type="submit">들어가기</button>
       </form>
 
       <div class="paper empty-state" th:if="${!view.isContributor() and !view.canJoin()}" style="margin-bottom:56px">
