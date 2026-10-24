@@ -338,7 +338,7 @@ class AnthologyFlowTest {
         // 꼬깃단 소개와 펫 설치 안내는 누구나 본다
         assertThat(mvc.perform(get("/characters")).andExpect(status().isOk()).andReturn().getResponse()
                 .getContentAsString())
-                .contains("꼬깃단", "조금씩 서툰 친구들", "뒤뚱", "느릿", "바위뛰기펭귄", "/pet/install.sh", "/pet/install.ps1")
+                .contains("꼬깃단", "조금씩 서툰 친구들", "뒤뚱", "느릿", "바위뛰기펭귄", "덕후감 대표", "대기실 실장", "/pet/install.sh", "/pet/install.ps1")
                 .doesNotContain("이름은 옛날 그대로");
 
         // 설치 스크립트를 내려준다

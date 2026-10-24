@@ -24,7 +24,7 @@
         <div class="critter-text">
           <p class="critter-species">
             <span th:text="${c.species()}">바위뛰기펭귄</span>
-            <em class="critter-badge" th:if="${s.first}">덕후감 대표</em>
+            <em class="critter-badge" th:text="${c.role()}">덕후감 대표</em>
           </p>
           <h2 class="critter-name" th:text="${c.title()}">뒤뚱</h2>
           <p class="critter-tagline" th:text="'“' + ${c.tagline()} + '”'">“다 엮었어요!”</p>
