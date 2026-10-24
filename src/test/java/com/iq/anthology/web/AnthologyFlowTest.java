@@ -251,7 +251,7 @@ class AnthologyFlowTest {
         assertThat(mvc.perform(get("/pet").cookie(editor))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString())
-                .contains("pet-avatar", "두 번째 말", "data-face=", "모임방 문집", "캐릭터 바꾸기");
+                .contains("pet-avatar", "두 번째 말", "data-face=", "모임방 문집", "캐릭터 바꾸기", "걸음 효과");
         assertThat(mvc.perform(get("/pet"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString())

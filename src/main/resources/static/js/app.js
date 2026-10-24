@@ -844,6 +844,25 @@
     });
   }
 
+  // 꼬깃단 걸음 효과(모임방에서 캐릭터마다 다른 걸음). 정신없을 수 있어 기본은 꺼 두고, 켜면 이 기기에 기억한다.
+  const gaitToggle = document.querySelector('[data-gait-toggle]');
+  if (gaitToggle) {
+    const root = document.documentElement;
+    const paint = () => {
+      const on = root.dataset.gait === 'on';
+      gaitToggle.setAttribute('aria-pressed', String(on));
+      gaitToggle.querySelector('.gait-label').textContent = on ? '켜짐' : '꺼짐';
+    };
+    gaitToggle.hidden = false;
+    paint();
+    gaitToggle.addEventListener('click', () => {
+      const on = root.dataset.gait !== 'on';
+      if (on) root.dataset.gait = 'on'; else delete root.dataset.gait;
+      try { if (on) localStorage.setItem('gait', 'on'); else localStorage.removeItem('gait'); } catch (e) { /* 이번만 */ }
+      paint();
+    });
+  }
+
   // 밤·낮 바꾸기. 고르면 이 기기에 기억하고, 고른 적 없으면 기기 설정을 따른다.
   const toggle = document.querySelector('[data-theme-toggle]');
   if (toggle) {

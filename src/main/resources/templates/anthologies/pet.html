@@ -7,6 +7,8 @@
   <title>덕후감 펫</title>
   <!-- 펫 화면 밝기: 자동(컴퓨터 따라감)·밝게·어둡게. 펫 창 안에만 저장된다 -->
   <script>try{var t=localStorage.getItem('pet-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <!-- 꼬깃단 걸음 효과: 기본은 꺼짐(모두 같은 콩콩 걸음). 메뉴에서 켜면 펫 창 안에만 저장된다 -->
+  <script>try{if(localStorage.getItem('pet-gait')==='on')document.documentElement.dataset.gait='on'}catch(e){}</script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sun-typeface/suit@2/fonts/variable/woff2/SUIT-Variable.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap">
   <link rel="stylesheet" th:href="@{/css/pet.css}">
@@ -222,6 +224,7 @@
     <button type="button" role="menuitem" data-menu="sound"><svg class="i"><use href="#i-headphones"/></svg><span>배경음</span></button>
     <button type="button" role="menuitem" data-menu="bookmarks"><svg class="i"><use href="#i-mark"/></svg><span>책갈피 모음</span></button>
     <button type="button" role="menuitem" data-menu="theme"><svg class="i"><use href="#i-theme"/></svg><span>화면 밝기 · <b class="theme-label">자동</b></span></button>
+    <button type="button" role="menuitem" data-menu="gait"><svg class="i"><use href="#i-brush"/></svg><span>걸음 효과 · <b class="gait-label">꺼짐</b></span></button>
     <hr>
     <button type="button" role="menuitem" data-menu="quit" class="quiet"><svg class="i"><use href="#i-power"/></svg><span>펫 끄기</span></button>
   </div>

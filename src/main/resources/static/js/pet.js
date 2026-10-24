@@ -214,6 +214,21 @@
   };
   applyTheme(themeNow());
 
+  // 꼬깃단 걸음 효과(캐릭터마다 다른 걸음). 정신없을 수 있어 기본은 꺼 둔다.
+  const gaitOn = () => document.documentElement.dataset.gait === 'on';
+  const applyGait = (on) => {
+    if (on) document.documentElement.dataset.gait = 'on';
+    else delete document.documentElement.dataset.gait;
+    const label = menu.querySelector('.gait-label');
+    if (label) label.textContent = on ? '켜짐' : '꺼짐';
+  };
+  const toggleGait = () => {
+    const next = !gaitOn();
+    try { if (next) localStorage.setItem('pet-gait', 'on'); else localStorage.removeItem('pet-gait'); } catch (e) { /* 이번만 */ }
+    applyGait(next);
+  };
+  applyGait(gaitOn());
+
   menu.addEventListener('click', async (event) => {
     const item = event.target.closest('[data-menu]');
     if (!item) return;
@@ -223,6 +238,7 @@
       case 'sound': expand(true); openSounds(); break;
       case 'bookmarks': window.open(current().element.dataset.bookmarks, '_blank'); break;
       case 'theme': cycleTheme(); break;
+      case 'gait': toggleGait(); break;
       case 'focus': select(item.dataset.code); expand(true); closeDresser(); closeCreator(); closeSounds(); break;
       case 'add': expand(true); openCreator(); break;
       case 'quit':

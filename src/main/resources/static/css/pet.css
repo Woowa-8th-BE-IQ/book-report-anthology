@@ -303,7 +303,7 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-stage.flip { flex-direction: column-reverse; justify-content: flex-end; padding: 6px 10px 0; }
 .pet-stage.flip .pet-menu { bottom: auto; top: 104px; }
 
-/* ───────── 꼬깃단 걸음걸이: 캐릭터마다 성격대로 걷는다. --dir은 바라보는 쪽(오른쪽 1, 왼쪽 -1) ───────── */
+/* ───────── 꼬깃단 걸음걸이(켜면, html[data-gait=on]): 캐릭터마다 성격대로 걷는다. 끄면 모두 같은 콩콩 걸음. --dir은 바라보는 쪽(오른쪽 1, 왼쪽 -1) ───────── */
 .pet-avatar { --dir: 1; }
 .pet-avatar.facing-left { --dir: -1; }
 /* 느릿은 머리가 왼쪽을 보게 그려져 있어서 다른 친구들과 반대로 뒤집어야 가는 쪽을 본다 */
@@ -313,54 +313,55 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-face svg [class] { transform-box: fill-box; }
 @media (prefers-reduced-motion: no-preference) {
   /* 뒤뚱: 무거운 책을 안고 기우뚱. 날개는 번갈아 파닥, 발은 번갈아 뗀다 */
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-penguin) { transform-origin: 50% 92%; animation: gait-waddle .62s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-penguin .wing-l { transform-origin: 100% 10%; animation: flap-l .62s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-penguin .wing-r { transform-origin: 0% 10%; animation: flap-r .62s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-penguin .foot-l { animation: step .62s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-penguin .foot-r { animation: step .62s ease-in-out -.31s infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-penguin .book { transform-origin: 50% 50%; animation: book-jostle .62s ease-in-out -.1s infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-penguin) { transform-origin: 50% 92%; animation: gait-waddle .62s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-penguin .wing-l { transform-origin: 100% 10%; animation: flap-l .62s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-penguin .wing-r { transform-origin: 0% 10%; animation: flap-r .62s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-penguin .foot-l { animation: step .62s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-penguin .foot-r { animation: step .62s ease-in-out -.31s infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-penguin .book { transform-origin: 50% 50%; animation: book-jostle .62s ease-in-out -.1s infinite; }
 
   /* 느릿: 배가 물결치고, 윤기가 머리 쪽으로 흐르고, 껍데기는 한 박자 늦게, 뒤에 점액 자국 */
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-snail) { transform-origin: 50% 95%; animation: gait-glide 1.7s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-snail .slime { opacity: 1; animation: slime-stretch 1.7s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-snail .foot { transform-origin: 50% 100%; animation: snail-goo .85s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-snail .foot-shine { opacity: .85; animation: snail-shine 1.7s linear infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-snail .shell { transform-origin: 50% 100%; animation: snail-shell 1.7s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-snail) { transform-origin: 50% 95%; animation: gait-glide 1.7s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-snail .slime { opacity: 1; animation: slime-stretch 1.7s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-snail .foot { transform-origin: 50% 100%; animation: snail-goo .85s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-snail .foot-shine { opacity: .85; animation: snail-shine 1.7s linear infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-snail .shell { transform-origin: 50% 100%; animation: snail-shell 1.7s ease-in-out infinite; }
 
   /* 꽥이: 콧노래 박자로 통·통·통~. 날개 파닥, 물갈퀴 번갈아, 책 지붕은 늦게 들썩, 음표가 떠오른다 */
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-duck) { transform-origin: 50% 92%; animation: gait-groove .95s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .wing-l { transform-origin: 100% 20%; animation: flutter-l .24s ease-in-out infinite alternate; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .wing-r { transform-origin: 0% 20%; animation: flutter-r .24s ease-in-out infinite alternate; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .foot-l { animation: step .475s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .foot-r { animation: step .475s ease-in-out -.24s infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .roof { transform-origin: 50% 100%; animation: roof-bob .95s ease-in-out -.12s infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .glyph { transform-origin: 50% 50%; animation: notes-rise 1.9s ease-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-duck) { transform-origin: 50% 92%; animation: gait-groove .95s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .wing-l { transform-origin: 100% 20%; animation: flutter-l .24s ease-in-out infinite alternate; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .wing-r { transform-origin: 0% 20%; animation: flutter-r .24s ease-in-out infinite alternate; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .foot-l { animation: step .475s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .foot-r { animation: step .475s ease-in-out -.24s infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .roof { transform-origin: 50% 100%; animation: roof-bob .95s ease-in-out -.12s infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .glyph { transform-origin: 50% 50%; animation: notes-rise 1.9s ease-out infinite; }
 
   /* 더듬: 낮게 웅크린 종종걸음. 헤드램프 불빛이 두리번 훑고 깜빡, 앞발은 다다닥 */
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-mole) { transform-origin: 50% 95%; animation: gait-scurry .22s linear infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .beam { transform-origin: 0% 30%; animation: beam-sweep 1.8s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .paws { animation: paws-patter .22s linear infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .helmet { transform-origin: 50% 100%; animation: helmet-jiggle .44s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-mole) { transform-origin: 50% 95%; animation: gait-scurry .22s linear infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .beam { transform-origin: 0% 30%; animation: beam-sweep 1.8s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .paws { animation: paws-patter .22s linear infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .helmet { transform-origin: 50% 100%; animation: helmet-jiggle .44s ease-in-out infinite; }
 
   /* 개굴: 깔고 앉은 책은 두고 몸만 폴짝. 공중에서 혀로 책갈피를 낚아채고, 착지하면 책이 눌린다 */
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-frog .hopper { transform-origin: 50% 100%; animation: frog-leap 1.15s cubic-bezier(.3,.6,.4,1) infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-frog .pad { transform-origin: 50% 100%; animation: pad-squash 1.15s ease-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-frog .catch { transform-origin: 0% 100%; animation: tongue-snap 1.15s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-frog) { animation: none; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-frog .hopper { transform-origin: 50% 100%; animation: frog-leap 1.15s cubic-bezier(.3,.6,.4,1) infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-frog .pad { transform-origin: 50% 100%; animation: pad-squash 1.15s ease-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-frog .catch { transform-origin: 0% 100%; animation: tongue-snap 1.15s ease-in-out infinite; }
 
   /* 꾸벅: 졸린 걸음 몇 번, 고개가 툭 떨어지며 Z가 커지고, 화들짝. 꼬리는 느릿느릿 */
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-raccoon) { transform-origin: 50% 92%; animation: gait-doze 3.4s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-raccoon .head { transform-origin: 50% 100%; animation: head-nod 3.4s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-raccoon .tail { transform-origin: 0% 100%; animation: tail-sway 1.7s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-raccoon .glyph { transform-origin: 0% 100%; animation: z-grow 3.4s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-raccoon) { transform-origin: 50% 92%; animation: gait-doze 3.4s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-raccoon .head { transform-origin: 50% 100%; animation: head-nod 3.4s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-raccoon .tail { transform-origin: 0% 100%; animation: tail-sway 1.7s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-raccoon .glyph { transform-origin: 0% 100%; animation: z-grow 3.4s ease-in-out infinite; }
 
   /* 꼼지: 책이 모서리로 뒤뚱 걷고, 꼼지는 책 속에서 쏙 들어갔다 빼꼼 */
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-bookworm) { transform-origin: 50% 98%; animation: book-tip .7s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-bookworm .worm { transform-origin: 50% 100%; animation: worm-peek 1.4s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-bookworm) { transform-origin: 50% 98%; animation: book-tip .7s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-bookworm .worm { transform-origin: 50% 100%; animation: worm-peek 1.4s ease-in-out infinite; }
 
   /* 따끔: 몽실 머리털이 통통 튀며 걷다가, 몸을 말아 데굴 한 바퀴. 머리 연필은 스프링처럼 흔들 */
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-hedgehog) { transform-origin: 50% 62%; animation: hug-roll 2.8s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-hedgehog .fluff { transform-origin: 50% 100%; animation: fluff-bounce .35s ease-in-out infinite; }
-  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-hedgehog .pencil { transform-origin: 0% 100%; animation: pencil-spring .7s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-hedgehog) { transform-origin: 50% 62%; animation: hug-roll 2.8s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-hedgehog .fluff { transform-origin: 50% 100%; animation: fluff-bounce .35s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-hedgehog .pencil { transform-origin: 0% 100%; animation: pencil-spring .7s ease-in-out infinite; }
 }
 @keyframes gait-waddle { 0%, 100% { transform: rotate(-8deg); } 25% { transform: translateY(-3px); } 50% { transform: rotate(8deg); } 75% { transform: translateY(-3px); } }
 @keyframes flap-l { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(28deg); } }
