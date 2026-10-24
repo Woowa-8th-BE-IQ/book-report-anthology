@@ -8,7 +8,7 @@
   <a class="kicker" th:href="@{/anthologies/{code}(code=${a.code()})}" th:text="'← ' + ${a.title()}">← 문집</a>
   <h1 data-reveal>모임방</h1>
   <a class="room-dress" th:href="@{/anthologies/{code}/room/bookmarks(code=${room.anthology().code()})}"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15l-5-3.6-5 3.6z"/></svg> 책갈피 모음</a>
-  <a class="room-dress" th:href="@{/anthologies/{code}/avatar(code=${room.anthology().code()}, back='room')}"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4.5l5 5-7.8 7.8-5-5z"/><path d="M6.7 12.3c-2.2.3-3 2-3 3.7 0 1.6-.7 2.6-1.2 3 2.6.6 6.2.2 7.7-1.7.9-1.1.8-2.4.2-3.3"/></svg> 내 캐릭터 꾸미기</a>
+  <a class="room-dress" th:href="@{/anthologies/{code}/avatar(code=${room.anthology().code()}, back='room')}"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4.5l5 5-7.8 7.8-5-5z"/><path d="M6.7 12.3c-2.2.3-3 2-3 3.7 0 1.6-.7 2.6-1.2 3 2.6.6 6.2.2 7.7-1.7.9-1.1.8-2.4.2-3.3"/></svg> 내 캐릭터 바꾸기</a>
   <details class="pet-link">
     <summary><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="11.5" rx="1.8"/><path d="M9 20h6M12 16v4"/><circle cx="12" cy="10.2" r="2.4"/></svg> 바탕화면 펫에 연결하기</summary>
     <div th:replace="~{fragments/pet :: box(${personalUrl})}"></div>

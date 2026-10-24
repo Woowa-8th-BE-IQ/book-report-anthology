@@ -149,28 +149,28 @@ public class RoomService {
     }
 
     /**
-     * 내 캐릭터를 바꾼다. style이 비어 있으면 기본 얼굴로 돌아간다.
+     * 내 캐릭터를 바꾼다. 비어 있으면 참여 순서로 받은 캐릭터로 돌아간다.
      * 모임방과 펫에 바로 보이도록 새 그림을 방에 알린다.
      */
-    public AvatarStyle changeAvatar(String code, String token, String style) {
+    public Critter changeAvatar(String code, String token, String slug) {
         Anthology anthology = anthologyService.get(code);
         Contributor me = AnthologyService.requireContributor(anthology, token);
-        boolean reset = style == null || style.isBlank();
-        AvatarStyle chosen = reset ? AvatarStyle.derived(me.nickname(), me.joinOrder()) : AvatarStyle.parse(style);
-        me.dressUp(reset ? null : chosen.format());
+        boolean reset = slug == null || slug.isBlank();
+        Critter chosen = reset ? Critter.derived(me.joinOrder()) : Critter.of(slug);
+        me.dressUp(reset ? null : chosen.slug());
         anthologies.updateAvatar(me);
         hub.broadcast(anthology.id(), "avatar", Map.of("contributorId", me.id(), "svg", Avatar.svg(chosen)));
         return chosen;
     }
 
-    /** 꾸미기 화면에 쓸 지금 내 모양. */
+    /** 캐릭터 고르기 화면에 쓸 지금 내 캐릭터와 처음 받은 캐릭터. */
     public Dressing dressing(String code, String token) {
         Anthology anthology = anthologyService.get(code);
         Contributor me = AnthologyService.requireContributor(anthology, token);
-        return new Dressing(anthology, me, Avatar.styleOf(me), AvatarStyle.derived(me.nickname(), me.joinOrder()));
+        return new Dressing(anthology, me, Avatar.critterOf(me), Critter.derived(me.joinOrder()));
     }
 
-    public record Dressing(Anthology anthology, Contributor me, AvatarStyle current, AvatarStyle original) {
+    public record Dressing(Anthology anthology, Contributor me, Critter current, Critter original) {
     }
 
     /** "○○님이 쓰는 중". 저장하지 않고 방에만 알린다. */

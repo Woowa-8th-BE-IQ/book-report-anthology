@@ -16,8 +16,8 @@
   <script th:src="@{/js/typing-sound.js}" defer></script>
 </head>
 <body class="pet-body">
-<!-- 캐릭터 조각: 꾸미기에서 서버에 묻지 않고 바로 그린다(Avatar.parts) -->
-<script th:inline="javascript">window.AVATAR_PARTS = /*[[${avatarParts}]]*/ null;</script>
+<!-- 캐릭터 그림의 손그림 흔들림 필터. 숨겨진 그림보다 먼저 와야 한다(Avatar.WOBBLE) -->
+<svg class="wobble-defs" width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute" th:utext="${wobble}"></svg>
   <!-- 선 아이콘 (24×24, 둥근 선, 색은 currentColor) -->
   <svg class="icon-sprite" aria-hidden="true" style="display:none">
     <symbol id="i-chat" viewBox="0 0 24 24"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.2a.5.5 0 0 1-.8-.4V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5z"/><path d="M8 10.5h8M8 13.5h5"/></symbol>
@@ -62,7 +62,7 @@
 </div>
 
 <div class="pet-stage" id="pet-stage" th:unless="${tabs.isEmpty()}"
-     th:attr="data-selected=${selected}, data-avatar-base=@{/avatars/v3/}, data-build=${build}">
+     th:attr="data-selected=${selected}, data-avatar-base=@{/avatars/v4/}, data-build=${build}">
 
   <!-- 펼친 창: 문집 탭 + 대화 / 캐릭터 바꾸기 -->
   <section class="pet-panel" id="pet-panel" hidden data-interactive aria-label="모임방 대화">
@@ -90,7 +90,7 @@
                   data-bookmarks=@{/anthologies/{code}/room/bookmarks(code=${tab.code()})},
                   data-more=${tab.lines().size() >= history},
                   data-unread=${room.unread()}, data-called=${room.calledWhileAway()},
-                  data-me=${room.meId()}, data-style=${tab.meStyle()}, data-original=${tab.originalStyle()}">
+                  data-me=${room.meId()}, data-critter=${tab.meCritter()}, data-original=${tab.originalCritter()}">
       <div class="pet-sub">
         <small><span class="pet-online" th:text="${room.onlineCount()}">1</span>명 있어요</small>
         <button type="button" class="pet-sound" data-typing-sound-toggle aria-pressed="false" hidden aria-label="타자 소리"><svg class="i"><use href="#i-keys"/></svg></button>
@@ -180,28 +180,25 @@
       <div class="dress-top">
         <img class="dress-preview" alt="" width="84" height="84">
         <div>
-          <b>내 캐릭터</b>
+          <b class="dress-name">내 캐릭터</b>
+          <small class="dress-tagline"></small>
           <small class="dress-where"></small>
-          <div class="dress-actions">
-            <button type="button" data-dress="random"><svg class="i"><use href="#i-dice"/></svg><span>뽑기</span></button>
-            <button type="button" data-dress="original"><svg class="i"><use href="#i-undo"/></svg><span>원래대로</span></button>
-          </div>
         </div>
       </div>
       <div class="dress-parts">
-        <div class="dress-part" th:each="part : ${parts}" th:attr="data-part=${part.key()}">
-          <span class="dress-label" th:text="${part.label()}">색</span>
-          <div class="dress-options">
-            <button type="button" class="dress-option" th:each="option : ${part.options()}"
-                    th:attr="data-value=${option.value()}, title=${option.name()}, aria-label=${part.label()} + ' ' + ${option.name()}">
-              <img alt="" width="34" height="34" loading="lazy">
-            </button>
-          </div>
+        <div class="dress-options critter-options">
+          <button type="button" class="dress-option" th:each="c : ${critters}"
+                  th:attr="data-critter=${c.slug()}, data-name=${c.title()}, data-tagline=${c.tagline()}, aria-label=${c.title()} + ' (' + ${c.species()} + ')'">
+            <img th:src="@{/avatars/v4/{s}.svg(s=${c.slug()})}" alt="" width="48" height="48" loading="lazy">
+            <span th:text="${c.title()}">뒤뚱</span>
+          </button>
         </div>
       </div>
       <div class="dress-foot">
+        <button type="button" class="ghost" data-dress="original">처음 친구로</button>
+        <span class="spacer"></span>
         <button type="button" class="ghost" data-dress="cancel">그만두기</button>
-        <button type="button" data-dress="save">이걸로 할게요</button>
+        <button type="button" data-dress="save">이 친구로 할게요</button>
       </div>
       <p class="pet-status dress-status" role="status"></p>
     </section>

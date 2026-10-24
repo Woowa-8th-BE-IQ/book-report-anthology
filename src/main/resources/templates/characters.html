@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('책 동물들')}"></head>
+<body class="characters-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main>
+  <section class="page-hero wrap critters-hero">
+    <span class="kicker">덕후감 서재</span>
+    <h1 data-reveal>하찮은 책 동물들</h1>
+    <p class="lead">다들 책을 좋아해요. 다만 조금씩 서툴러요<br>문집에 참여하면 이 중 한 친구가 내 자리에 앉아요</p>
+    <div class="critters-parade" aria-hidden="true">
+      <img th:each="c, s : ${critters}" th:src="@{/avatars/v4/{x}.svg(x=${c.slug()})}" alt="" width="64" height="64"
+           th:style="'--i:' + ${s.index}">
+    </div>
+  </section>
+
+  <section class="section critters-section">
+    <div class="wrap critters">
+      <article class="paper tape critter fade-up" th:each="c, s : ${critters}"
+               th:id="${c.slug()}" th:classappend="${s.even} ? 'tilt-l' : 'tilt-r'">
+        <div class="critter-art">
+          <img th:src="@{/avatars/v4/{x}.svg(x=${c.slug()})}" th:alt="${c.title()} 그림" width="150" height="150" loading="lazy">
+        </div>
+        <div class="critter-text">
+          <p class="critter-species">
+            <span th:text="${c.species()}">바위뛰기펭귄</span>
+            <em class="critter-badge" th:if="${s.first}">덕후감 대표</em>
+          </p>
+          <h2 class="critter-name" th:text="${c.title()}">뒤뚱</h2>
+          <p class="critter-tagline" th:text="'“' + ${c.tagline()} + '”'">“다 엮었어요!”</p>
+          <p class="critter-story" th:text="${c.story()}">이야기</p>
+          <p class="critter-where"><span>여기서 만나요</span> <b th:text="${c.where()}">마감</b></p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 바탕화면 펫 설치 -->
+  <section class="section deep" id="pet">
+    <div class="wrap">
+      <div class="section-head reveal-on-view">
+        <h2 class="section-title" data-reveal>바탕화면에 데려가요</h2>
+        <span class="rule"></span>
+        <p class="lead">덕후감 펫을 깔면 내 책 동물이 바탕화면을 걸어 다녀요<br>누르면 모임방 대화창이 열리고, 새 말이 오면 알려 줘요</p>
+      </div>
+
+      <div class="pet-get">
+        <article class="paper tape pet-os fade-up">
+          <h3><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="11.5" rx="1.8"/><path d="M9 20h6M12 16v4"/></svg> 맥</h3>
+          <p>터미널을 열고 아래 명령을 붙여 넣은 뒤 Enter</p>
+          <div class="copy-line code">
+            <input id="pet-get-mac" type="text" readonly aria-label="맥 설치 명령"
+                   th:value="'curl -fsSL ' + (${baseUrl} ?: '') + '/pet/install.sh | bash'">
+            <button class="btn small" type="button" data-copy="pet-get-mac">복사</button>
+          </div>
+          <p class="tool-note">터미널은 Spotlight(⌘ + Space)에서 ‘터미널’을 찾으면 돼요</p>
+        </article>
+        <article class="paper tape pet-os fade-up">
+          <h3><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="7.5" height="7" rx=".6"/><rect x="13" y="4.5" width="7.5" height="7" rx=".6"/><rect x="3.5" y="13.5" width="7.5" height="7" rx=".6"/><rect x="13" y="13.5" width="7.5" height="7" rx=".6"/></svg> 윈도우</h3>
+          <p>PowerShell을 열고 아래 명령을 붙여 넣은 뒤 Enter</p>
+          <div class="copy-line code">
+            <input id="pet-get-win" type="text" readonly aria-label="윈도우 설치 명령"
+                   th:value="'irm ' + (${baseUrl} ?: '') + '/pet/install.ps1 | iex'">
+            <button class="btn small" type="button" data-copy="pet-get-win">복사</button>
+          </div>
+          <p class="tool-note">시작 메뉴에서 ‘PowerShell’을 찾으면 돼요</p>
+        </article>
+      </div>
+
+      <ol class="pet-steps">
+        <li><b>받고, 설치하고, 펫을 띄우는 것</b>까지 명령 한 줄이 알아서 해요</li>
+        <li>펫 창이 뜨면 <b>문집에서 받은 개인 링크</b>를 붙여 넣어요</li>
+        <li>아직 문집이 없으면 펫 안에서 바로 <b>새 문집을 열거나 초대 링크로 참여</b>할 수 있어요</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section critters-cta">
+    <div class="wrap">
+      <p class="critters-cta-line">같은 책을 읽은 친구들과, 책 동물 하나씩 데리고</p>
+      <a class="btn" th:href="@{/anthologies/new}">문집 열기</a>
+    </div>
+  </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

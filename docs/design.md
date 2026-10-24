@@ -70,7 +70,7 @@ essay(id, anthology_id, contributor_id, title, quote, body TEXT, status, include
 reply(id, essay_id, contributor_id, body, created_at)
 activity(id, anthology_id, contributor_id, kind, essay_id, created_at)   -- 퍼널 기록
 room_message(id, anthology_id, contributor_id, body, created_at)        -- 모임방
--- contributor.last_seen_at(마지막 접속), avatar_style(캐릭터), last_read_message_id(모임방 어디까지 읽었나),
+-- contributor.last_seen_at(마지막 접속), avatar_style(고른 책 동물 slug, 없으면 참여 순서로), last_read_message_id(모임방 어디까지 읽었나),
 --   nudged_on(마감 재촉 보낸 날), chat_in_book(FALSE면 내 말을 책에 싣지 않음)
 room_bookmark(message_id, contributor_id, created_at, PK(message_id, contributor_id))  -- 책갈피
 -- 2차: anthology.prompts, anthology.appendix, essay.book_order, essay.public_sample
@@ -115,9 +115,10 @@ room_bookmark(message_id, contributor_id, created_at, PK(message_id, contributor
 | POST | `/anthologies/{code}/room/chat-in-book` | 내 말을 책에 실을지 `include=true/false` |
 | GET | `/out?url=` | 대화 속 바깥 링크 안내 화면 (눌러서 간다) |
 | POST | `/anthologies/{code}/room/read` | 여기까지 읽었다 `upTo=말 id` (뒤로 가지 않음) |
-| GET | `/anthologies/{code}/avatar` | 캐릭터 꾸미기 |
+| GET | `/anthologies/{code}/avatar` | 캐릭터 고르기 (여덟 책 동물 중 하나) |
 | POST | `/anthologies/{code}/avatar` | 캐릭터 저장. `X-Room` 헤더면 JSON |
-| GET | `/avatars/v3/{style}.svg` | 모양 글자로 그린 아바타 (오래 캐시, 그림체를 바꾸면 판을 올림) |
+| GET | `/avatars/v4/{slug}.svg` | 책 동물 그림 (오래 캐시, 그림을 고치면 판을 올림). 예전 `v3` 주소도 열린다 |
+| GET | `/characters` | 책 동물 소개 + 바탕화면 펫 설치 안내 |
 | GET | `/pet` | 데스크톱 펫 화면 (출입증의 모든 문집) |
 | POST | `/pet/leave` | 펫에서 문집 빼기 (출입증만 지움) |
 | POST | `/pet/anthologies` | 펫에서 문집 열기. JSON(초대 링크·개인 링크) |
@@ -179,7 +180,7 @@ OpenPDF로 A5(148×210mm) PDF를 만든다. 부크크, 교보문고 바로출판
 
 ### 모임방
 
-문집마다 방이 하나. 참여자는 닉네임과 참여 순서로 그린 아바타(`Avatar`, SVG)로 책상에 둘러앉는다.
+문집마다 방이 하나. 참여자는 책 동물(`Critter`, 여덟 마리) 중 하나로 책상에 둘러앉는다. 고르지 않으면 참여 순서대로 돌아가며 받는다(1번 뒤뚱).
 
 - 실시간은 SSE. `RoomHub`가 서버 메모리에 연결을 들고 `hello`·`presence`·`message`·`typing`을 보낸다.
 - 20초마다 빈 신호(keep-alive)로 프록시가 연결을 끊지 않게 하고, 끊긴 연결을 걸러 낸다. 연결은 15분마다 새로 붙는다(EventSource가 자동으로).

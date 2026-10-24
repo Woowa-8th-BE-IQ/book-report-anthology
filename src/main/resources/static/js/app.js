@@ -826,73 +826,21 @@
     });
   }
 
-  // 12. 캐릭터 꾸미기: 조각을 고르면 미리보기와 다른 조각의 보기 그림이 함께 바뀐다.
+  // 12. 캐릭터 고르기: 고르면 미리보기 그림·이름·한마디가 바로 바뀐다(저장은 버튼으로).
   const dresser = document.getElementById('dresser');
   if (dresser) {
-    const order = ['color', 'body', 'eyes', 'mouth', 'extra', 'cheeks'];
-    const letter = { color: 'c', body: 'b', eyes: 'e', mouth: 'm', extra: 'x', cheeks: 'k' };
-    const hidden = document.getElementById('style-value');
     const image = document.getElementById('dresser-image');
-    const base = image.getAttribute('src').replace(/[^/]+\.svg$/, '');
-    hidden.disabled = false;
-
-    const current = () => Object.fromEntries(order.map((part) =>
-      [part, Number(dresser.querySelector(`input[name="${part}"]:checked`)?.value || 0)]));
-    const format = (style) => order.map((part) => letter[part] + style[part]).join('');
-    const parse = (text) => {
-      const match = /^c(\d+)b(\d)e(\d)m(\d)x(\d)k(\d)$/.exec(text || '');
-      return match ? Object.fromEntries(order.map((part, i) => [part, Number(match[i + 1])])) : null;
-    };
-
-    // 캐릭터 그림을 브라우저에서 바로 만든다(서버 Avatar.svg와 같은 순서로 조각을 잇는다). 조각이 없으면 null.
-    const drawAvatar = (style) => {
-      const parts = window.AVATAR_PARTS;
-      if (!parts || !style) return null;
-      const svg = parts.open + parts.bodies[style.body].replace('{paint}', parts.paints[style.color])
-        + parts.extras[style.extra] + '<g class="face">' + parts.eyes[style.eyes] + parts.mouths[style.mouth] + '</g>'
-        + (style.cheeks === 1 ? parts.cheeks : '') + parts.close;
-      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-    };
-    const art = (style) => drawAvatar(style) || base + format(style) + '.svg';
-    const render = (pop) => {
-      const style = current();
-      hidden.value = format(style);
-      image.src = art(style);
-      if (pop) {
-        image.classList.remove('pop');
-        void image.offsetWidth;
-        image.classList.add('pop');
-      }
-      // 각 보기 그림은 "지금 모양에서 그 조각만 바꾼 모양"
-      dresser.querySelectorAll('fieldset[data-part]').forEach((fieldset) => {
-        const part = fieldset.dataset.part;
-        fieldset.querySelectorAll('.option').forEach((option) => {
-          const value = Number(option.querySelector('input').value);
-          option.querySelector('img').src = art({ ...style, [part]: value });
-        });
-      });
-    };
-    const apply = (style) => {
-      order.forEach((part) => {
-        const input = dresser.querySelector(`input[name="${part}"][value="${style[part]}"]`);
-        if (input) input.checked = true;
-      });
-      render(true);
-    };
-
-    dresser.addEventListener('change', () => render(true));
-    const counts = Object.fromEntries(order.map((part) =>
-      [part, dresser.querySelectorAll(`input[name="${part}"]`).length]));
-    const randomButton = dresser.querySelector('[data-dress="random"]');
-    const originalButton = dresser.querySelector('[data-dress="original"]');
-    randomButton.hidden = false;
-    originalButton.hidden = false;
-    randomButton.addEventListener('click', () => {
-      apply(Object.fromEntries(order.map((part) => [part, Math.floor(Math.random() * counts[part])])));
-    });
-    originalButton.addEventListener('click', () => {
-      const original = parse(dresser.dataset.original);
-      if (original) apply(original);
+    const name = document.getElementById('dresser-name');
+    const tagline = document.getElementById('dresser-tagline');
+    dresser.addEventListener('change', (event) => {
+      const pick = event.target.closest('.critter-pick');
+      if (!pick) return;
+      image.src = pick.querySelector('img').getAttribute('src');
+      name.textContent = pick.dataset.name;
+      tagline.textContent = `“${pick.dataset.tagline}”`;
+      image.classList.remove('pop');
+      void image.offsetWidth;
+      image.classList.add('pop');
     });
   }
 

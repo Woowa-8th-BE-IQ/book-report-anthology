@@ -2,7 +2,7 @@ package com.iq.anthology.web;
 
 import com.iq.anthology.essay.EssayService;
 import com.iq.anthology.room.Avatar;
-import com.iq.anthology.room.AvatarStyle;
+import com.iq.anthology.room.Critter;
 import com.iq.anthology.room.RoomMessage;
 import com.iq.anthology.room.RoomService;
 import com.iq.anthology.room.RoomService.Room;
@@ -119,8 +119,8 @@ public class PetController {
                 Room room = roomService.enter(pass.getKey(), pass.getValue());
                 RoomView view = RoomView.of(room, essayService.shelf(room.anthology()), roomService.now());
                 tabs.add(new Tab(room.anthology().code(), room.anthology().title(), view,
-                        Avatar.styleOf(room.me()).format(),
-                        AvatarStyle.derived(room.me().nickname(), room.me().joinOrder()).format(),
+                        Avatar.critterOf(room.me()).slug(),
+                        Critter.derived(room.me().joinOrder()).slug(),
                         room.anthology().id()));
             } catch (DomainException e) {
                 cookies.clear(request, response, pass.getKey()); // 링크가 바뀌었거나 내보내진 문집은 잊는다
@@ -134,8 +134,7 @@ public class PetController {
         model.addAttribute("selected", selected);
         model.addAttribute("history", PET_HISTORY);
         model.addAttribute("bodyMax", RoomMessage.BODY_MAX);
-        model.addAttribute("parts", AvatarController.partNames());
-        model.addAttribute("avatarParts", Avatar.parts());
+        model.addAttribute("critters", Critter.values());
         return "anthologies/pet";
     }
 
@@ -182,8 +181,8 @@ public class PetController {
         return ResponseEntity.noContent().build();
     }
 
-    /** 펫 탭 하나. meStyle은 지금 내 캐릭터, originalStyle은 고르기 전 기본 얼굴. */
-    public record Tab(String code, String title, RoomView room, String meStyle, String originalStyle,
+    /** 펫 탭 하나. meCritter는 지금 내 캐릭터, originalCritter는 참여 순서로 받은 캐릭터(slug). */
+    public record Tab(String code, String title, RoomView room, String meCritter, String originalCritter,
                       Long anthologyId) {
 
         public List<RoomView.Line> lines() {

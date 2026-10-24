@@ -303,36 +303,43 @@ class AnthologyFlowTest {
 
         // 펫 안에서 캐릭터 바꾸기는 JSON으로 답한다
         mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor).header("X-Room", "1")
-                        .param("style", "c2b3e1m1x5k0"))
+                        .param("critter", "frog"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"style\":\"c2b3e1m1x5k0\"")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"critter\":\"frog\"")));
         mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor).header("X-Room", "1")
-                        .param("style", "zzz"))
+                        .param("critter", "zzz"))
                 .andExpect(status().isUnprocessableEntity());
 
-        // 캐릭터 꾸미기: 미리보기 그림, 꾸미기 화면, 저장하면 모임방에 새 얼굴
-        mvc.perform(get("/avatars/{style}.svg", "c8b4e2m3x5k1"))
+        // 캐릭터 고르기: 그림, 고르기 화면, 저장하면 모임방에 새 얼굴
+        mvc.perform(get("/avatars/v4/{slug}.svg", "snail"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", org.hamcrest.Matchers.startsWith("image/svg+xml")));
-        mvc.perform(get("/avatars/{style}.svg", "nope")).andExpect(status().isUnprocessableEntity());
+        mvc.perform(get("/avatars/v4/{slug}.svg", "nope")).andExpect(status().isUnprocessableEntity());
+        mvc.perform(get("/avatars/v3/{style}.svg", "c8b4e2m3x5k1")).andExpect(status().isOk()); // 예전 주소도 열린다
         assertThat(mvc.perform(get("/anthologies/{code}/avatar", code).cookie(editor))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString())
-                .contains("내 캐릭터", "고양이", "/avatars/v3/c");
+                .contains("내 캐릭터", "꽥이", "처음 받은 친구", "/avatars/v4/frog.svg");
         mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor)
-                        .param("style", "c8b4e2m3x5k1").param("back", "room"))
+                        .param("critter", "snail").param("back", "room"))
                 .andExpect(status().is3xxRedirection())
+                .andExpect(result -> assertThat(result.getFlashMap().get("notice")).asString().contains("느릿"))
                 .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
                         .isEqualTo("/anthologies/" + code + "/room"));
         assertThat(mvc.perform(get("/anthologies/{code}/room", code).cookie(editor)).andReturn().getResponse()
-                .getContentAsString()).contains("#FF9EC7"); // 8번 색(연분홍)
-        mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor).param("style", "c99b0e0m0x0k0"))
+                .getContentAsString()).contains(com.iq.anthology.room.Avatar.svg(com.iq.anthology.room.Critter.SNAIL));
+        mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor).param("critter", "unicorn"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(result -> assertThat(result.getFlashMap().get("error")).asString().contains("색"));
-        // JS 없이 조각별 값으로도 저장된다
-        mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor)
-                        .param("color", "1").param("body", "3").param("eyes", "0").param("mouth", "0")
-                        .param("extra", "0").param("cheeks", "0"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(result -> assertThat(result.getFlashMap().get("error")).asString().contains("없는 캐릭터"));
+        // 비워서 보내면 처음 받은 친구로 돌아간다
+        mvc.perform(post("/anthologies/{code}/avatar", code).cookie(editor).param("critter", ""))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(result -> assertThat(result.getFlashMap().get("notice")).asString().contains("뒤뚱이에요"));
+
+        // 책 동물 소개와 펫 설치 안내는 누구나 본다
+        assertThat(mvc.perform(get("/characters")).andExpect(status().isOk()).andReturn().getResponse()
+                .getContentAsString())
+                .contains("하찮은 책 동물들", "뒤뚱", "느릿", "바위뛰기펭귄", "/pet/install.sh", "/pet/install.ps1")
+                .doesNotContain("이름은 옛날 그대로");
 
         // 설치 스크립트를 내려준다
         assertThat(mvc.perform(get("/pet/install.sh")).andExpect(status().isOk())

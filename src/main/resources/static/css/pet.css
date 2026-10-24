@@ -137,20 +137,18 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .dress-top { display: flex; gap: 12px; align-items: center; padding: 12px; border-bottom: 1px solid var(--line); }
 .dress-preview { width: 84px; height: 84px; flex: none; }
 .dress-preview.pop { animation: jump .45s ease-out; }
-.dress-top b { display: block; font-size: 14px; }
+.dress-top b { display: block; font-family: "Nanum Pen Script", cursive; font-size: 24px; font-weight: 400; line-height: 1.1; }
+.dress-tagline { display: block; font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
 .dress-where { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
-.dress-actions { display: flex; gap: 6px; margin-top: 8px; }
-.dress-actions button { display: inline-flex; align-items: center; gap: 5px; }
-.dress-actions .i { width: 14px; height: 14px; }
-.dress-actions button, .dress-foot button { padding: 6px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 12px; cursor: pointer; }
-.dress-parts { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 12px 10px; }
-.dress-part { margin-top: 8px; }
-.dress-label { display: block; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 4px; }
-.dress-options { display: flex; flex-wrap: wrap; gap: 4px; }
-.dress-option { padding: 3px; border: 1.5px solid transparent; border-radius: 10px; background: none; cursor: pointer; line-height: 0; }
+.dress-foot button { padding: 6px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); font: inherit; font-size: 12px; cursor: pointer; }
+.dress-foot .spacer { flex: 1; }
+.dress-parts { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 12px; }
+.critter-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.dress-option { display: grid; justify-items: center; gap: 2px; padding: 6px 2px 4px; border: 1.5px solid transparent; border-radius: 10px; background: none; color: inherit; cursor: pointer; }
 .dress-option:hover { background: var(--paper); }
 .dress-option[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
-.dress-option img { width: 34px; height: 34px; }
+.dress-option img { width: 48px; height: 48px; }
+.dress-option span { font-family: "Nanum Pen Script", cursive; font-size: 17px; line-height: 1; }
 .dress-foot { display: flex; justify-content: flex-end; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--line); }
 .dress-foot [data-dress="save"] { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 

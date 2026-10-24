@@ -8,42 +8,37 @@
   <a class="kicker" th:href="${back == 'room'} ? @{/anthologies/{code}/room(code=${a.code()})} : @{/anthologies/{code}(code=${a.code()})}"
      th:text="'← ' + (${back == 'room'} ? '모임방' : ${a.title()})">← 문집</a>
   <h1 data-reveal>내 캐릭터</h1>
-  <p class="lead">조각을 골라 꾸미거나, 새 캐릭터를 뽑아요<br>바꾸면 모임방과 바탕화면 펫에 바로 보여요</p>
+  <p class="lead">덕후감 서재의 책 동물 중 하나를 골라요<br>바꾸면 모임방과 바탕화면 펫에 바로 보여요</p>
 </section>
 
 <div th:replace="~{fragments/layout :: flash}"></div>
 
-<!-- 캐릭터 조각: 꾸미기에서 서버에 묻지 않고 바로 그린다(Avatar.parts) -->
-<script th:inline="javascript">window.AVATAR_PARTS = /*[[${avatarParts}]]*/ null;</script>
 <main class="section" style="padding-top:20px">
-  <form class="dresser" id="dresser" method="post" th:action="@{/anthologies/{code}/avatar(code=${a.code()})}" data-once
-        th:attr="data-original=${dressing.original().format()}">
+  <form class="dresser" id="dresser" method="post" th:action="@{/anthologies/{code}/avatar(code=${a.code()})}" data-once>
     <input type="hidden" name="back" th:value="${back}">
-    <input type="hidden" name="style" id="style-value" th:value="${dressing.current().format()}" disabled>
 
     <div class="dresser-preview paper tape">
       <div class="dresser-stage">
-        <img id="dresser-image" th:src="@{/avatars/v3/{s}.svg(s=${dressing.current().format()})}" alt="" width="180" height="180">
+        <img id="dresser-image" th:src="@{/avatars/v4/{s}.svg(s=${dressing.current().slug()})}" alt="" width="180" height="180">
       </div>
-      <p class="dresser-name" th:text="${me.nickname()}">감자</p>
-      <div class="dresser-actions">
-        <button class="btn ghost small" type="button" data-dress="random" hidden><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="9" cy="9" r=".9" fill="currentColor"/><circle cx="15" cy="15" r=".9" fill="currentColor"/><circle cx="15" cy="9" r=".9" fill="currentColor"/><circle cx="9" cy="15" r=".9" fill="currentColor"/></svg> 새 캐릭터 뽑기</button>
-        <button class="btn ghost small" type="button" data-dress="original" hidden>원래 얼굴로</button>
-      </div>
+      <p class="dresser-name" id="dresser-name" th:text="${dressing.current().title()}">뒤뚱</p>
+      <p class="dresser-tagline" id="dresser-tagline" th:text="'“' + ${dressing.current().tagline()} + '”'">“다 엮었어요!”</p>
+      <p class="dresser-who" th:text="${me.nickname()}">감자</p>
     </div>
 
     <div class="dresser-parts">
-      <fieldset class="part" th:each="part : ${parts}" th:attr="data-part=${part.key()}">
-        <legend th:text="${part.label()}">색</legend>
-        <div class="options">
-          <label class="option" th:each="option : ${part.options()}" th:title="${option.name()}">
-            <input type="radio" th:name="${part.key()}" th:value="${option.value()}" th:checked="${option.selected()}">
-            <img th:src="@{/avatars/v3/{s}.svg(s=${option.style()})}" alt="" width="52" height="52" loading="lazy">
-            <span th:text="${option.name()}">살구</span>
-          </label>
-        </div>
-      </fieldset>
-      <button class="btn" type="submit">이 캐릭터로 할게요</button>
+      <div class="critter-picks" role="radiogroup" aria-label="책 동물">
+        <label class="critter-pick" th:each="c : ${critters}"
+               th:attr="data-name=${c.title()}, data-tagline=${c.tagline()}">
+          <input type="radio" name="critter" th:value="${c.slug()}" th:checked="${c == dressing.current()}">
+          <img th:src="@{/avatars/v4/{s}.svg(s=${c.slug()})}" alt="" width="72" height="72" loading="lazy">
+          <b th:text="${c.title()}">뒤뚱</b>
+          <small th:text="${c.species()}">바위뛰기펭귄</small>
+          <em class="critter-first" th:if="${c == dressing.original()}">처음 받은 친구</em>
+        </label>
+      </div>
+      <p class="tool-note">어떤 친구들인지는 <a class="text-link" th:href="@{/characters}" target="_blank" rel="noopener">책 동물 소개</a>에서 볼 수 있어요</p>
+      <button class="btn" type="submit">이 친구로 할게요</button>
     </div>
   </form>
 </main>

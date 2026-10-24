@@ -622,7 +622,7 @@
   };
 
   // 서버가 새로 배포되면(다시 붙은 연결의 판이 다르면) 화면을 새로 고친다.
-  // 쓰던 말이 있거나 메뉴·꾸미기를 보고 있으면 끝날 때까지 기다린다.
+  // 쓰던 말이 있거나 메뉴·캐릭터 고르기를 보고 있으면 끝날 때까지 기다린다.
   let refreshing = null;
   const busy = () => !menu.hidden || !dresser.hidden || !creator.hidden || !soundPanel.hidden
     || [...views.values()].some((view) => view.element.querySelector('.pet-form textarea')?.value.trim());
@@ -729,45 +729,27 @@
     });
   });
 
-  // ───────── 캐릭터 바꾸기 (펫 창 안에서) ─────────
-  const order = ['color', 'body', 'eyes', 'mouth', 'extra', 'cheeks'];
-  const letter = { color: 'c', body: 'b', eyes: 'e', mouth: 'm', extra: 'x', cheeks: 'k' };
-  const toStyle = (text) => {
-    const match = /^c(\d+)b(\d)e(\d)m(\d)x(\d)k(\d)$/.exec(text || '');
-    return match ? Object.fromEntries(order.map((part, i) => [part, Number(match[i + 1])])) : null;
-  };
-  const format = (style) => order.map((part) => letter[part] + style[part]).join('');
+  // ───────── 캐릭터 바꾸기 (펫 창 안에서): 여덟 책 동물 중 하나 ─────────
   const preview = dresser.querySelector('.dress-preview');
   const dressStatus = dresser.querySelector('.dress-status');
+  const options = [...dresser.querySelectorAll('.dress-option')];
+  const known = (slug) => options.some((option) => option.dataset.critter === slug);
   let draft = null;
 
-  // 캐릭터 그림을 브라우저에서 바로 만든다(서버 Avatar.svg와 같은 순서로 조각을 잇는다). 조각이 없으면 null.
-  const drawAvatar = (style) => {
-    const parts = window.AVATAR_PARTS;
-    if (!parts || !style) return null;
-    const svg = parts.open + parts.bodies[style.body].replace('{paint}', parts.paints[style.color])
-      + parts.extras[style.extra] + '<g class="face">' + parts.eyes[style.eyes] + parts.mouths[style.mouth] + '</g>'
-      + (style.cheeks === 1 ? parts.cheeks : '') + parts.close;
-    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-  };
-  const art = (style) => drawAvatar(style) || avatarBase + format(style) + '.svg';
   const renderDresser = () => {
-    preview.src = art(draft);
-    dresser.querySelectorAll('.dress-part').forEach((row) => {
-      const part = row.dataset.part;
-      row.querySelectorAll('.dress-option').forEach((option) => {
-        const value = Number(option.dataset.value);
-        option.querySelector('img').src = art({ ...draft, [part]: value });
-        option.setAttribute('aria-pressed', String(draft[part] === value));
-      });
-    });
+    const chosen = options.find((option) => option.dataset.critter === draft);
+    preview.src = avatarBase + draft + '.svg';
+    dresser.querySelector('.dress-name').textContent = chosen ? chosen.dataset.name : '내 캐릭터';
+    dresser.querySelector('.dress-tagline').textContent = chosen ? `“${chosen.dataset.tagline}”` : '';
+    options.forEach((option) => option.setAttribute('aria-pressed', String(option.dataset.critter === draft)));
   };
   function openDresser() {
     closeCreator();
     closeSounds();
     const view = current();
-    draft = toStyle(view.element.dataset.style) || toStyle(view.element.dataset.original);
-    if (!draft) return;
+    const mine = view.element.dataset.critter;
+    draft = known(mine) ? mine : view.element.dataset.original;
+    if (!known(draft)) return;
     dresser.querySelector('.dress-where').textContent = many ? `'${view.title}'에서의 모습` : '';
     dressStatus.textContent = '';
     views.forEach((each) => { each.element.hidden = true; });
@@ -782,21 +764,14 @@
   dresser.addEventListener('click', async (event) => {
     const option = event.target.closest('.dress-option');
     if (option) {
-      draft = { ...draft, [option.closest('.dress-part').dataset.part]: Number(option.dataset.value) };
+      draft = option.dataset.critter;
       renderDresser();
       restart(preview, 'pop');
       return;
     }
     const action = event.target.closest('[data-dress]')?.dataset.dress;
-    if (action === 'random') {
-      draft = Object.fromEntries(order.map((part) => {
-        const count = dresser.querySelectorAll(`.dress-part[data-part="${part}"] .dress-option`).length;
-        return [part, Math.floor(Math.random() * count)];
-      }));
-      renderDresser();
-      restart(preview, 'pop');
-    } else if (action === 'original') {
-      draft = toStyle(current().element.dataset.original);
+    if (action === 'original') {
+      draft = current().element.dataset.original;
       renderDresser();
       restart(preview, 'pop');
     } else if (action === 'cancel') {
@@ -808,7 +783,7 @@
         const response = await fetch(view.element.dataset.avatar, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8', 'X-Room': '1' },
-          body: new URLSearchParams({ style: format(draft) }),
+          body: new URLSearchParams({ critter: draft }),
           credentials: 'same-origin',
         });
         const result = await response.json().catch(() => ({}));
@@ -816,7 +791,7 @@
           dressStatus.textContent = result.message || '저장하지 못했어요.';
           return;
         }
-        view.element.dataset.style = result.style;
+        view.element.dataset.critter = result.critter;
         const template = faceOf(view, view.me);
         if (template) template.content.firstElementChild.innerHTML = result.svg;
         face.innerHTML = result.svg;

@@ -30,7 +30,7 @@ public class Contributor {
         this(id, nickname, realName, token, joinOrder, joinedAt, lastSeenAt, null);
     }
 
-    /** avatarStyle: 직접 고른 캐릭터 모양(예: c3b1e2m0x4k1). 고르지 않았으면 null. */
+    /** avatarStyle: 직접 고른 캐릭터(예: snail). 고르지 않았으면 null. 예전 꾸미기 값(c3b1e2m0x4k1)이 남아 있을 수 있다. */
     public Contributor(Long id, String nickname, String realName, String token, int joinOrder,
                        LocalDateTime joinedAt, LocalDateTime lastSeenAt, String avatarStyle) {
         this.avatarStyle = avatarStyle;
@@ -64,7 +64,7 @@ public class Contributor {
         return avatarStyle;
     }
 
-    /** 캐릭터 모양을 바꾼다. null이면 기본 얼굴로 돌아간다. 모양이 맞는지는 부르는 쪽(AvatarStyle)이 확인한다. */
+    /** 캐릭터를 바꾼다. null이면 참여 순서로 받은 캐릭터로 돌아간다. 있는 캐릭터인지는 부르는 쪽(Critter)이 확인한다. */
     public void dressUp(String style) {
         this.avatarStyle = style;
     }

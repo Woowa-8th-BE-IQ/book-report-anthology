@@ -2,58 +2,70 @@ package com.iq.anthology.room;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.iq.anthology.anthology.Contributor;
+import com.iq.anthology.support.ErrorType;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.Test;
 
 class AvatarTest {
 
-    @Test
-    void 같은_사람은_언제나_같은_얼굴이다() {
-        assertThat(Avatar.svg("감자", 2)).isEqualTo(Avatar.svg("감자", 2));
-    }
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 10, 24, 12, 0);
 
     @Test
-    void 옆자리끼리는_색이_다르다() {
-        assertThat(color(Avatar.svg("감자", 1))).isNotEqualTo(color(Avatar.svg("감자", 2)));
-    }
+    void 여덟_캐릭터_모두_올바른_SVG이고_얼굴이_묶여_있다() {
+        for (Critter critter : Critter.values()) {
+            String svg = Avatar.svg(critter);
 
-    @Test
-    void 올바른_SVG이고_닉네임_글자를_담지_않는다() {
-        String svg = Avatar.svg("<script>감자</script>", 3);
-
-        assertThat(svg).doesNotContain("script").doesNotContain("감자");
-        assertThatCode(() -> DocumentBuilderFactory.newInstance().newDocumentBuilder()
-                .parse(new ByteArrayInputStream(svg.getBytes(StandardCharsets.UTF_8))))
-                .doesNotThrowAnyException();
-    }
-
-    @Test
-    void 여러_닉네임이_여러_얼굴로_갈린다() {
-        long distinct = java.util.stream.IntStream.range(0, 40)
-                .mapToObj(i -> Avatar.svg("사람" + i, 1))
-                .distinct()
-                .count();
-
-        assertThat(distinct).isGreaterThan(20);
-    }
-
-    @Test
-    void 브라우저가_조각으로_그린_그림과_서버_그림이_같다() {
-        var parts = Avatar.parts();
-        for (int color = 0; color < AvatarStyle.COLORS; color++) {
-            for (int body = 0; body < AvatarStyle.BODIES; body++) {
-                AvatarStyle style = new AvatarStyle(color, body, (color + body) % AvatarStyle.EYES,
-                        body % AvatarStyle.MOUTHS, color % AvatarStyle.EXTRAS, body % 2);
-                assertThat(Avatar.assemble(parts, style)).isEqualTo(Avatar.svg(style));
-            }
+            assertThat(svg).contains("class=\"face\"", "filter=\"url(#wob)\"", "id=\"wob\"");
+            assertThatCode(() -> DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                    .parse(new ByteArrayInputStream(svg.getBytes(StandardCharsets.UTF_8))))
+                    .as(critter.title()).doesNotThrowAnyException();
         }
     }
 
-    private static String color(String svg) {
-        int start = svg.indexOf("fill=\"#") + 6;
-        return svg.substring(start, start + 7);
+    @Test
+    void 캐릭터는_서로_다르고_이름과_주소가_겹치지_않는다() {
+        assertThat(Arrays.stream(Critter.values()).map(Avatar::svg).distinct()).hasSize(8);
+        assertThat(Arrays.stream(Critter.values()).map(Critter::slug).distinct()).hasSize(8);
+        assertThat(Arrays.stream(Critter.values()).map(Critter::title).distinct()).hasSize(8);
+    }
+
+    @Test
+    void 고르지_않으면_참여_순서대로_돌아가며_받는다() {
+        assertThat(Critter.derived(1)).isEqualTo(Critter.PENGUIN);
+        assertThat(Critter.derived(2)).isEqualTo(Critter.DUCK);
+        assertThat(Critter.derived(9)).isEqualTo(Critter.PENGUIN);
+        assertThat(Arrays.stream(new int[]{1, 2, 3, 4, 5, 6, 7, 8}).mapToObj(Critter::derived).distinct()).hasSize(8);
+    }
+
+    @Test
+    void 고른_캐릭터가_있으면_그것으로_예전_꾸미기_값은_순서대로_받은_캐릭터로() {
+        assertThat(Avatar.critterOf(contributor(3, null))).isEqualTo(Critter.derived(3));
+        assertThat(Avatar.critterOf(contributor(3, "snail"))).isEqualTo(Critter.SNAIL);
+        assertThat(Avatar.critterOf(contributor(3, "c8b4e2m3x5k1"))).isEqualTo(Critter.derived(3));
+        assertThat(Avatar.of(contributor(1, "frog"))).isEqualTo(Avatar.svg(Critter.FROG));
+    }
+
+    @Test
+    void 없는_캐릭터는_고를_수_없다() {
+        assertThatThrownBy(() -> Critter.of("<svg>")).extracting("type").isEqualTo(ErrorType.RULE_VIOLATION);
+        assertThat(Critter.of("mole")).isEqualTo(Critter.MOLE);
+    }
+
+    @Test
+    void 닉네임_글자를_그림에_담지_않는다() {
+        Contributor sneaky = new Contributor(1L, "<script>감자</script>", null, "t", 1, NOW);
+
+        assertThat(Avatar.of(sneaky)).doesNotContain("script").doesNotContain("감자");
+    }
+
+    private static Contributor contributor(int joinOrder, String style) {
+        return new Contributor(1L, "감자", null, "t", joinOrder, NOW, null, style);
     }
 }
