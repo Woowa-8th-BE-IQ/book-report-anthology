@@ -17,8 +17,12 @@ public final class Avatar {
             + "<feTurbulence type=\"fractalNoise\" baseFrequency=\"0.06\" numOctaves=\"2\" seed=\"3\"/>"
             + "<feDisplacementMap in=\"SourceGraphic\" scale=\"1.5\"/></filter></defs>";
 
-    private static final String OPEN = "<svg class=\"avatar-svg\" viewBox=\"0 0 64 64\" "
-            + "xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\" focusable=\"false\">";
+    /** 걸음걸이를 캐릭터마다 다르게 하려고 critter-<slug> 클래스를 붙인다(화면 CSS가 :has로 고른다). */
+    private static String open(Critter critter) {
+        return "<svg class=\"avatar-svg critter-" + critter.slug() + "\" viewBox=\"0 0 64 64\" "
+                + "xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\" focusable=\"false\">";
+    }
+
     private static final String CLOSE = "</svg>";
 
     private Avatar() {
@@ -36,6 +40,6 @@ public final class Avatar {
     }
 
     public static String svg(Critter critter) {
-        return OPEN + WOBBLE + "<g filter=\"url(#wob)\">" + critter.art() + "</g>" + CLOSE;
+        return open(critter) + WOBBLE + "<g filter=\"url(#wob)\">" + critter.art() + "</g>" + CLOSE;
     }
 }

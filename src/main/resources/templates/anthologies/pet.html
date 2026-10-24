@@ -101,6 +101,7 @@
         <li class="pet-line" th:each="line : ${tab.lines()}"
             th:classappend="${(line.mine(room.meId()) ? 'mine ' : '') + (line.callsMe() ? 'calls-me' : '')}"
             th:attr="data-id=${line.id()}">
+          <span class="pet-who" th:attr="data-who=${line.author().id()}" th:utext="${line.author().avatar()}"></span>
           <b th:text="${line.author().nickname()}">감자</b>
           <span th:text="${line.body()}">말</span>
           <button type="button" class="pet-mark" th:classappend="${(line.marked() ? 'on ' : '') + (line.marks() > 0 ? 'has' : '')}"

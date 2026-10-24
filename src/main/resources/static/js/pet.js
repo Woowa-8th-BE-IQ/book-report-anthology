@@ -71,6 +71,17 @@
 
   const faceOf = (view, id) => view.element.querySelector(`template[data-face="${id}"]`);
   const svgOf = (template) => template ? template.content.firstElementChild.innerHTML : '';
+  // 대화 한 줄 앞의 작은 캐릭터. 캐릭터를 바꾸면 refreshWho로 그 사람 줄을 모두 바꾼다.
+  const whoOf = (view, id) => {
+    const who = document.createElement('span');
+    who.className = 'pet-who';
+    who.dataset.who = id;
+    who.innerHTML = svgOf(faceOf(view, id));
+    return who;
+  };
+  const refreshWho = (view, id, svg) => {
+    view.log.querySelectorAll(`.pet-who[data-who="${id}"]`).forEach((who) => { who.innerHTML = svg; });
+  };
   const current = () => views.get(selected);
   const scrollLog = (view) => { view.log.scrollTop = view.log.scrollHeight; };
 
@@ -480,7 +491,7 @@
         const text = document.createElement('span');
         text.textContent = message.body;
         window.MentionMarkup?.decorate(text, view.element);
-        line.append(name, text, markButton(message));
+        line.append(whoOf(view, message.contributorId), name, text, markButton(message));
         fragment.append(line);
       });
       view.log.querySelector('.pet-more').after(fragment);
@@ -504,7 +515,7 @@
     const text = document.createElement('span');
     text.textContent = message.body;
     window.MentionMarkup?.decorate(text, view.element);
-    line.append(name, text, markButton(message));
+    line.append(whoOf(view, message.contributorId), name, text, markButton(message));
     view.log.append(line);
     while (view.log.querySelectorAll('.pet-line').length > 400) view.log.querySelector('.pet-line').remove();
     if (view.code === selected) scrollLog(view);
@@ -674,6 +685,7 @@
       const template = data && faceOf(view, data.contributorId);
       if (!template) return;
       template.content.firstElementChild.innerHTML = data.svg;
+      refreshWho(view, data.contributorId, data.svg);
       if (data.contributorId === view.me && view.code === selected) {
         face.innerHTML = data.svg;
         restart(avatar, 'excited');
@@ -794,6 +806,7 @@
         view.element.dataset.critter = result.critter;
         const template = faceOf(view, view.me);
         if (template) template.content.firstElementChild.innerHTML = result.svg;
+        refreshWho(view, view.me, result.svg);
         face.innerHTML = result.svg;
         restart(avatar, 'excited');
         closeDresser();
