@@ -735,13 +735,15 @@
     // 책상 위로는 못 올라간다: 가운데 원 안을 누르면 책상 가장자리로 밀어낸다.
     const settle = (x, y) => {
       const table = room.querySelector('.table-scene').classList.contains('crowd') ? 0.24 : 0.29;
+      // 바닥은 비스듬히 보여 세로로 눌려 있다(RoomView.FLOOR_SQUASH와 같은 값). 펴서 재고 다시 누른다.
+      const squash = 0.55;
       let dx = x - 0.5;
-      let dy = y - 0.5;
+      let dy = (y - 0.5) / squash;
       const r = Math.hypot(dx, dy);
       if (r < table) {
         if (r < 0.001) { dx = 0; dy = 1; } else { dx /= r; dy /= r; }
         x = 0.5 + dx * table;
-        y = 0.5 + dy * table;
+        y = 0.5 + dy * table * squash;
       }
       const clamp = (v) => Math.min(0.94, Math.max(0.06, v));
       return [clamp(x), clamp(y)];

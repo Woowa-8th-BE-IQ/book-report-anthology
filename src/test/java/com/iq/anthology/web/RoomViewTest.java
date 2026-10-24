@@ -8,7 +8,7 @@ class RoomViewTest {
 
     @Test
     void 첫_자리는_책상_위쪽_가운데다() {
-        assertThat(RoomView.seat(0, 6)).containsExactly(0.5, 0.12);
+        assertThat(RoomView.seat(0, 6)).containsExactly(0.5, 0.291);
     }
 
     @Test
@@ -32,6 +32,6 @@ class RoomViewTest {
     }
 
     private static double distance(double[] seat) {
-        return Math.hypot(seat[0] - 0.5, seat[1] - 0.5);
+        return Math.hypot(seat[0] - 0.5, (seat[1] - 0.5) / RoomView.FLOOR_SQUASH); // 눌린 타원을 펴서 잰다
     }
 }

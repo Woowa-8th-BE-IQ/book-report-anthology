@@ -66,8 +66,11 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
 
     /**
      * 책상 둘레의 제자리. 14명까지는 한 바퀴, 넘으면 바깥에 한 바퀴 더(20자리). 그보다 많으면 바깥 바퀴에 겹쳐 앉는다.
-     * 값은 방 너비·높이에 대한 비율(0~1)이다.
+     * 값은 방 너비·높이에 대한 비율(0~1)이다. 방이 정사각형이고 바닥을 비스듬히 보므로 세로로 FLOOR_SQUASH만큼 눌린 타원 위에 앉는다.
      */
+    /** 방은 비스듬히 내려다본 모습이라 바닥의 원은 세로로 이만큼 눌려 보인다(화면의 책상·러그와 같은 비율). */
+    static final double FLOOR_SQUASH = 0.55;
+
     static double[] seat(int index, int count) {
         int inner = Math.min(count, 14);
         boolean onInner = index < inner;
@@ -76,7 +79,7 @@ public record RoomView(Anthology anthology, Long meId, List<Member> members, Lis
         double radius = onInner ? 0.38 : 0.465;
         double offset = onInner ? 0 : Math.PI / ringSize;
         double angle = 2 * Math.PI * position / ringSize - Math.PI / 2 + offset;
-        return new double[]{round(0.5 + radius * Math.cos(angle)), round(0.5 + radius * Math.sin(angle))};
+        return new double[]{round(0.5 + radius * Math.cos(angle)), round(0.5 + radius * FLOOR_SQUASH * Math.sin(angle))};
     }
 
     private static double round(double value) {

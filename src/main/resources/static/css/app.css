@@ -631,7 +631,7 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .room { width: min(1120px, 100% - 40px); margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 430px); gap: 28px; align-items: start; }
 
 .table-scene { container-type: inline-size; position: sticky; top: 90px; }
-.table-scene .ring { position: relative; aspect-ratio: 20 / 11; margin: var(--ft) 0 0; padding: 0; list-style: none; }
+.table-scene .ring { position: relative; aspect-ratio: 1; margin: var(--ft) 0 0; padding: 0; list-style: none; }
 
 /* 방 바닥: 아바타는 (--x, --y) 비율 자리에 선다. 걸어갈 때는 left/top이 천천히 바뀐다. */
 .floor { outline: none; border-radius: 24px; }
@@ -932,10 +932,10 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .toc-page .toc-foot { margin-top: 34px; padding-top: 16px; border-top: 1px dashed var(--line); font-size: 14.5px; }
 
 /* ───────── 모임방 3D: 비스듬히 내려다본 방, 좌식 원탁에 방석을 깔고 둘러앉는다 ─────────
-   바닥은 가로 100 : 세로 55로 눌러 그린다(--x, --y 비율은 그대로라 누른 자리로 걷기도 그대로 맞는다).
-   길이는 모두 책상 영역 너비(cqi) 기준. 바닥 중심은 (50cqi, --ft + 27.5cqi).
+   방 바닥은 정사각형이라 러그 밖으로도 자유롭게 걸어 다닌다. 러그·책상·자리는 세로로 0.55만큼 눌린 타원
+   (RoomView.FLOOR_SQUASH). 길이는 모두 책상 영역 너비(cqi) 기준. 바닥 중심은 (50cqi, --ft + 50cqi).
    앞뒤 겹침: 뒤(y가 작은) 사람은 책상 뒤로, 앞사람은 책상 앞으로(z-index = y × 100, 책상은 51). */
-.table-scene { --ft: 92px; --c: calc(var(--ft) + 27.5cqi); }
+.table-scene { --ft: 92px; --c: calc(var(--ft) + 50cqi); }
 .room-rug, .table-shade, .table-legs, .table-top, .cushions { position: absolute; pointer-events: none; }
 .room-rug { left: 4cqi; width: 92cqi; top: calc(var(--c) - 25.3cqi); height: 50.6cqi; border-radius: 50%; z-index: 0;
   background:
@@ -1000,7 +1000,7 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
   background: linear-gradient(180deg, #FFF9EC, #F3E8D2); box-shadow: 0 .25em 0 -.05em #D9C8AA, .1em .5em .5em rgba(40, 22, 8, .3); }
 .table-count::before { content: ""; position: absolute; left: 4%; right: 4%; top: -.35em; height: .4em; border-radius: .2em .2em 0 0; background: #E2D3B8; z-index: -1; }
 /* 방석: 사람마다 제자리에 하나씩. 자리를 떠나도 방석은 남는다 */
-.cushions { left: 0; width: 100%; top: var(--ft); aspect-ratio: 20 / 11; margin: 0; padding: 0; list-style: none; }
+.cushions { left: 0; width: 100%; top: var(--ft); aspect-ratio: 1; margin: 0; padding: 0; list-style: none; }
 .cushion { position: absolute; left: calc(var(--x) * 100%); top: calc(var(--y) * 100%); width: 10.5cqi; height: 5cqi; translate: -50% -62%; border-radius: 46%;
   z-index: calc(var(--y) * 100 - 1);
   background: radial-gradient(ellipse at 50% 38%, #F4E9D8, #E2CFB4 70%, #D3BC9C);
@@ -1048,3 +1048,8 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 /* 꺼져 있으면 사선 */
 .key-sound[aria-pressed="false"]::after { content: ""; position: absolute; left: 10px; right: 10px; top: 50%; height: 1.5px; border-radius: 1px; background: currentColor; transform: rotate(-35deg); }
 .talk-foot:has(.talk-status:empty) { display: none; }
+/* 방 바닥: 걸어 다닐 수 있는 곳을 은은한 마루로 보여 준다(가장자리는 흐리게) */
+.table-scene .ring::before { content: ""; position: absolute; inset: 2% 0; z-index: -1; border-radius: 28px; pointer-events: none;
+  background: repeating-linear-gradient(180deg, transparent 0 calc(5cqi - 1px), color-mix(in srgb, var(--ink) 5%, transparent) calc(5cqi - 1px) 5cqi),
+    color-mix(in srgb, var(--accent) 4%, transparent);
+  -webkit-mask: radial-gradient(closest-side, #000 70%, transparent); mask: radial-gradient(closest-side, #000 70%, transparent); }
