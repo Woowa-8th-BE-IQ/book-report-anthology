@@ -332,3 +332,19 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 @keyframes gait-doze { 0%, 16%, 32%, 48% { transform: none; } 8%, 24%, 40% { transform: translateY(-3px); } 58% { transform: translateY(2px) rotate(calc(var(--dir) * 12deg)); } 80% { transform: translateY(3px) rotate(calc(var(--dir) * 15deg)); } 85% { transform: translateY(-7px) rotate(calc(var(--dir) * -4deg)); } 93% { transform: none; } }
 @keyframes gait-wiggle { 0%, 100% { transform: none; } 25% { transform: skewX(calc(var(--dir) * -8deg)) scale(1.04, .96); } 50% { transform: translateY(-2px) scale(.97, 1.04); } 75% { transform: skewX(calc(var(--dir) * 6deg)) scale(1.03, .97); } }
 @keyframes gait-roll { from { transform: translateY(5px) scale(.84) rotate(0deg); } to { transform: translateY(5px) scale(.84) rotate(calc(var(--dir) * 360deg)); } }
+
+/* 느릿: 몸은 왼쪽을 보고 그려져 있어서, 다른 친구들과 반대로 뒤집어야 가는 쪽을 본다 */
+.pet-avatar:not(.facing-left) .pet-face svg.critter-snail { scale: -1 1; }
+.pet-avatar.facing-left .pet-face svg.critter-snail { scale: 1 1; }
+/* 느릿: 걸을 때 배가 물결치고(foot), 윤기가 앞으로 흐르고(foot-shine), 껍데기가 한 박자 늦게 따라오고, 뒤에 점액 자국이 남는다 */
+.pet-face .critter-snail .slime { transform-box: fill-box; transform-origin: 0% 50%; transition: opacity .5s; }
+@media (prefers-reduced-motion: no-preference) {
+  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-snail .slime { opacity: 1; animation: slime-stretch 1.7s ease-in-out infinite; }
+  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-snail .foot { transform-box: fill-box; transform-origin: 50% 100%; animation: snail-goo .85s ease-in-out infinite; }
+  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-snail .foot-shine { opacity: .85; animation: snail-shine 1.7s linear infinite; }
+  .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-snail .shell { transform-box: fill-box; transform-origin: 50% 100%; animation: snail-shell 1.7s ease-in-out infinite; }
+}
+@keyframes slime-stretch { 0%, 100% { transform: scaleX(.75); } 50% { transform: scaleX(1.15); } }
+@keyframes snail-goo { 0%, 100% { transform: none; } 25% { transform: skewX(-7deg) scaleY(1.1); } 50% { transform: scaleY(.92); } 75% { transform: skewX(5deg) scaleY(1.06); } }
+@keyframes snail-shine { from { transform: translateX(0); opacity: 0; } 15% { opacity: .85; } 85% { opacity: .85; } to { transform: translateX(-28px); opacity: 0; } }
+@keyframes snail-shell { 0%, 100% { transform: none; } 35% { transform: translateY(-1px) rotate(-5deg); } 70% { transform: rotate(3deg); } }

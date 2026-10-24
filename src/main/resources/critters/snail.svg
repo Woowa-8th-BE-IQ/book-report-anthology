@@ -1,6 +1,7 @@
-<path d="M9 52.5c0-3.6 2.8-5.6 6.6-5.6h32c4 0 6.4 2.6 6.4 5.6 0 2.6-2 4-5 4H12.4C10.2 56.5 9 54.8 9 52.5z" fill="#F6E3C4" stroke="#2E241C" stroke-width="1.55" stroke-linejoin="round" stroke-linecap="round"/>
-<circle cx="38" cy="39" r="10.5" fill="#E9C9A0" stroke="#2E241C" stroke-width="1.55" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M38 39m-1.8 0a1.8 1.8 0 1 1 3.6 0a3.8 3.8 0 1 1-7.6 0a5.8 5.8 0 1 1 11.6 0" fill="none" stroke="#2E241C" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<g class="slime" opacity="0"><path d="M51 54.4c4-.8 8.6-.6 12.4.2 1 .2 1 1.8 0 2-3.8.8-8.4 1-12.4.2z" fill="#CFE6EE" opacity=".75"/><path d="M55 55h4.6" stroke="#FFFFFF" stroke-width=".9" stroke-linecap="round" opacity=".9"/></g>
+<g class="foot"><path d="M9 52.5c0-3.6 2.8-5.6 6.6-5.6h32c4 0 6.4 2.6 6.4 5.6 0 2.6-2 4-5 4H12.4C10.2 56.5 9 54.8 9 52.5z" fill="#F6E3C4" stroke="#2E241C" stroke-width="1.55" stroke-linejoin="round" stroke-linecap="round"/><path class="foot-shine" d="M42 53.4h5" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" opacity="0"/></g>
+<g class="shell"><circle cx="38" cy="39" r="10.5" fill="#E9C9A0" stroke="#2E241C" stroke-width="1.55" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M38 39m-1.8 0a1.8 1.8 0 1 1 3.6 0a3.8 3.8 0 1 1-7.6 0a5.8 5.8 0 1 1 11.6 0" fill="none" stroke="#2E241C" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/></g>
 <path d="M13.5 48c-2-6.6.4-14.4 5.4-17.2 4.4 2 6.4 9.6 4.6 17.2" fill="#F6E3C4" stroke="#2E241C" stroke-width="1.55" stroke-linejoin="round" stroke-linecap="round"/>
 <path d="M16.6 31.6l-2.4-7.4M21 31.6l1.8-7.6" fill="none" stroke="#2E241C" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
 <g class="face"><circle cx="13.9" cy="23.4" r="1.75" fill="#2E241C"/><circle cx="23.1" cy="23.4" r="1.75" fill="#2E241C"/><path d="M16.6 40.4l1.9-1.6 1.9 1.6" fill="none" stroke="#2E241C" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/></g><ellipse cx="15.2" cy="37" rx="2.3" ry="1.3" fill="#F49A93" opacity="0.75"/><ellipse cx="21.6" cy="37" rx="2.3" ry="1.3" fill="#F49A93" opacity="0.75"/>
