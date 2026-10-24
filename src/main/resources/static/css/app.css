@@ -1110,45 +1110,90 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 /* ───────── 꼬깃단 걸음걸이: 캐릭터마다 성격대로 걷는다. --dir은 바라보는 쪽(오른쪽 1, 왼쪽 -1) ───────── */
 .member { --dir: 1; }
 .member.facing-left { --dir: -1; }
-@media (prefers-reduced-motion: no-preference) {
-  /* 뒤뚱: 무거운 책을 안고 좌우로 기우뚱 */
-  .member.walking .avatar:has(> .critter-penguin) { transform-origin: 50% 92%; animation: gait-waddle .62s ease-in-out infinite; }
-  /* 느릿: 뛰지 않고 늘었다 당겼다 스르륵 */
-  .member.walking .avatar:has(> .critter-snail) { transform-origin: 50% 95%; animation: gait-glide 1.7s ease-in-out infinite; }
-  /* 꽥이: 콧노래 박자에 맞춰 통·통·통~ */
-  .member.walking .avatar:has(> .critter-duck) { transform-origin: 50% 92%; animation: gait-groove .95s ease-in-out infinite; }
-  /* 더듬: 야근에 지쳐 낮게 웅크린 종종걸음 */
-  .member.walking .avatar:has(> .critter-mole) { transform-origin: 50% 95%; animation: gait-scurry .22s linear infinite; }
-  /* 개굴: 움츠렸다 크게 폴짝, 착지하고 숨 고르기 */
-  .member.walking .avatar:has(> .critter-frog) { transform-origin: 50% 95%; animation: gait-leap 1.15s cubic-bezier(.3,.6,.4,1) infinite; }
-  /* 꾸벅: 졸린 걸음 몇 번, 꾸벅 졸다 화들짝 */
-  .member.walking .avatar:has(> .critter-raccoon) { transform-origin: 50% 92%; animation: gait-doze 3.4s ease-in-out infinite; }
-  /* 꼼지: 책째로 꿈틀꿈틀 */
-  .member.walking .avatar:has(> .critter-bookworm) { transform-origin: 50% 95%; animation: gait-wiggle .72s ease-in-out infinite; }
-  /* 따끔: 몸을 말아 데굴데굴(걷는 방향으로 구른다) */
-  .member.walking .avatar:has(> .critter-hedgehog) { transform-origin: 50% 62%; animation: gait-roll 2.4s linear infinite; }
-}
-@keyframes gait-waddle { 0%, 100% { transform: rotate(-8deg); } 25% { transform: translateY(-3px); } 50% { transform: rotate(8deg); } 75% { transform: translateY(-3px); } }
-@keyframes gait-glide { 0%, 100% { transform: none; } 45% { transform: translateX(calc(var(--dir) * 2px)) scale(1.07, .95); } 72% { transform: scale(.98, 1.02); } }
-@keyframes gait-groove { 0%, 100% { transform: none; } 15% { transform: translateY(-5px) rotate(calc(var(--dir) * -5deg)); } 30% { transform: scale(1.04, .96); } 45% { transform: translateY(-5px) rotate(calc(var(--dir) * 5deg)); } 60% { transform: scale(1.05, .95); } 78% { transform: translateY(-13px) scale(.97, 1.03); } }
-@keyframes gait-scurry { 0%, 100% { transform: translateY(2px) scale(1.05, .92); } 50% { transform: translateY(0) scale(1.03, .95) rotate(calc(var(--dir) * 3deg)); } }
-@keyframes gait-leap { 0%, 100% { transform: none; } 16% { transform: translateY(2px) scale(1.12, .86); } 40% { transform: translateY(-18px) rotate(calc(var(--dir) * 7deg)) scale(.94, 1.08); } 62% { transform: scale(1.1, .9); } 74% { transform: none; } }
-@keyframes gait-doze { 0%, 16%, 32%, 48% { transform: none; } 8%, 24%, 40% { transform: translateY(-3px); } 58% { transform: translateY(2px) rotate(calc(var(--dir) * 12deg)); } 80% { transform: translateY(3px) rotate(calc(var(--dir) * 15deg)); } 85% { transform: translateY(-7px) rotate(calc(var(--dir) * -4deg)); } 93% { transform: none; } }
-@keyframes gait-wiggle { 0%, 100% { transform: none; } 25% { transform: skewX(calc(var(--dir) * -8deg)) scale(1.04, .96); } 50% { transform: translateY(-2px) scale(.97, 1.04); } 75% { transform: skewX(calc(var(--dir) * 6deg)) scale(1.03, .97); } }
-@keyframes gait-roll { from { transform: translateY(5px) scale(.84) rotate(0deg); } to { transform: translateY(5px) scale(.84) rotate(calc(var(--dir) * 360deg)); } }
-
-/* 느릿: 몸은 왼쪽을 보고 그려져 있어서, 다른 친구들과 반대로 뒤집어야 가는 쪽을 본다 */
+/* 느릿은 머리가 왼쪽을 보게 그려져 있어서 다른 친구들과 반대로 뒤집어야 가는 쪽을 본다 */
 .member:not(.facing-left) .avatar svg.critter-snail { scale: -1 1; }
 .member.facing-left .avatar svg.critter-snail { scale: 1 1; }
-/* 느릿: 걸을 때 배가 물결치고(foot), 윤기가 앞으로 흐르고(foot-shine), 껍데기가 한 박자 늦게 따라오고, 뒤에 점액 자국이 남는다 */
 .avatar .critter-snail .slime { transform-box: fill-box; transform-origin: 0% 50%; transition: opacity .5s; }
+.avatar svg [class] { transform-box: fill-box; }
 @media (prefers-reduced-motion: no-preference) {
+  /* 뒤뚱: 무거운 책을 안고 기우뚱. 날개는 번갈아 파닥, 발은 번갈아 뗀다 */
+  .member.walking .avatar:has(> .critter-penguin) { transform-origin: 50% 92%; animation: gait-waddle .62s ease-in-out infinite; }
+  .member.walking .avatar .critter-penguin .wing-l { transform-origin: 100% 10%; animation: flap-l .62s ease-in-out infinite; }
+  .member.walking .avatar .critter-penguin .wing-r { transform-origin: 0% 10%; animation: flap-r .62s ease-in-out infinite; }
+  .member.walking .avatar .critter-penguin .foot-l { animation: step .62s ease-in-out infinite; }
+  .member.walking .avatar .critter-penguin .foot-r { animation: step .62s ease-in-out -.31s infinite; }
+  .member.walking .avatar .critter-penguin .book { transform-origin: 50% 50%; animation: book-jostle .62s ease-in-out -.1s infinite; }
+
+  /* 느릿: 배가 물결치고, 윤기가 머리 쪽으로 흐르고, 껍데기는 한 박자 늦게, 뒤에 점액 자국 */
+  .member.walking .avatar:has(> .critter-snail) { transform-origin: 50% 95%; animation: gait-glide 1.7s ease-in-out infinite; }
   .member.walking .avatar .critter-snail .slime { opacity: 1; animation: slime-stretch 1.7s ease-in-out infinite; }
-  .member.walking .avatar .critter-snail .foot { transform-box: fill-box; transform-origin: 50% 100%; animation: snail-goo .85s ease-in-out infinite; }
+  .member.walking .avatar .critter-snail .foot { transform-origin: 50% 100%; animation: snail-goo .85s ease-in-out infinite; }
   .member.walking .avatar .critter-snail .foot-shine { opacity: .85; animation: snail-shine 1.7s linear infinite; }
-  .member.walking .avatar .critter-snail .shell { transform-box: fill-box; transform-origin: 50% 100%; animation: snail-shell 1.7s ease-in-out infinite; }
+  .member.walking .avatar .critter-snail .shell { transform-origin: 50% 100%; animation: snail-shell 1.7s ease-in-out infinite; }
+
+  /* 꽥이: 콧노래 박자로 통·통·통~. 날개 파닥, 물갈퀴 번갈아, 책 지붕은 늦게 들썩, 음표가 떠오른다 */
+  .member.walking .avatar:has(> .critter-duck) { transform-origin: 50% 92%; animation: gait-groove .95s ease-in-out infinite; }
+  .member.walking .avatar .critter-duck .wing-l { transform-origin: 100% 20%; animation: flutter-l .24s ease-in-out infinite alternate; }
+  .member.walking .avatar .critter-duck .wing-r { transform-origin: 0% 20%; animation: flutter-r .24s ease-in-out infinite alternate; }
+  .member.walking .avatar .critter-duck .foot-l { animation: step .475s ease-in-out infinite; }
+  .member.walking .avatar .critter-duck .foot-r { animation: step .475s ease-in-out -.24s infinite; }
+  .member.walking .avatar .critter-duck .roof { transform-origin: 50% 100%; animation: roof-bob .95s ease-in-out -.12s infinite; }
+  .member.walking .avatar .critter-duck .glyph { transform-origin: 50% 50%; animation: notes-rise 1.9s ease-out infinite; }
+
+  /* 더듬: 낮게 웅크린 종종걸음. 헤드램프 불빛이 두리번 훑고 깜빡, 앞발은 다다닥 */
+  .member.walking .avatar:has(> .critter-mole) { transform-origin: 50% 95%; animation: gait-scurry .22s linear infinite; }
+  .member.walking .avatar .critter-mole .beam { transform-origin: 0% 30%; animation: beam-sweep 1.8s ease-in-out infinite; }
+  .member.walking .avatar .critter-mole .paws { animation: paws-patter .22s linear infinite; }
+  .member.walking .avatar .critter-mole .helmet { transform-origin: 50% 100%; animation: helmet-jiggle .44s ease-in-out infinite; }
+
+  /* 개굴: 깔고 앉은 책은 두고 몸만 폴짝. 공중에서 혀로 책갈피를 낚아채고, 착지하면 책이 눌린다 */
+  .member.walking .avatar .critter-frog .hopper { transform-origin: 50% 100%; animation: frog-leap 1.15s cubic-bezier(.3,.6,.4,1) infinite; }
+  .member.walking .avatar .critter-frog .pad { transform-origin: 50% 100%; animation: pad-squash 1.15s ease-out infinite; }
+  .member.walking .avatar .critter-frog .catch { transform-origin: 0% 100%; animation: tongue-snap 1.15s ease-in-out infinite; }
+
+  /* 꾸벅: 졸린 걸음 몇 번, 고개가 툭 떨어지며 Z가 커지고, 화들짝. 꼬리는 느릿느릿 */
+  .member.walking .avatar:has(> .critter-raccoon) { transform-origin: 50% 92%; animation: gait-doze 3.4s ease-in-out infinite; }
+  .member.walking .avatar .critter-raccoon .head { transform-origin: 50% 100%; animation: head-nod 3.4s ease-in-out infinite; }
+  .member.walking .avatar .critter-raccoon .tail { transform-origin: 0% 100%; animation: tail-sway 1.7s ease-in-out infinite; }
+  .member.walking .avatar .critter-raccoon .glyph { transform-origin: 0% 100%; animation: z-grow 3.4s ease-in-out infinite; }
+
+  /* 꼼지: 책이 모서리로 뒤뚱 걷고, 꼼지는 책 속에서 쏙 들어갔다 빼꼼 */
+  .member.walking .avatar:has(> .critter-bookworm) { transform-origin: 50% 98%; animation: book-tip .7s ease-in-out infinite; }
+  .member.walking .avatar .critter-bookworm .worm { transform-origin: 50% 100%; animation: worm-peek 1.4s ease-in-out infinite; }
+
+  /* 따끔: 몽실 머리털이 통통 튀며 걷다가, 몸을 말아 데굴 한 바퀴. 머리 연필은 스프링처럼 흔들 */
+  .member.walking .avatar:has(> .critter-hedgehog) { transform-origin: 50% 62%; animation: hug-roll 2.8s ease-in-out infinite; }
+  .member.walking .avatar .critter-hedgehog .fluff { transform-origin: 50% 100%; animation: fluff-bounce .35s ease-in-out infinite; }
+  .member.walking .avatar .critter-hedgehog .pencil { transform-origin: 0% 100%; animation: pencil-spring .7s ease-in-out infinite; }
 }
+@keyframes gait-waddle { 0%, 100% { transform: rotate(-8deg); } 25% { transform: translateY(-3px); } 50% { transform: rotate(8deg); } 75% { transform: translateY(-3px); } }
+@keyframes flap-l { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(28deg); } }
+@keyframes flap-r { 0%, 100% { transform: rotate(-28deg); } 50% { transform: rotate(0); } }
+@keyframes step { 0%, 50%, 100% { transform: none; } 25% { transform: translateY(-2.2px); } }
+@keyframes book-jostle { 0%, 100% { transform: none; } 50% { transform: translateY(1.2px) rotate(3deg); } }
+@keyframes gait-glide { 0%, 100% { transform: none; } 45% { transform: translateX(calc(var(--dir) * 2px)) scale(1.07, .95); } 72% { transform: scale(.98, 1.02); } }
 @keyframes slime-stretch { 0%, 100% { transform: scaleX(.75); } 50% { transform: scaleX(1.15); } }
 @keyframes snail-goo { 0%, 100% { transform: none; } 25% { transform: skewX(-7deg) scaleY(1.1); } 50% { transform: scaleY(.92); } 75% { transform: skewX(5deg) scaleY(1.06); } }
 @keyframes snail-shine { from { transform: translateX(0); opacity: 0; } 15% { opacity: .85; } 85% { opacity: .85; } to { transform: translateX(-28px); opacity: 0; } }
 @keyframes snail-shell { 0%, 100% { transform: none; } 35% { transform: translateY(-1px) rotate(-5deg); } 70% { transform: rotate(3deg); } }
+@keyframes gait-groove { 0%, 100% { transform: none; } 15% { transform: translateY(-5px) rotate(calc(var(--dir) * -5deg)); } 30% { transform: scale(1.04, .96); } 45% { transform: translateY(-5px) rotate(calc(var(--dir) * 5deg)); } 60% { transform: scale(1.05, .95); } 78% { transform: translateY(-13px) scale(.97, 1.03); } }
+@keyframes flutter-l { from { transform: rotate(0); } to { transform: rotate(32deg); } }
+@keyframes flutter-r { from { transform: rotate(0); } to { transform: rotate(-32deg); } }
+@keyframes roof-bob { 0%, 100% { transform: none; } 30% { transform: translateY(-2.5px) rotate(-3deg); } 60% { transform: translateY(1px) rotate(2deg); } }
+@keyframes notes-rise { 0% { translate: 0 2px; opacity: 0; } 20% { opacity: 1; } 100% { translate: 0 -10px; opacity: 0; } }
+@keyframes gait-scurry { 0%, 100% { transform: translateY(2px) scale(1.05, .92); } 50% { transform: translateY(0) scale(1.03, .95) rotate(calc(var(--dir) * 3deg)); } }
+@keyframes beam-sweep { 0%, 100% { transform: rotate(-14deg); opacity: .9; } 45% { transform: rotate(16deg); opacity: .8; } 50% { opacity: .2; } 55% { opacity: .9; } }
+@keyframes paws-patter { 0%, 100% { transform: none; } 50% { transform: translateY(-1.6px); } }
+@keyframes helmet-jiggle { 0%, 100% { transform: none; } 50% { transform: translateY(-.8px) rotate(-2deg); } }
+@keyframes frog-leap { 0%, 100% { transform: none; } 16% { transform: translateY(1.5px) scale(1.1, .86); } 42% { transform: translateY(-18px) scale(.94, 1.08); } 64% { transform: scale(1.1, .9); } 76% { transform: none; } }
+@keyframes pad-squash { 0%, 60%, 100% { transform: none; } 66% { transform: scale(1.06, .82); } 78% { transform: none; } }
+@keyframes tongue-snap { 0%, 22%, 62%, 100% { transform: none; } 34% { transform: scale(.25); } 46% { transform: scale(1.25) rotate(-6deg); } 54% { transform: scale(.4); } }
+@keyframes gait-doze { 0%, 16%, 32%, 48% { transform: none; } 8%, 24%, 40% { transform: translateY(-3px); } 58% { transform: translateY(2px) rotate(calc(var(--dir) * 6deg)); } 80% { transform: translateY(3px) rotate(calc(var(--dir) * 7deg)); } 85% { transform: translateY(-7px) rotate(calc(var(--dir) * -3deg)); } 93% { transform: none; } }
+@keyframes head-nod { 0%, 50%, 93%, 100% { transform: none; } 60% { transform: rotate(14deg) translateY(1.5px); } 80% { transform: rotate(18deg) translateY(2px); } 85% { transform: rotate(-6deg) translateY(-2px); } }
+@keyframes tail-sway { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-12deg); } }
+@keyframes z-grow { 0%, 50%, 100% { scale: 1; opacity: .5; } 62%, 80% { scale: 1.7; opacity: 1; } 86% { scale: .6; opacity: 0; } }
+@keyframes book-tip { 0%, 100% { transform: rotate(-6deg); } 25% { transform: translateY(-2.5px); } 50% { transform: rotate(6deg); } 75% { transform: translateY(-2.5px); } }
+@keyframes worm-peek { 0%, 100% { transform: none; } 30% { transform: translateY(-2.5px) rotate(-6deg); } 55% { transform: translateY(5px) scaleY(.85); } 75% { transform: translateY(-1px) rotate(5deg); } }
+@keyframes hug-roll { 0%, 100% { transform: none; } 9%, 27%, 45% { transform: translateY(-3px) scale(.98, 1.02); } 18%, 36% { transform: scale(1.03, .97); } 54% { transform: translateY(4px) scale(.84); } 86% { transform: translateY(4px) scale(.84) rotate(calc(var(--dir) * 360deg)); } 94% { transform: translateY(-4px) scale(1.04, .96) rotate(calc(var(--dir) * 360deg)); } }
+@keyframes fluff-bounce { 0%, 100% { transform: none; } 50% { transform: scale(1.04, .94); } }
+@keyframes pencil-spring { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
