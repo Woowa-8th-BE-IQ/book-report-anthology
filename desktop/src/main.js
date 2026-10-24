@@ -18,7 +18,8 @@ let pet = null;
 let setup = null;
 let tray = null;
 let expanded = false;
-let flip = false; // 화면 위쪽이라 아바타를 창 위에 두고 아래로 펼치는 중
+let flip = false; // 화면 위쪽이라 아바타를 창 위에 두고 말풍선을 아래로 띄우는 중
+let restoreTo = null; // 대화창을 열려고 펫이 내려왔으면, 접을 때 돌아갈 아바타 자리
 let dragging = false;
 let walking = null;
 let wanderOn = true;
@@ -100,7 +101,8 @@ function openSetup(message) {
 
 // ───────── 아바타 기준 배치 ─────────
 // 아바타의 자리(가운데 x, 띠의 윗변 top)를 기준으로 창을 놓는다.
-// 위로 펼칠 자리가 모자라면 뒤집어서 아래로 펼친다. 그래서 펫은 화면 맨 위까지 옮길 수 있다.
+// 접혀 있을 때: 위로 자리가 모자라면 창을 뒤집어 말풍선을 아바타 아래에 띄운다(화면 맨 위까지 옮길 수 있다).
+// 대화창을 펼칠 때: 대화창은 언제나 아바타 위. 자리가 모자라면 펫이 내려오고, 접으면 원래 자리로 돌아간다.
 const avatarOf = (bounds) => ({ cx: bounds.x + bounds.width / 2, top: flip ? bounds.y : bounds.y + bounds.height - ZONE });
 
 function setFlip(next) {
@@ -109,25 +111,25 @@ function setFlip(next) {
   if (pet && !pet.isDestroyed()) pet.webContents.send('pet:layout', { flip });
 }
 
-function placeAvatar(cx, top, size) {
+function placeAvatar(cx, top, size, { canFlip = true } = {}) {
   const area = screen.getDisplayNearestPoint({ x: Math.round(cx), y: Math.round(top) }).workArea;
   const above = size.height - ZONE; // 아바타 위로 펼칠 높이
   const roomAbove = top - area.y;
   const roomBelow = area.y + area.height - (top + ZONE);
-  const nextFlip = roomAbove < above && roomBelow > roomAbove;
+  const nextFlip = canFlip && roomAbove < above && roomBelow > roomAbove;
   let y = nextFlip ? top : top - above;
-  // 위아래 어느 쪽도 다 들어가지 않는 작은 화면이면 창이 화면 안에 들어오게 민다
+  // 들어가지 않으면 창이 화면 안에 들어오게 민다(펼칠 때는 이렇게 펫이 내려온다)
   if (nextFlip) y = Math.min(y, area.y + area.height - size.height);
   else if (roomAbove < above) y = Math.max(y, area.y);
   return { x: Math.round(cx - size.width / 2), y: Math.round(y), flip: nextFlip };
 }
 
-function moveWindow(target, size) {
+function moveWindow(target, size, animate = false) {
   setFlip(target.flip);
   try {
     if (size) {
       pet.setResizable(true);
-      pet.setBounds({ x: target.x, y: target.y, ...size });
+      pet.setBounds({ x: target.x, y: target.y, ...size }, animate && process.platform === 'darwin');
       pet.setResizable(false);
     } else {
       pet.setPosition(target.x, target.y);
@@ -258,14 +260,26 @@ ipcMain.on('pet:interactive', (event, on) => {
 ipcMain.on('pet:expand', (event, open) => {
   if (!pet || event.sender !== pet.webContents) return;
   stopWalk();
+  const was = expanded;
   expanded = Boolean(open);
   const size = expanded ? SIZE.expanded : SIZE.collapsed;
-  const { cx, top } = avatarOf(pet.getBounds());
+  const now = avatarOf(pet.getBounds());
+  let { cx, top } = now;
+  if (!expanded && restoreTo) ({ cx, top } = restoreTo); // 내려왔던 펫은 제자리로
   const area = screen.getDisplayNearestPoint({ x: Math.round(cx), y: Math.round(top) }).workArea;
   // 옆으로는 창이 화면 안에 들어오게만 민다
   const x = Math.min(area.x + area.width - size.width / 2, Math.max(area.x + size.width / 2, cx));
-  moveWindow(placeAvatar(x, top, size), size);
+  const target = placeAvatar(x, top, size, { canFlip: !expanded });
+  if (expanded && !was) {
+    // 펼치느라 펫이 움직였으면(위로 자리가 모자라 내려왔거나 옆으로 밀렸으면) 접을 때 돌아갈 자리를 기억한다
+    const moved = target.y !== Math.round(top - (size.height - ZONE)) || Math.round(x) !== Math.round(cx);
+    restoreTo = moved ? now : null;
+  } else if (!expanded) {
+    restoreTo = null;
+  }
+  moveWindow(target, size, was !== expanded);
   if (expanded) pet.focus();
+  else savePosition();
 });
 
 ipcMain.on('pet:drag', (event, dx, dy) => {
@@ -284,7 +298,8 @@ ipcMain.on('pet:drag', (event, dx, dy) => {
   }, { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
   const nx = Math.min(Math.max(cx + mx, area.left), area.right);
   const ntop = Math.min(Math.max(top + my, area.top), area.bottom - ZONE / 2);
-  moveWindow(placeAvatar(nx, ntop, pet.getBounds()));
+  restoreTo = null; // 직접 옮겼으면 그 자리에 둔다
+  moveWindow(placeAvatar(nx, ntop, pet.getBounds(), { canFlip: !expanded }));
 });
 
 ipcMain.on('pet:drag-end', (event) => {
