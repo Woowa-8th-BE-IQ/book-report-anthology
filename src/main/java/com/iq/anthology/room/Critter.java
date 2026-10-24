@@ -76,10 +76,10 @@ public enum Critter {
         }
     }
 
-    /** 고른 적 없으면 참여 순서대로 돌아가며 받는다. 문집을 연 사람(1번)은 뒤뚱. */
+    /** 고른 적 없으면 참여 순서대로 돌아가며 받는다. joinOrder는 0부터라 문집을 연 사람(0)은 뒤뚱. */
     public static Critter derived(int joinOrder) {
         Critter[] all = values();
-        return all[Math.floorMod(joinOrder - 1, all.length)];
+        return all[Math.floorMod(joinOrder, all.length)];
     }
 
     public static Optional<Critter> find(String slug) {
