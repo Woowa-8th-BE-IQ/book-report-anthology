@@ -20,7 +20,7 @@
       <article class="paper tape critter fade-up" th:each="c, s : ${critters}"
                th:id="${c.slug()}" th:classappend="${s.even} ? 'tilt-l' : 'tilt-r'">
         <div class="critter-art">
-          <img th:src="@{/avatars/v4/{x}.svg(x=${c.slug()})}" th:alt="${c.title()} 그림" width="150" height="150" loading="lazy">
+          <img th:src="@{/avatars/v4/{x}.svg(x=${c.slug()})}" th:alt="${c.title()} + ' 그림'" width="150" height="150" loading="lazy">
         </div>
         <div class="critter-text">
           <p class="critter-species">
