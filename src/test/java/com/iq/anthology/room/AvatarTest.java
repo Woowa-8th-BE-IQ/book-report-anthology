@@ -38,10 +38,10 @@ class AvatarTest {
 
     @Test
     void 고르지_않으면_참여_순서대로_돌아가며_받는다() {
-        assertThat(Critter.derived(1)).isEqualTo(Critter.PENGUIN);
-        assertThat(Critter.derived(2)).isEqualTo(Critter.DUCK);
-        assertThat(Critter.derived(9)).isEqualTo(Critter.PENGUIN);
-        assertThat(Arrays.stream(new int[]{1, 2, 3, 4, 5, 6, 7, 8}).mapToObj(Critter::derived).distinct()).hasSize(8);
+        assertThat(Critter.derived(0)).isEqualTo(Critter.PENGUIN); // 문집을 연 사람
+        assertThat(Critter.derived(1)).isEqualTo(Critter.DUCK);
+        assertThat(Critter.derived(8)).isEqualTo(Critter.PENGUIN);
+        assertThat(Arrays.stream(new int[]{0, 1, 2, 3, 4, 5, 6, 7}).mapToObj(Critter::derived).distinct()).hasSize(8);
     }
 
     @Test
