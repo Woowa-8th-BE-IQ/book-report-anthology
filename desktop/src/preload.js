@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('petApp', {
   quit: () => ipcRenderer.send('pet:quit'),
   openLink: (url) => ipcRenderer.send('pet:open-link', String(url || '')),
   onCommand: (callback) => ipcRenderer.on('pet:command', (event, name) => callback(String(name || ''))),
+  onLayout: (callback) => ipcRenderer.on('pet:layout', (event, state) => callback({ flip: Boolean(state && state.flip) })),
   onWalk: (callback) => ipcRenderer.on('pet:walk', (event, state) => callback({
     walking: Boolean(state && state.walking),
     facing: state && (state.facing === 'left' || state.facing === 'right') ? state.facing : null,

@@ -4,7 +4,7 @@
   const noop = () => {};
   const app = Object.assign({
     setInteractive: noop, setExpanded: noop, dragBy: noop, dragEnd: noop, relink: noop, onWalk: noop,
-    attention: noop, onUpdate: noop, applyUpdate: noop, onCommand: noop,
+    attention: noop, onUpdate: noop, applyUpdate: noop, onCommand: noop, onLayout: noop,
   }, window.petApp || {});
 
   // 투명한 곳은 클릭이 뒤의 앱으로 지나가고, 아바타·말풍선·창·메뉴 위에서만 창이 클릭을 받는다.
@@ -302,6 +302,11 @@
       event.preventDefault();
       expand(panel.hidden);
     }
+  });
+
+  // 펫이 화면 위쪽에 있으면 앱이 창을 뒤집는다: 아바타가 위, 말풍선·대화창은 아래로 열린다(펫 0.4.7부터)
+  app.onLayout(({ flip }) => {
+    document.querySelectorAll('.pet-stage').forEach((element) => element.classList.toggle('flip', flip));
   });
 
   app.onWalk(({ walking, facing }) => {

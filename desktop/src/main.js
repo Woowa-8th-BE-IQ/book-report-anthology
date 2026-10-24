@@ -11,11 +11,14 @@ process.on('uncaughtException', (error) => console.error('펫 오류', error));
 const BASE = new URL(process.env.PET_BASE_URL || 'https://book-report-anthology.onrender.com');
 const SIZE = { collapsed: { width: 260, height: 300 }, expanded: { width: 340, height: 560 } };
 const WALK_SPEED = 70; // px/s
+// 창 안에서 아바타가 차지하는 띠의 높이(아바타 92 + 여백 6). 보통은 창 맨 아래, 뒤집히면 맨 위에 있다.
+const ZONE = 98;
 
 let pet = null;
 let setup = null;
 let tray = null;
 let expanded = false;
+let flip = false; // 화면 위쪽이라 아바타를 창 위에 두고 아래로 펼치는 중
 let dragging = false;
 let walking = null;
 let wanderOn = true;
@@ -95,6 +98,45 @@ function openSetup(message) {
   setup.on('closed', () => { setup = null; });
 }
 
+// ───────── 아바타 기준 배치 ─────────
+// 아바타의 자리(가운데 x, 띠의 윗변 top)를 기준으로 창을 놓는다.
+// 위로 펼칠 자리가 모자라면 뒤집어서 아래로 펼친다. 그래서 펫은 화면 맨 위까지 옮길 수 있다.
+const avatarOf = (bounds) => ({ cx: bounds.x + bounds.width / 2, top: flip ? bounds.y : bounds.y + bounds.height - ZONE });
+
+function setFlip(next) {
+  if (flip === next) return;
+  flip = next;
+  if (pet && !pet.isDestroyed()) pet.webContents.send('pet:layout', { flip });
+}
+
+function placeAvatar(cx, top, size) {
+  const area = screen.getDisplayNearestPoint({ x: Math.round(cx), y: Math.round(top) }).workArea;
+  const above = size.height - ZONE; // 아바타 위로 펼칠 높이
+  const roomAbove = top - area.y;
+  const roomBelow = area.y + area.height - (top + ZONE);
+  const nextFlip = roomAbove < above && roomBelow > roomAbove;
+  let y = nextFlip ? top : top - above;
+  // 위아래 어느 쪽도 다 들어가지 않는 작은 화면이면 창이 화면 안에 들어오게 민다
+  if (nextFlip) y = Math.min(y, area.y + area.height - size.height);
+  else if (roomAbove < above) y = Math.max(y, area.y);
+  return { x: Math.round(cx - size.width / 2), y: Math.round(y), flip: nextFlip };
+}
+
+function moveWindow(target, size) {
+  setFlip(target.flip);
+  try {
+    if (size) {
+      pet.setResizable(true);
+      pet.setBounds({ x: target.x, y: target.y, ...size });
+      pet.setResizable(false);
+    } else {
+      pet.setPosition(target.x, target.y);
+    }
+  } catch (error) {
+    console.error('펫을 옮기지 못했어요', error); // 한 번 실패해도 오류 창을 띄우지 않는다
+  }
+}
+
 function bottomRight(size) {
   const area = screen.getPrimaryDisplay().workArea;
   return { x: area.x + area.width - size.width - 24, y: area.y + area.height - size.height };
@@ -103,7 +145,11 @@ function bottomRight(size) {
 function openPet(link) {
   if (pet) pet.destroy();
   const config = readConfig();
-  const start = config.position || bottomRight(SIZE.collapsed);
+  flip = false;
+  const saved = config.avatar && Number.isFinite(config.avatar.cx) && Number.isFinite(config.avatar.top)
+    ? placeAvatar(config.avatar.cx, config.avatar.top, SIZE.collapsed) : null;
+  if (saved) flip = saved.flip;
+  const start = saved ? { x: saved.x, y: saved.y } : config.position || bottomRight(SIZE.collapsed);
   pet = new BrowserWindow({
     ...SIZE.collapsed, ...start,
     transparent: true, frame: false, resizable: false, movable: true, hasShadow: false,
@@ -119,6 +165,7 @@ function openPet(link) {
   pet.once('ready-to-show', () => pet.showInactive());
   pet.webContents.on('did-finish-load', () => {
     sendUpdate(updater.state());
+    pet.webContents.send('pet:layout', { flip }); // 새로 그린 화면에도 지금 배치를 알린다
     // 지난번과 버전이 다르면(업데이트로 다시 켜졌으면) "바뀌었어요"를 확인할 때까지 띄운다
     const config = readConfig();
     if (config.lastVersion && config.lastVersion !== app.getVersion()) {
@@ -198,7 +245,8 @@ function scheduleWander() {
 function savePosition() {
   if (!pet || expanded) return;
   const [x, y] = pet.getPosition();
-  writeConfig({ ...readConfig(), position: { x, y } });
+  const { cx, top } = avatarOf(pet.getBounds());
+  writeConfig({ ...readConfig(), position: { x, y }, avatar: { cx: Math.round(cx), top: Math.round(top) } });
 }
 
 // ───────── 화면에서 오는 요청 ─────────
@@ -211,17 +259,12 @@ ipcMain.on('pet:expand', (event, open) => {
   if (!pet || event.sender !== pet.webContents) return;
   stopWalk();
   expanded = Boolean(open);
-  const bounds = pet.getBounds();
   const size = expanded ? SIZE.expanded : SIZE.collapsed;
-  const area = screen.getDisplayMatching(bounds).workArea;
-  // 아래 가운데를 기준으로 커지고 줄어든다.
-  let x = Math.round(bounds.x + bounds.width / 2 - size.width / 2);
-  let y = bounds.y + bounds.height - size.height;
-  x = Math.min(area.x + area.width - size.width, Math.max(area.x, x));
-  y = Math.min(area.y + area.height - size.height, Math.max(area.y, y));
-  pet.setResizable(true);
-  pet.setBounds({ x, y, ...size });
-  pet.setResizable(false);
+  const { cx, top } = avatarOf(pet.getBounds());
+  const area = screen.getDisplayNearestPoint({ x: Math.round(cx), y: Math.round(top) }).workArea;
+  // 옆으로는 창이 화면 안에 들어오게만 민다
+  const x = Math.min(area.x + area.width - size.width / 2, Math.max(area.x + size.width / 2, cx));
+  moveWindow(placeAvatar(x, top, size), size);
   if (expanded) pet.focus();
 });
 
@@ -232,21 +275,16 @@ ipcMain.on('pet:drag', (event, dx, dy) => {
   const mx = Number(dx);
   const my = Number(dy);
   if (!Number.isFinite(mx) || !Number.isFinite(my) || Math.abs(mx) > 400 || Math.abs(my) > 400) return;
-  const [x, y] = pet.getPosition();
-  // 화면 밖으로 멀리 나가지 않게 모든 화면을 합친 범위 안에 둔다
+  const { cx, top } = avatarOf(pet.getBounds());
+  // 아바타가 모든 화면을 합친 범위 안에 있게(맨 위 가장자리까지 옮길 수 있다)
   const area = screen.getAllDisplays().reduce((box, display) => {
     const b = display.bounds;
     return { left: Math.min(box.left, b.x), top: Math.min(box.top, b.y),
       right: Math.max(box.right, b.x + b.width), bottom: Math.max(box.bottom, b.y + b.height) };
   }, { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
-  const [width, height] = pet.getSize();
-  const nx = Math.round(Math.min(Math.max(x + mx, area.left - width / 2), area.right - width / 2));
-  const ny = Math.round(Math.min(Math.max(y + my, area.top), area.bottom - height / 2));
-  try {
-    pet.setPosition(nx, ny);
-  } catch (error) {
-    console.error('펫을 옮기지 못했어요', error); // 한 번 실패해도 오류 창을 띄우지 않는다
-  }
+  const nx = Math.min(Math.max(cx + mx, area.left), area.right);
+  const ntop = Math.min(Math.max(top + my, area.top), area.bottom - ZONE / 2);
+  moveWindow(placeAvatar(nx, ntop, pet.getBounds()));
 });
 
 ipcMain.on('pet:drag-end', (event) => {
@@ -356,6 +394,7 @@ function buildTray() {
       { label: '제자리로', click: () => {
         if (!pet) return;
         const { x, y } = bottomRight(pet.getBounds());
+        setFlip(false);
         pet.setPosition(x, y);
         savePosition();
       } },

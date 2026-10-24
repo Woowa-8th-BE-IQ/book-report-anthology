@@ -296,3 +296,7 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-more[hidden] { display: none; }
 .pet-more button { padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink-soft); font: inherit; font-size: 11.5px; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .pet-mark.pop .i { animation: none; } }
+
+/* 화면 위쪽에 있을 때(앱이 알려 준다): 아바타가 위, 말풍선·대화창·메뉴는 아래로 */
+.pet-stage.flip { flex-direction: column-reverse; justify-content: flex-end; padding: 6px 10px 0; }
+.pet-stage.flip .pet-menu { bottom: auto; top: 104px; }
