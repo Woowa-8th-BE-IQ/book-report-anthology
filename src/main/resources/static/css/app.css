@@ -1074,6 +1074,12 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .critter:nth-child(even) .critter-art img { animation-delay: -1.8s; }
 .critter-species { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); letter-spacing: .04em; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .critter-badge { font-style: normal; font-size: 11px; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 99px; padding: 1px 8px; }
+.critter-badge { position: relative; cursor: help; }
+.critter-badge::after { content: attr(data-note); position: absolute; left: 50%; bottom: calc(100% + 8px); translate: -50% 4px; white-space: nowrap;
+  padding: 6px 10px; border-radius: 8px; background: var(--ink); color: var(--paper); font-size: 12.5px; letter-spacing: 0;
+  opacity: 0; pointer-events: none; transition: opacity .15s, translate .15s; z-index: 5; }
+.critter-badge:hover::after, .critter-badge:focus-visible::after, .critter-badge:focus::after { opacity: 1; translate: -50% 0; }
+.critter-badge:focus { outline: none; }
 .critter-name { margin: 0; font-family: var(--hand); font-weight: 400; font-size: 46px; line-height: 1.05; letter-spacing: 0; }
 .critter-tagline { margin: 4px 0 12px; font-family: var(--hand); font-size: 24px; line-height: 1.25; color: var(--accent); }
 .critter-story { margin: 0; font-family: var(--serif); font-size: 15px; line-height: 1.85; color: var(--ink-soft); }
