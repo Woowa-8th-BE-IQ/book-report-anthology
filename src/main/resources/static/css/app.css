@@ -1077,9 +1077,6 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .critter-name { margin: 0; font-family: var(--hand); font-weight: 400; font-size: 46px; line-height: 1.05; letter-spacing: 0; }
 .critter-tagline { margin: 4px 0 12px; font-family: var(--hand); font-size: 24px; line-height: 1.25; color: var(--accent); }
 .critter-story { margin: 0; font-family: var(--serif); font-size: 15px; line-height: 1.85; color: var(--ink-soft); }
-.critter-where { margin: 14px 0 0; padding-top: 12px; border-top: 1px dashed var(--line); font-size: 13px; color: var(--ink-soft); }
-.critter-where span { color: var(--muted); margin-right: 6px; }
-.critter-where b { font-weight: 600; }
 .pet-get { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
 .pet-os h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-family: var(--hand); font-weight: 400; font-size: 30px; }
 .pet-os h3 .i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
