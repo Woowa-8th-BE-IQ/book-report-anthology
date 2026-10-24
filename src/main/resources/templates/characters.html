@@ -6,9 +6,8 @@
 
 <main>
   <section class="page-hero wrap critters-hero">
-    <span class="kicker">덕후감 서재</span>
     <h1 data-reveal>꼬깃단</h1>
-    <p class="lead">책을 좋아하는 하찮은 동물들이에요. 다만 조금씩 서툴러요<br>문집에 참여하면 이 중 한 친구가 내 자리에 앉아요</p>
+    <p class="lead">책은 좋아하는데, 조금씩 서툰 친구들</p>
     <div class="critters-parade" aria-hidden="true">
       <img th:each="c, s : ${critters}" th:src="@{/avatars/v4/{x}.svg(x=${c.slug()})}" alt="" width="64" height="64"
            th:style="'--i:' + ${s.index}">
