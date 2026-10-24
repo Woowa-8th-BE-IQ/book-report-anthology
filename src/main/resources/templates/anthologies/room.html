@@ -29,6 +29,11 @@
   <section class="table-scene" aria-label="모임방에 있는 사람"
            th:classappend="${room.members().size() > 14} ? 'crowd' : ''">
     <div class="room-rug" aria-hidden="true"></div>
+    <ul class="cushions" aria-hidden="true">
+      <li class="cushion" th:each="member : ${room.members()}" th:style="'--x:' + ${member.seatX()} + ';--y:' + ${member.seatY()}"></li>
+    </ul>
+    <div class="table-shade" aria-hidden="true"></div>
+    <div class="table-legs" aria-hidden="true"></div>
     <div class="table-top" aria-hidden="true">
       <span class="table-book"><i class="ribbon"></i></span>
       <span class="table-stack"></span>

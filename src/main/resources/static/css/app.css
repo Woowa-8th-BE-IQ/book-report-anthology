@@ -631,67 +631,7 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .room { width: min(1120px, 100% - 40px); margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 430px); gap: 28px; align-items: start; }
 
 .table-scene { container-type: inline-size; position: sticky; top: 90px; }
-.table-scene .ring { position: relative; aspect-ratio: 1; margin: 0; padding: 0; list-style: none; }
-/* 책상: 위에서 내려다본 나무 원탁. 나이테·테두리 두께·광택, 위에는 펼친 책·쌓인 책·연필·김 나는 머그 */
-.table-top { position: absolute; aspect-ratio: 1; width: 46cqi; left: 27cqi; top: 27cqi; border-radius: 50%; z-index: 0; pointer-events: none;
-  background:
-    radial-gradient(circle at 34% 28%, rgba(255, 238, 210, .38), transparent 42%),
-    repeating-radial-gradient(circle at 47% 55%, transparent 0 7px, rgba(92, 56, 26, .07) 7px 8px, transparent 8px 15px, rgba(92, 56, 26, .045) 15px 16px),
-    radial-gradient(circle at 50% 50%, #D2A676 0%, #BD8A5A 60%, #A3703F 100%);
-  box-shadow:
-    inset 0 0 0 5px #A06C3E, inset 0 0 0 6.5px rgba(255, 232, 200, .35),
-    inset 0 -16px 30px rgba(60, 34, 14, .26),
-    0 7px 0 #7A4F2C, 0 9px 0 rgba(0, 0, 0, .08), 0 30px 48px -6px rgba(74, 48, 32, .3); }
-/* 나뭇결: 결 방향으로 길게 늘인 잡음 */
-.table-top::before { content: ""; position: absolute; inset: 0; border-radius: 50%; opacity: .22; mix-blend-mode: multiply;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.32' numOctaves='3' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .2 0 0 0 0 .08 0 0 0 1.4 -.35'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E") center / cover; }
-.table-scene.crowd .table-top { width: 36cqi; left: 32cqi; top: 32cqi; }
-/* 바닥 러그: 책상과 자리를 한 덩어리로 묶는다 */
-.room-rug { position: absolute; aspect-ratio: 1; width: 90cqi; left: 5cqi; top: 5cqi; border-radius: 50%; z-index: 0; pointer-events: none;
-  background:
-    repeating-linear-gradient(45deg, color-mix(in srgb, var(--ink) 2.2%, transparent) 0 2px, transparent 2px 7px),
-    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ink) 2.2%, transparent) 0 2px, transparent 2px 7px),
-    radial-gradient(circle, color-mix(in srgb, var(--accent) 5%, transparent), color-mix(in srgb, var(--accent) 9%, transparent));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 7%, transparent), inset 0 0 0 12px color-mix(in srgb, var(--accent) 6%, transparent); }
-.room-rug::after { content: ""; position: absolute; inset: 5%; border-radius: 50%; border: 1.5px dashed color-mix(in srgb, var(--accent) 22%, transparent); }
-.table-scene.crowd .room-rug { width: 98cqi; left: 1cqi; top: 1cqi; }
-
-/* 펼친 책: 가운데 접힌 골, 줄글, 아래로 늘어진 갈피끈 */
-.table-book { position: absolute; width: 34%; height: 23%; left: 15%; top: 23%; border-radius: 3px; transform: rotate(-13deg);
-  background:
-    linear-gradient(90deg, transparent 47%, rgba(74, 48, 32, .16) 50%, transparent 53%),
-    repeating-linear-gradient(180deg, transparent 0 14%, rgba(74, 48, 32, .18) 14% 16%) 9% 22% / 34% 62% no-repeat,
-    repeating-linear-gradient(180deg, transparent 0 14%, rgba(74, 48, 32, .18) 14% 16%) 91% 22% / 34% 62% no-repeat,
-    linear-gradient(90deg, #FFFDF8 0 30%, #F1E7D6 48%, #EADFCB 50%, #F1E7D6 52%, #FFFDF8 70%);
-  box-shadow: 0 2px 0 #E6D9C3, 0 4px 0 #D9C8AC, 4px 8px 12px rgba(50, 28, 10, .25); }
-.table-book .ribbon { position: absolute; left: 51%; top: 92%; width: 6%; height: 34%; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); transform: rotate(8deg); transform-origin: top; }
-/* 쌓아 둔 책 두 권: 아래는 붉은 책, 위는 초록 책(제목 띠) */
-.table-stack { position: absolute; width: 25%; height: 17%; right: 13%; bottom: 31%; transform: rotate(9deg); }
-.table-stack::before, .table-stack::after { content: ""; position: absolute; inset: 0; border-radius: 2px 4px 4px 2px; }
-.table-stack::before { transform: translate(-10%, 18%) rotate(-12deg);
-  background: linear-gradient(90deg, rgba(0, 0, 0, .22) 0 9%, transparent 9%), #9A4528; box-shadow: 0 2px 0 #E9DEC9, 2px 5px 8px rgba(50, 28, 10, .2); }
-.table-stack::after {
-  background: linear-gradient(rgba(255, 246, 228, .85), rgba(255, 246, 228, .85)) 62% 45% / 48% 22% no-repeat, linear-gradient(90deg, rgba(0, 0, 0, .22) 0 9%, transparent 9%), #3F5B48;
-  box-shadow: 0 2px 0 #E9DEC9, 0 3px 0 #2E4334, 3px 6px 10px rgba(50, 28, 10, .25); }
-/* 연필 */
-.table-pencil { position: absolute; width: 26%; height: 2.6%; left: 22%; bottom: 38%; transform: rotate(-16deg); border-radius: 0 2px 2px 0;
-  background: linear-gradient(90deg, #2A211A 0 3%, #EBCB9F 3% 11%, #E9A93A 11% 86%, #C9C3B8 86% 91%, #E39A8F 91%);
-  clip-path: polygon(0 50%, 11% 0, 100% 0, 100% 100%, 11% 100%); box-shadow: 1px 2px 0 rgba(0, 0, 0, .15); }
-/* 머그: 받침 접시, 손잡이, 커피, 피어오르는 김 */
-.table-mug { position: absolute; width: 14%; aspect-ratio: 1; right: 20%; top: 22%; border-radius: 50%;
-  background: radial-gradient(circle, #6B4024 0 46%, #4A2A15 56%, #FFFDF8 58% 72%, #E9DFCF 74%);
-  box-shadow: 0 0 0 9px rgba(255, 251, 242, .55), 0 0 0 10px rgba(74, 48, 32, .12), 3px 6px 10px rgba(50, 28, 10, .25); }
-.table-mug::after { content: ""; position: absolute; width: 38%; height: 30%; right: -30%; top: 35%; border: 3.5px solid #FFFDF8; border-left: 0; border-radius: 0 10px 10px 0; box-sizing: border-box; }
-.table-mug .steam { position: absolute; left: 30%; top: -40%; width: 22%; height: 60%; border-radius: 50%; border-left: 2px solid rgba(255, 253, 248, .75); opacity: 0; filter: blur(.4px); }
-.table-mug .steam + .steam { left: 54%; animation-delay: 1.4s; }
-.js .table-mug .steam { animation: steam 2.8s ease-in-out infinite; }
-@keyframes steam { 0% { opacity: 0; transform: translateY(6px) scaleY(.7); } 35% { opacity: .9; } 100% { opacity: 0; transform: translateY(-12px) scaleY(1.1) skewX(-12deg); } }
-/* 지금 있는 사람 수: 책상 위 작은 쪽지 */
-.table-count { position: absolute; left: 50%; bottom: 12%; margin: 0; padding: .1em .65em .15em; transform: translateX(-50%) rotate(-3deg); white-space: nowrap;
-  font-size: clamp(15px, 4.2cqi, 22px); line-height: 1.2; color: #3A2716; background: #FFF8EA; border-radius: 2px; box-shadow: 0 1px 0 #E8DCC6, 2px 4px 8px rgba(50, 28, 10, .22); }
-.table-count::before { content: ""; position: absolute; left: 50%; top: -6px; width: 30%; height: 9px; transform: translateX(-50%) rotate(2deg); background: rgba(216, 201, 180, .75); }
-.table-scene.crowd .table-count { font-size: clamp(13px, 3.4cqi, 18px); }
-@media (prefers-reduced-motion: reduce) { .js .table-mug .steam { animation: none; opacity: .5; } }
+.table-scene .ring { position: relative; aspect-ratio: 20 / 11; margin: var(--ft) 0 0; padding: 0; list-style: none; }
 
 /* 방 바닥: 아바타는 (--x, --y) 비율 자리에 선다. 걸어갈 때는 left/top이 천천히 바뀐다. */
 .floor { outline: none; border-radius: 24px; }
@@ -990,8 +930,107 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .toc-page .toc { gap: 18px; margin-top: 22px; }
 .toc-page .toc .toc-byline { font-size: 17px; }
 .toc-page .toc-foot { margin-top: 34px; padding-top: 16px; border-top: 1px dashed var(--line); font-size: 14.5px; }
-/* 앉은 자리 그림자: 바닥에 닿아 있는 느낌 */
-.member::before { content: ""; position: absolute; top: 52px; left: 50%; width: 54px; height: 12px; translate: -50% 0; border-radius: 50%; z-index: 0;
-  background: radial-gradient(closest-side, rgba(60, 36, 16, .22), transparent); }
-.table-scene.crowd .member::before { top: 38px; width: 40px; height: 9px; }
-@media (max-width: 860px) { .member::before { top: 38px; width: 40px; height: 9px; } }
+
+/* ───────── 모임방 3D: 비스듬히 내려다본 방, 좌식 원탁에 방석을 깔고 둘러앉는다 ─────────
+   바닥은 가로 100 : 세로 55로 눌러 그린다(--x, --y 비율은 그대로라 누른 자리로 걷기도 그대로 맞는다).
+   길이는 모두 책상 영역 너비(cqi) 기준. 바닥 중심은 (50cqi, --ft + 27.5cqi).
+   앞뒤 겹침: 뒤(y가 작은) 사람은 책상 뒤로, 앞사람은 책상 앞으로(z-index = y × 100, 책상은 51). */
+.table-scene { --ft: 92px; --c: calc(var(--ft) + 27.5cqi); }
+.room-rug, .table-shade, .table-legs, .table-top, .cushions { position: absolute; pointer-events: none; }
+.room-rug { left: 4cqi; width: 92cqi; top: calc(var(--c) - 25.3cqi); height: 50.6cqi; border-radius: 50%; z-index: 0;
+  background:
+    radial-gradient(closest-side, transparent 88%, color-mix(in srgb, var(--accent) 16%, transparent) 88.5% 91%, transparent 91.5%),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--ink) 2.4%, transparent) 0 2px, transparent 2px 6px),
+    radial-gradient(closest-side, color-mix(in srgb, var(--accent) 7%, var(--paper)), color-mix(in srgb, var(--accent) 12%, var(--paper)));
+  box-shadow: 0 1.2cqi 0 color-mix(in srgb, var(--accent) 14%, var(--paper)), 0 1.6cqi 2cqi rgba(74, 48, 32, .1); }
+/* 책상 그림자(바닥에 번지는) */
+.table-shade { left: 24cqi; width: 52cqi; top: calc(var(--c) - 11cqi); height: 26cqi; border-radius: 50%; z-index: 1;
+  background: radial-gradient(closest-side, rgba(60, 34, 14, .32), rgba(60, 34, 14, .12) 60%, transparent); filter: blur(2px); }
+/* 짧은 다리 두 개(앞쪽만 보인다) */
+.table-legs { left: 27cqi; width: 46cqi; top: calc(var(--c) + 6.6cqi); height: 4.2cqi; z-index: 50; }
+.table-legs::before, .table-legs::after { content: ""; position: absolute; top: 0; width: 3.4cqi; height: 100%; border-radius: 0 0 1cqi 1cqi;
+  background: linear-gradient(90deg, #6B4325, #8E5E36 45%, #5E3A1F); box-shadow: 0 .6cqi .8cqi rgba(40, 22, 8, .3); }
+.table-legs::before { left: 18%; } .table-legs::after { right: 18%; }
+/* 책상 판: 윗면(타원) + 두께(아래로 겹친 그림자 띠) */
+.table-top { left: 27cqi; width: 46cqi; top: calc(var(--c) - 12.65cqi - 5cqi); height: 25.3cqi; border-radius: 50%; z-index: 51;
+  background:
+    radial-gradient(ellipse 60% 55% at 36% 30%, rgba(255, 238, 210, .42), transparent),
+    repeating-radial-gradient(ellipse at 47% 55%, transparent 0 1.2cqi, rgba(92, 56, 26, .07) 1.2cqi 1.35cqi, transparent 1.35cqi 2.4cqi),
+    radial-gradient(ellipse at 50% 50%, #D2A676, #BD8A5A 62%, #A6723F);
+  box-shadow:
+    inset 0 0 0 .5cqi #B07B4B, inset 0 .25cqi 0 .7cqi rgba(255, 232, 200, .3),
+    0 1.2cqi 0 #8C5C34, 0 2.4cqi 0 #6E4426, 0 2.6cqi 1.4cqi rgba(40, 22, 8, .3); }
+.table-top::before { content: ""; position: absolute; inset: 0; border-radius: 50%; opacity: .2; mix-blend-mode: multiply;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.32' numOctaves='3' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .2 0 0 0 0 .08 0 0 0 1.4 -.35'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E") center / cover; }
+/* 책상 위 소품. 바닥에 눕는 것은 세로로 눌러(scaleY) 원근을 맞춘다 */
+.table-top > * { position: absolute; }
+.table-book { left: 10%; top: 14%; width: 15cqi; height: 10cqi; border-radius: .4cqi; transform: scaleY(.55) rotate(-12deg); transform-origin: 50% 50%;
+  background:
+    linear-gradient(90deg, transparent 47%, rgba(74, 48, 32, .18) 50%, transparent 53%),
+    repeating-linear-gradient(180deg, transparent 0 1.1cqi, rgba(74, 48, 32, .2) 1.1cqi 1.25cqi) 10% 25% / 33% 60% no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 1.1cqi, rgba(74, 48, 32, .2) 1.1cqi 1.25cqi) 90% 25% / 33% 60% no-repeat,
+    linear-gradient(90deg, #FFFDF8 0 30%, #F0E5D3 48%, #E7DBC6 50%, #F0E5D3 52%, #FFFDF8 70%);
+  box-shadow: 0 .35cqi 0 #E8DCC6, 0 .7cqi 0 #D6C4A6, .6cqi 1.4cqi 1.4cqi rgba(50, 28, 10, .3); }
+.table-book .ribbon { position: absolute; left: 51%; top: 95%; width: 6%; height: 30%; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); }
+/* 쌓인 책 두 권: 두께가 보이게 아래로 띠를 겹친다 */
+.table-stack { right: 10%; top: 38%; width: 11cqi; height: 7.8cqi; transform: scaleY(.55) rotate(10deg); }
+.table-stack::before, .table-stack::after { content: ""; position: absolute; inset: 0; border-radius: .3cqi .6cqi .6cqi .3cqi; }
+.table-stack::before { transform: translate(-.8cqi, 1.6cqi) rotate(-12deg); background: linear-gradient(90deg, rgba(0, 0, 0, .22) 0 9%, transparent 9%), #9A4528;
+  box-shadow: 0 .5cqi 0 #EFE5D2, 0 1.3cqi 0 #EFE5D2, 0 1.6cqi 0 #6E2F1B, .4cqi 2.2cqi 1.6cqi rgba(50, 28, 10, .3); }
+.table-stack::after { transform: translateY(-1.4cqi);
+  background: linear-gradient(rgba(255, 246, 228, .85), rgba(255, 246, 228, .85)) 62% 45% / 48% 22% no-repeat, linear-gradient(90deg, rgba(0, 0, 0, .22) 0 9%, transparent 9%), #3F5B48;
+  box-shadow: 0 .5cqi 0 #EFE5D2, 0 1.3cqi 0 #EFE5D2, 0 1.6cqi 0 #2C4031, .4cqi 2.2cqi 1.6cqi rgba(50, 28, 10, .25); }
+.table-pencil { left: 14%; top: 66%; width: 12cqi; height: 1.1cqi; transform: rotate(-8deg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .35), transparent 50%), linear-gradient(90deg, #2A211A 0 3%, #EBCB9F 3% 11%, #E9A93A 11% 86%, #C9C3B8 86% 91%, #E39A8F 91%);
+  clip-path: polygon(0 50%, 11% 0, 100% 0, 100% 100%, 11% 100%); filter: drop-shadow(.2cqi .5cqi .2cqi rgba(40, 22, 8, .35)); }
+/* 머그: 세워 둔 원기둥(몸통 + 위 타원 + 손잡이), 받침 접시, 피어오르는 김 */
+.table-mug { right: 22%; top: 4%; width: 5cqi; height: 4.8cqi; border-radius: 0 0 2.5cqi 2.5cqi / 0 0 1.3cqi 1.3cqi;
+  background: linear-gradient(90deg, #E2D6C2, #FFFDF8 35%, #F6EEE0 60%, #CFC1AA);
+  box-shadow: 0 .4cqi 0 -.1cqi rgba(255, 253, 248, .7), 0 .9cqi 0 .7cqi rgba(232, 222, 205, .9), .6cqi 1.4cqi 1.2cqi .6cqi rgba(40, 22, 8, .28); }
+.table-mug::before { content: ""; position: absolute; left: 0; right: 0; top: -1.3cqi; height: 2.6cqi; border-radius: 50%;
+  background: radial-gradient(closest-side, #6B4024 0 62%, #4A2A15 78%, #FFFDF8 82%); box-shadow: inset 0 0 0 .25cqi #EFE6D6; }
+.table-mug::after { content: ""; position: absolute; right: -1.8cqi; top: .5cqi; width: 2.4cqi; height: 2.8cqi; border: .6cqi solid #F2EADC; border-left: 0; border-radius: 0 50% 50% 0; box-sizing: border-box; }
+.table-mug .steam { position: absolute; left: 28%; bottom: 105%; width: 1.4cqi; height: 4.5cqi; border-radius: 50%; border-left: .3cqi solid rgba(255, 253, 248, .8); opacity: 0; filter: blur(.3px); }
+.table-mug .steam + .steam { left: 56%; animation-delay: 1.4s; }
+.js .table-mug .steam { animation: steam 2.8s ease-in-out infinite; }
+@keyframes steam { 0% { opacity: 0; transform: translateY(.8cqi) scaleY(.7); } 35% { opacity: .9; } 100% { opacity: 0; transform: translateY(-1.6cqi) scaleY(1.1) skewX(-12deg); } }
+/* 지금 있는 사람 수: 책상에 세운 작은 이름표(접어 세운 카드) */
+.table-count { left: 52%; top: 70%; margin: 0; padding: .15em .7em .2em; translate: -50% -50%; white-space: nowrap; border-radius: .2em;
+  font-size: clamp(12px, 3.6cqi, 22px); line-height: 1.2; color: #3A2716;
+  background: linear-gradient(180deg, #FFF9EC, #F3E8D2); box-shadow: 0 .25em 0 -.05em #D9C8AA, .1em .5em .5em rgba(40, 22, 8, .3); }
+.table-count::before { content: ""; position: absolute; left: 4%; right: 4%; top: -.35em; height: .4em; border-radius: .2em .2em 0 0; background: #E2D3B8; z-index: -1; }
+/* 방석: 사람마다 제자리에 하나씩. 자리를 떠나도 방석은 남는다 */
+.cushions { left: 0; width: 100%; top: var(--ft); aspect-ratio: 20 / 11; margin: 0; padding: 0; list-style: none; }
+.cushion { position: absolute; left: calc(var(--x) * 100%); top: calc(var(--y) * 100%); width: 10.5cqi; height: 5cqi; translate: -50% -62%; border-radius: 46%;
+  z-index: calc(var(--y) * 100 - 1);
+  background: radial-gradient(ellipse at 50% 38%, #F4E9D8, #E2CFB4 70%, #D3BC9C);
+  box-shadow: inset 0 0 0 .35cqi rgba(184, 87, 26, .18), 0 .45cqi 0 #C2A884, 0 .9cqi 1cqi rgba(60, 34, 14, .2); }
+.cushion::after { content: ""; position: absolute; inset: 22% 20%; border-radius: 50%; border: .2cqi dashed rgba(138, 98, 64, .35); }
+.table-scene.crowd .cushion { width: 8.5cqi; height: 4cqi; }
+
+/* 사람: 이름은 머리 위, 발끝이 (x, y)에 닿는다. 뒤에 있을수록 조금 작게 */
+.table-scene .member { translate: -50% -100%; scale: calc(.86 + var(--y) * .26); transform-origin: 50% 100%; gap: 2px;
+  transition: left var(--walk, .8s) ease-in-out, top var(--walk, .8s) ease-in-out, scale var(--walk, .8s) ease-in-out; }
+.table-scene .member-name { order: -1; padding: 1px 7px; border-radius: 8px; max-width: 100%;
+  background: color-mix(in srgb, var(--card) 82%, transparent); box-shadow: 0 1px 3px rgba(60, 34, 14, .08); }
+.table-scene .member:not(.online) .avatar { opacity: .85; filter: grayscale(.95) brightness(1.08) contrast(.85); }
+.table-scene.crowd .member { translate: -50% -100%; }
+.table-scene .member .avatar { margin-bottom: -.6cqi; }
+.table-scene .member::before { content: ""; position: absolute; left: 50%; bottom: -1.2cqi; width: 70%; height: 2.6cqi; translate: -50% 0; border-radius: 50%; z-index: -1;
+  background: radial-gradient(closest-side, rgba(60, 34, 14, .3), transparent); }
+.table-scene .member.walking::before { opacity: .6; }
+.table-scene .bubble { bottom: calc(100% + 2px); }
+
+/* 책상 크기: 사람이 많으면 작게(바깥 바퀴 자리를 비워 둔다) */
+.table-scene.crowd .table-top { left: 32cqi; width: 36cqi; height: 19.8cqi; top: calc(var(--c) - 9.9cqi - 4cqi); }
+.table-scene.crowd .table-legs { left: 32cqi; width: 36cqi; top: calc(var(--c) + 5.2cqi); height: 3.4cqi; }
+.table-scene.crowd .table-shade { left: 29cqi; width: 42cqi; top: calc(var(--c) - 8.5cqi); height: 20cqi; }
+.table-scene.crowd .room-rug { left: 1cqi; width: 98cqi; top: calc(var(--c) - 27cqi); height: 54cqi; }
+@media (max-width: 860px) {
+  .table-scene { --ft: 70px; }
+  .table-scene .member .avatar { width: 40px; height: 40px; }
+  .table-scene .member { width: 70px; }
+}
+:root[data-theme="dark"] :is(.table-top, .table-legs, .cushion) { filter: brightness(.82) saturate(.9); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.table-top, .table-legs, .cushion) { filter: brightness(.82) saturate(.9); } }
+@media (prefers-reduced-motion: reduce) { .js .table-mug .steam { animation: none; opacity: .5; } }
