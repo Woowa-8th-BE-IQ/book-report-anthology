@@ -1096,3 +1096,8 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
   .critters-parade img { width: 44px; height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) { .critters-parade img, .critter-art img { animation: none; } }
+/* 밤에는 그림 받침을 밝은 종이색으로 둬서 잉크 선이 묻히지 않게 한다 */
+:root[data-theme="dark"] :is(.critter-art, .dresser-stage) { background: radial-gradient(circle, #F4EBDD, #E2D3BD); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :is(.critter-art, .dresser-stage) { background: radial-gradient(circle, #F4EBDD, #E2D3BD); }
+}
