@@ -1034,3 +1034,17 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 :root[data-theme="dark"] :is(.table-top, .table-legs, .cushion) { filter: brightness(.82) saturate(.9); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.table-top, .table-legs, .cushion) { filter: brightness(.82) saturate(.9); } }
 @media (prefers-reduced-motion: reduce) { .js .table-mug .steam { animation: none; opacity: .5; } }
+
+/* 모임방 입력줄: 입력칸 · 타자 소리 · 보내기를 같은 높이로 한 줄에 */
+.talk-form { align-items: stretch; }
+.talk-form textarea { min-height: 44px; }
+.talk-form .btn { align-self: flex-end; height: 44px; padding: 0 20px; box-shadow: none; }
+.key-sound { position: relative; align-self: flex-end; display: grid; place-items: center; flex: none; width: 44px; height: 44px; padding: 0;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--muted); cursor: pointer; transition: color .15s, border-color .15s, background .15s; }
+.key-sound[hidden] { display: none; }
+.key-sound .i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.key-sound:hover { color: var(--ink-soft); border-color: var(--tape); }
+.key-sound[aria-pressed="true"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
+/* 꺼져 있으면 사선 */
+.key-sound[aria-pressed="false"]::after { content: ""; position: absolute; left: 10px; right: 10px; top: 50%; height: 1.5px; border-radius: 1px; background: currentColor; transform: rotate(-35deg); }
+.talk-foot:has(.talk-status:empty) { display: none; }
