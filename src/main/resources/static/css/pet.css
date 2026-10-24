@@ -33,6 +33,7 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-face .blink { transform-box: fill-box; transform-origin: center; animation: blink 5.3s infinite; }
 .pet-face .face { transition: transform .4s ease-out; transform: translateX(var(--gaze, 0px)); }
 .pet-avatar.facing-left .pet-face svg { scale: -1 1; }
+.pet-avatar.facing-left .pet-face .glyph { transform: scaleX(-1); transform-box: fill-box; transform-origin: center; }
 .pet-avatar.walking .pet-face { animation: hop .34s ease-in-out infinite; }
 .pet-avatar.excited .pet-face { animation: jump .55s ease-out 2; }
 .pet-badge { position: absolute; top: 2px; right: 2px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 10px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; line-height: 20px; text-align: center; box-shadow: 0 0 0 2px var(--card); }

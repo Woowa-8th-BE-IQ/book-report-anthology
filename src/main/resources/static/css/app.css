@@ -657,6 +657,8 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .js .member .blink { transform-box: fill-box; transform-origin: center; animation: blink 5.3s infinite; animation-delay: calc(var(--d) * -.8s); }
 .member .face { transition: transform .45s ease-out; transform: translateX(var(--gaze, 0px)); }
 .member.facing-left .avatar svg { scale: -1 1; }
+/* 몸은 뒤집어도 음표·Z 같은 글자 모양은 제자리에서 다시 뒤집어 바로 읽히게 */
+.member.facing-left .avatar .glyph { transform: scaleX(-1); transform-box: fill-box; transform-origin: center; }
 .member.walking .avatar { animation: hop .34s ease-in-out infinite; }
 .member.walking .member-name { opacity: .7; }
 .member.arrived .avatar { animation: settle .45s ease-out; }
