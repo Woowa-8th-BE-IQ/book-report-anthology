@@ -3,7 +3,7 @@ package com.iq.anthology.room;
 import com.iq.anthology.anthology.Contributor;
 
 /**
- * 참여자 아바타 SVG. 여덟 책 동물({@link Critter}) 중 하나를 그린다.
+ * 참여자 아바타 SVG. 꼬깃단 여덟 친구({@link Critter}) 중 하나를 그린다.
  * 사용자 글자는 그림 안에 넣지 않으므로 그대로 HTML에 넣어도 안전하다.
  * 얼굴은 {@code <g class="face">}로 묶여 있어 화면이 시선을 돌리고, {@code .blink}가 있으면 눈을 깜빡인다.
  */

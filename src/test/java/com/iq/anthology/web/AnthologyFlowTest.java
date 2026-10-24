@@ -335,10 +335,10 @@ class AnthologyFlowTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(result -> assertThat(result.getFlashMap().get("notice")).asString().contains("뒤뚱이에요"));
 
-        // 책 동물 소개와 펫 설치 안내는 누구나 본다
+        // 꼬깃단 소개와 펫 설치 안내는 누구나 본다
         assertThat(mvc.perform(get("/characters")).andExpect(status().isOk()).andReturn().getResponse()
                 .getContentAsString())
-                .contains("하찮은 책 동물들", "뒤뚱", "느릿", "바위뛰기펭귄", "/pet/install.sh", "/pet/install.ps1")
+                .contains("꼬깃단", "책을 좋아하는 하찮은 동물들", "뒤뚱", "느릿", "바위뛰기펭귄", "/pet/install.sh", "/pet/install.ps1")
                 .doesNotContain("이름은 옛날 그대로");
 
         // 설치 스크립트를 내려준다

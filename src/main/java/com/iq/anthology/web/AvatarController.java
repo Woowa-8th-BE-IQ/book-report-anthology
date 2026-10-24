@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-/** 캐릭터: 여덟 책 동물 소개, 그림, 내 캐릭터 고르기. */
+/** 캐릭터: 꼬깃단 여덟 친구 소개, 그림, 내 캐릭터 고르기. */
 @Controller
 public class AvatarController extends FormSupport {
 
@@ -35,11 +35,11 @@ public class AvatarController extends FormSupport {
         this.cookies = cookies;
     }
 
-    /** 덕후감 서재의 책 동물들. 누구나 볼 수 있다. */
+    /** 덕후감 서재의 꼬깃단. 누구나 볼 수 있다. */
     @GetMapping("/characters")
     public String characters(Model model) {
         model.addAttribute("critters", Critter.values());
-        model.addAttribute("ogDescription", "덕후감 서재의 하찮은 책 동물들. 다들 책을 좋아해요. 다만 조금씩 서툴러요.");
+        model.addAttribute("ogDescription", "덕후감 서재의 꼬깃단. 책을 좋아하는 하찮은 동물들, 다만 조금씩 서툴러요.");
         return "characters";
     }
 
@@ -53,7 +53,7 @@ public class AvatarController extends FormSupport {
         return svg(Avatar.svg(Critter.of(slug)));
     }
 
-    /** 예전 꾸미기 주소(c3b1e2m0x4k1). 조각 그림은 없어졌으니 그 글자로 정한 책 동물 하나를 보여 준다. */
+    /** 예전 꾸미기 주소(c3b1e2m0x4k1). 조각 그림은 없어졌으니 그 글자로 정한 꼬깃단 하나를 보여 준다. */
     @GetMapping({"/avatars/v3/{style}.svg", "/avatars/v2/{style}.svg", "/avatars/{style}.svg"})
     @ResponseBody
     public ResponseEntity<String> legacy(@PathVariable String style) {

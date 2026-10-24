@@ -8,7 +8,7 @@
   <a class="kicker" th:href="${back == 'room'} ? @{/anthologies/{code}/room(code=${a.code()})} : @{/anthologies/{code}(code=${a.code()})}"
      th:text="'← ' + (${back == 'room'} ? '모임방' : ${a.title()})">← 문집</a>
   <h1 data-reveal>내 캐릭터</h1>
-  <p class="lead">덕후감 서재의 책 동물 중 하나를 골라요<br>바꾸면 모임방과 바탕화면 펫에 바로 보여요</p>
+  <p class="lead">꼬깃단 중 한 친구를 골라요<br>바꾸면 모임방과 바탕화면 펫에 바로 보여요</p>
 </section>
 
 <div th:replace="~{fragments/layout :: flash}"></div>
@@ -27,7 +27,7 @@
     </div>
 
     <div class="dresser-parts">
-      <div class="critter-picks" role="radiogroup" aria-label="책 동물">
+      <div class="critter-picks" role="radiogroup" aria-label="꼬깃단">
         <label class="critter-pick" th:each="c : ${critters}"
                th:attr="data-name=${c.title()}, data-tagline=${c.tagline()}">
           <input type="radio" name="critter" th:value="${c.slug()}" th:checked="${c == dressing.current()}">
@@ -37,7 +37,7 @@
           <em class="critter-first" th:if="${c == dressing.original()}">처음 받은 친구</em>
         </label>
       </div>
-      <p class="tool-note">어떤 친구들인지는 <a class="text-link" th:href="@{/characters}" target="_blank" rel="noopener">책 동물 소개</a>에서 볼 수 있어요</p>
+      <p class="tool-note">어떤 친구들인지는 <a class="text-link" th:href="@{/characters}" target="_blank" rel="noopener">꼬깃단 소개</a>에서 볼 수 있어요</p>
       <button class="btn" type="submit">이 친구로 할게요</button>
     </div>
   </form>

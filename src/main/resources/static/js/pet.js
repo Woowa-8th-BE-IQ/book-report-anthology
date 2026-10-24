@@ -729,7 +729,7 @@
     });
   });
 
-  // ───────── 캐릭터 바꾸기 (펫 창 안에서): 여덟 책 동물 중 하나 ─────────
+  // ───────── 캐릭터 바꾸기 (펫 창 안에서): 꼬깃단 여덟 친구 중 하나 ─────────
   const preview = dresser.querySelector('.dress-preview');
   const dressStatus = dresser.querySelector('.dress-status');
   const options = [...dresser.querySelectorAll('.dress-option')];
