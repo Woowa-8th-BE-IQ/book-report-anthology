@@ -106,6 +106,12 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-line.mine:not(.news) span { flex: 0 1 auto; text-align: left; }
 .pet-line.mine { text-align: right; }
 .pet-line.mine b { color: var(--accent); }
+/* 내 말은 카톡처럼: 얼굴·이름 없이 오른쪽 말풍선만. 이름은 화면 읽기용으로만 남긴다 */
+.pet-line.mine:not(.news) .pet-who { display: none; }
+.pet-line.mine:not(.news) b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.pet-line.mine:not(.news) { position: relative; align-items: flex-end; }
+.pet-line.mine:not(.news) span:not(.pet-who) { flex: 0 1 auto; max-width: 80%; padding: 6px 11px; border-radius: 14px 14px 4px 14px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--card)); color: var(--ink); text-align: left; }
 .pet-form textarea { flex: 1; min-width: 0; min-height: 36px; max-height: 112px; box-sizing: border-box; resize: none; overflow-y: hidden; padding: 8px 10px; font: inherit; font-size: 13px; line-height: 1.45; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); outline: none; }
 .pet-form textarea:focus { border-color: var(--accent); }
 .pet-form { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--line); }
