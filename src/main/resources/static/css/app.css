@@ -1187,10 +1187,10 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
   :root[data-gait="on"] .member.walking .avatar .critter-raccoon .glyph { transform-origin: 0% 100%; animation: z-grow 3.4s ease-in-out infinite; }
   :root[data-gait="on"] .member.walking .avatar .critter-raccoon .snot { transform-origin: 15% 50%; animation: snot-bubble 3.4s ease-in-out infinite; }
 
-  /* 꼼지: 책이 모서리로 뒤뚱 걷는다. 책장이 넘어가려 하면 꼼지가 쏙 내려가 도로 붙잡는다(아직 1쪽) */
+  /* 꼼지: 책이 모서리로 뒤뚱 걷고, 책 밑 책갈피 끈이 꼬리처럼 살랑살랑. 꼼지는 위에서 흔들흔들 읽는다 */
   :root[data-gait="on"] .member.walking .avatar:has(> .critter-bookworm) { transform-origin: 50% 98%; animation: book-tip .7s ease-in-out infinite; }
-  :root[data-gait="on"] .member.walking .avatar .critter-bookworm .worm { transform-origin: 50% 100%; animation: worm-hold 2.8s ease-in-out infinite; }
-  :root[data-gait="on"] .member.walking .avatar .critter-bookworm .flap { transform-origin: 0% 50%; animation: flap-turn 2.8s ease-in-out infinite; }
+  :root[data-gait="on"] .member.walking .avatar .critter-bookworm .ribbon { transform-origin: 50% 0%; animation: ribbon-tail .7s ease-in-out infinite; }
+  :root[data-gait="on"] .member.walking .avatar .critter-bookworm .worm { transform-origin: 50% 100%; animation: worm-sway 1.4s ease-in-out infinite; }
 
   /* 따끔: 몽실 머리털이 통통 튀며 걷다가, 몸을 동그랗게 말아 천천히 데굴 한 바퀴 */
   :root[data-gait="on"] .member.walking .avatar:has(> .critter-hedgehog) { transform-origin: 50% 62%; animation: hug-roll 4.2s ease-in-out infinite; }
@@ -1202,8 +1202,6 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 @keyframes drop-fall { 0% { transform: translateY(-4px); opacity: 0; } 15% { opacity: 1; } 82% { transform: translateY(var(--fall)); opacity: 1; } 100% { transform: translateY(var(--fall)) scale(1.8, .25); opacity: 0; } }
 @keyframes quote-catch { 0%, 26%, 100% { opacity: 1; transform: translateY(0); } 13% { opacity: 1; transform: translateY(-1.5px); } 40% { opacity: 1; transform: translate(-3px, 4px) scale(.7); } 47% { opacity: 0; transform: translate(-6px, 9px) scale(.2); } 88% { opacity: 0; transform: translateY(-3px) scale(.6); } }
 @keyframes snot-bubble { 0%, 52%, 100% { opacity: 0; transform: scale(.2); } 58% { opacity: 1; transform: scale(.7); } 68% { transform: scale(1.1); } 74% { transform: scale(.9); } 82% { opacity: 1; transform: scale(1.8); } 85% { opacity: 0; transform: scale(2.4); } }
-@keyframes flap-turn { 0%, 28%, 82%, 100% { opacity: 0; transform: none; } 34% { opacity: 1; transform: none; } 50% { opacity: 1; transform: scaleX(-.35) skewY(-6deg); } 58% { opacity: 1; transform: scaleX(-.1); } 70% { opacity: 1; transform: scaleX(.6); } 78% { opacity: 1; transform: none; } }
-@keyframes worm-hold { 0%, 100% { transform: none; } 15% { transform: translateY(-2.5px) rotate(-6deg); } 30% { transform: none; } 52% { transform: translateY(4px) rotate(10deg); } 62% { transform: translateY(5px) rotate(12deg); } 76% { transform: translateY(-2px) rotate(-4deg); } 86% { transform: none; } }
 @keyframes gait-waddle { 0%, 100% { transform: rotate(-8deg); } 25% { transform: translateY(-3px); } 50% { transform: rotate(8deg); } 75% { transform: translateY(-3px); } }
 @keyframes flap-l { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(28deg); } }
 @keyframes flap-r { 0%, 100% { transform: rotate(-28deg); } 50% { transform: rotate(0); } }
@@ -1235,6 +1233,8 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 @keyframes tail-sway { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-12deg); } }
 @keyframes z-grow { 0%, 50%, 100% { scale: 1; opacity: .5; } 62%, 80% { scale: 1.7; opacity: 1; } 86% { scale: .6; opacity: 0; } }
 @keyframes book-tip { 0%, 100% { transform: rotate(-6deg); } 25% { transform: translateY(-2.5px); } 50% { transform: rotate(6deg); } 75% { transform: translateY(-2.5px); } }
+@keyframes ribbon-tail { 0%, 100% { transform: rotate(22deg); } 50% { transform: rotate(-22deg); } }
+@keyframes worm-sway { 0%, 100% { transform: rotate(-8deg); } 50% { transform: translateY(-1.5px) rotate(8deg); } }
 @keyframes worm-peek { 0%, 100% { transform: none; } 30% { transform: translateY(-2.5px) rotate(-6deg); } 55% { transform: translateY(5px) scaleY(.85); } 75% { transform: translateY(-1px) rotate(5deg); } }
 @keyframes hug-roll { 0% { transform: rotate(0deg); } 8%, 24% { transform: translateY(-3px) scale(.98, 1.02); } 16%, 32% { transform: scale(1.03, .97); } 40% { transform: none; } 46% { transform: translateY(4px) scale(.84) rotate(0deg); } 84% { transform: translateY(4px) scale(.84) rotate(calc(var(--dir) * 360deg)); } 90% { transform: translateY(-4px) scale(1.05, .95) rotate(calc(var(--dir) * 360deg)); } 95%, 100% { transform: rotate(calc(var(--dir) * 360deg)); } }
 @keyframes fluff-bounce { 0%, 100% { transform: none; } 50% { transform: scale(1.04, .94); } }
@@ -1306,10 +1306,10 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
   .critter-art:is(:hover, :focus) .critter-stage .critter-raccoon .glyph { transform-origin: 0% 100%; animation: z-grow 3.4s ease-in-out infinite; }
   .critter-art:is(:hover, :focus) .critter-stage .critter-raccoon .snot { transform-origin: 15% 50%; animation: snot-bubble 3.4s ease-in-out infinite; }
 
-  /* 꼼지: 책이 모서리로 뒤뚱 걷는다. 책장이 넘어가려 하면 꼼지가 쏙 내려가 도로 붙잡는다(아직 1쪽) */
+  /* 꼼지: 책이 모서리로 뒤뚱 걷고, 책 밑 책갈피 끈이 꼬리처럼 살랑살랑. 꼼지는 위에서 흔들흔들 읽는다 */
   .critter-art:is(:hover, :focus) .critter-stage:has(> .critter-bookworm) { transform-origin: 50% 98%; animation: book-tip .7s ease-in-out infinite; }
-  .critter-art:is(:hover, :focus) .critter-stage .critter-bookworm .worm { transform-origin: 50% 100%; animation: worm-hold 2.8s ease-in-out infinite; }
-  .critter-art:is(:hover, :focus) .critter-stage .critter-bookworm .flap { transform-origin: 0% 50%; animation: flap-turn 2.8s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-bookworm .ribbon { transform-origin: 50% 0%; animation: ribbon-tail .7s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-bookworm .worm { transform-origin: 50% 100%; animation: worm-sway 1.4s ease-in-out infinite; }
 
   /* 따끔: 몽실 머리털이 통통 튀며 걷다가, 몸을 동그랗게 말아 천천히 데굴 한 바퀴 */
   .critter-art:is(:hover, :focus) .critter-stage:has(> .critter-hedgehog) { transform-origin: 50% 62%; animation: hug-roll 4.2s ease-in-out infinite; }
