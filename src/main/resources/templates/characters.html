@@ -8,7 +8,6 @@
   <section class="page-hero wrap critters-hero">
     <h1 data-reveal>꼬깃단</h1>
     <p class="lead">책은 좋아하는데, 조금씩 서툰 친구들</p>
-    <p class="critters-hint">그림에 마우스를 올리면 그 친구만의 걸음을 보여 줘요 · 펫과 모임방에서 <b>걸음 효과</b>를 켜면 이렇게 걸어요</p>
     <div class="critters-parade" aria-hidden="true">
       <img th:each="c, s : ${critters}" th:src="@{/avatars/v4/{x}.svg(x=${c.slug()})}" alt="" width="64" height="64"
            th:style="'--i:' + ${s.index}">
