@@ -39,6 +39,12 @@ public class AvatarController extends FormSupport {
     @GetMapping("/characters")
     public String characters(Model model) {
         model.addAttribute("critters", Critter.values());
+        // 그림을 페이지에 바로 넣어야 마우스를 올렸을 때 손발까지 걷는 모습을 보여 줄 수 있다
+        Map<String, String> arts = new java.util.LinkedHashMap<>();
+        for (Critter critter : Critter.values()) {
+            arts.put(critter.slug(), Avatar.svg(critter));
+        }
+        model.addAttribute("arts", arts);
         model.addAttribute("ogDescription", "덕후감 서재의 꼬깃단. 책을 좋아하는 하찮은 동물들, 다만 조금씩 서툴러요.");
         return "characters";
     }

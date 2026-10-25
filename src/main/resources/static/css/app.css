@@ -696,6 +696,9 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .talk-body p { margin: 0; padding: 8px 12px; background: var(--paper); border: 1px solid var(--line); border-radius: 4px 14px 14px 14px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .talk-line.mine { flex-direction: row-reverse; }
 .talk-line.mine .talk-who { text-align: right; }
+/* 모임방에서 내 말은 카톡처럼: 얼굴·이름 없이 오른쪽 말풍선과 시각만. 이름은 화면 읽기용으로만 남긴다 */
+.talk > .talk-line.mine > .avatar { display: none; }
+.talk > .talk-line.mine .talk-who b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .talk-line.mine .talk-body p { background: color-mix(in srgb, var(--accent) 12%, var(--card)); border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius: 14px 4px 14px 14px; }
 .typing-line { min-height: 20px; margin: 0; padding: 0 18px; font-size: 12px; color: var(--muted); }
 .talk-form { display: flex; gap: 8px; align-items: flex-end; padding: 12px; border-top: 1px solid var(--line); }
@@ -1074,8 +1077,13 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .critter { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 22px; align-items: start; scroll-margin-top: 90px; }
 .critter-art { width: 150px; height: 150px; border-radius: 50%; display: grid; place-items: center;
   background: radial-gradient(circle, color-mix(in srgb, var(--paper) 55%, var(--card)), var(--paper)); }
-.critter-art img { width: 136px; height: 136px; transform-origin: 50% 88%; animation: breathe 3.6s ease-in-out infinite; }
-.critter:nth-child(even) .critter-art img { animation-delay: -1.8s; }
+.critter-art { cursor: pointer; outline: none; }
+.critter-art:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+.critter-stage { display: block; width: 136px; height: 136px; }
+.critter-stage svg { width: 100%; height: 100%; display: block; overflow: visible; transform-origin: 50% 88%; animation: breathe 3.6s ease-in-out infinite; }
+.critter:nth-child(even) .critter-stage svg { animation-delay: -1.8s; }
+.critters-hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+.critters-hint b { color: var(--accent); font-weight: 600; }
 .critter-species { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); letter-spacing: .04em; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .critter-badge { font-style: normal; font-size: 11px; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 99px; padding: 1px 8px; }
 .critter-badge { position: relative; cursor: help; }
@@ -1104,7 +1112,7 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
   .critter-species { justify-content: center; }
   .critters-parade img { width: 44px; height: 44px; }
 }
-@media (prefers-reduced-motion: reduce) { .critters-parade img, .critter-art img { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .critters-parade img, .critter-stage svg { animation: none; } }
 /* 밤에는 그림 받침을 밝은 종이색으로 둬서 잉크 선이 묻히지 않게 한다 */
 :root[data-theme="dark"] :is(.critter-art, .dresser-stage) { background: radial-gradient(circle, #F4EBDD, #E2D3BD); }
 @media (prefers-color-scheme: dark) {
@@ -1202,3 +1210,64 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 @keyframes hug-roll { 0%, 100% { transform: none; } 9%, 27%, 45% { transform: translateY(-3px) scale(.98, 1.02); } 18%, 36% { transform: scale(1.03, .97); } 54% { transform: translateY(4px) scale(.84); } 86% { transform: translateY(4px) scale(.84) rotate(calc(var(--dir) * 360deg)); } 94% { transform: translateY(-4px) scale(1.04, .96) rotate(calc(var(--dir) * 360deg)); } }
 @keyframes fluff-bounce { 0%, 100% { transform: none; } 50% { transform: scale(1.04, .94); } }
 @keyframes pencil-spring { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
+
+/* ───────── 꼬깃단 걸음 미리보기(소개 페이지에서 그림에 올리면): 캐릭터마다 성격대로 걷는다. 끄면 모두 같은 콩콩 걸음. --dir은 바라보는 쪽(오른쪽 1, 왼쪽 -1) ───────── */
+.critter-art { --dir: 1; }
+.critter-art.facing-left { --dir: -1; }
+/* 느릿은 머리가 왼쪽을 보게 그려져 있어서 다른 친구들과 반대로 뒤집어야 가는 쪽을 본다 */
+.critter-art:not(.facing-left) .critter-stage svg.critter-snail { scale: -1 1; }
+.critter-art.facing-left .critter-stage svg.critter-snail { scale: 1 1; }
+.critter-stage .critter-snail .slime { transform-box: fill-box; transform-origin: 0% 50%; transition: opacity .5s; }
+.critter-stage svg [class] { transform-box: fill-box; }
+@media (prefers-reduced-motion: no-preference) {
+  /* 뒤뚱: 무거운 책을 안고 기우뚱. 날개는 번갈아 파닥, 발은 번갈아 뗀다 */
+  .critter-art:is(:hover, :focus) .critter-stage:has(> .critter-penguin) { transform-origin: 50% 92%; animation: gait-waddle .62s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-penguin .wing-l { transform-origin: 100% 10%; animation: flap-l .62s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-penguin .wing-r { transform-origin: 0% 10%; animation: flap-r .62s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-penguin .foot-l { animation: step .62s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-penguin .foot-r { animation: step .62s ease-in-out -.31s infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-penguin .book { transform-origin: 50% 50%; animation: book-jostle .62s ease-in-out -.1s infinite; }
+
+  /* 느릿: 배가 물결치고, 윤기가 머리 쪽으로 흐르고, 껍데기는 한 박자 늦게, 뒤에 점액 자국 */
+  .critter-art:is(:hover, :focus) .critter-stage:has(> .critter-snail) { transform-origin: 50% 95%; animation: gait-glide 1.7s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-snail .slime { opacity: 1; animation: slime-stretch 1.7s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-snail .foot { transform-origin: 50% 100%; animation: snail-goo .85s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-snail .foot-shine { opacity: .85; animation: snail-shine 1.7s linear infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-snail .shell { transform-origin: 50% 100%; animation: snail-shell 1.7s ease-in-out infinite; }
+
+  /* 꽥이: 콧노래 박자로 통·통·통~. 날개 파닥, 물갈퀴 번갈아, 책 지붕은 늦게 들썩, 음표가 떠오른다 */
+  .critter-art:is(:hover, :focus) .critter-stage:has(> .critter-duck) { transform-origin: 50% 92%; animation: gait-groove .95s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-duck .wing-l { transform-origin: 100% 20%; animation: flutter-l .24s ease-in-out infinite alternate; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-duck .wing-r { transform-origin: 0% 20%; animation: flutter-r .24s ease-in-out infinite alternate; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-duck .foot-l { animation: step .475s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-duck .foot-r { animation: step .475s ease-in-out -.24s infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-duck .roof { transform-origin: 50% 100%; animation: roof-bob .95s ease-in-out -.12s infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-duck .glyph { transform-origin: 50% 50%; animation: notes-rise 1.9s ease-out infinite; }
+
+  /* 더듬: 낮게 웅크린 종종걸음. 헤드램프 불빛이 두리번 훑고 깜빡, 앞발은 다다닥 */
+  .critter-art:is(:hover, :focus) .critter-stage:has(> .critter-mole) { transform-origin: 50% 95%; animation: gait-scurry .22s linear infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-mole .beam { transform-origin: 0% 30%; animation: beam-sweep 1.8s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-mole .paws { animation: paws-patter .22s linear infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-mole .helmet { transform-origin: 50% 100%; animation: helmet-jiggle .44s ease-in-out infinite; }
+
+  /* 개굴: 깔고 앉은 책은 두고 몸만 폴짝. 공중에서 혀로 책갈피를 낚아채고, 착지하면 책이 눌린다 */
+  .critter-art:is(:hover, :focus) .critter-stage:has(> .critter-frog) { animation: none; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-frog .hopper { transform-origin: 50% 100%; animation: frog-leap 1.15s cubic-bezier(.3,.6,.4,1) infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-frog .pad { transform-origin: 50% 100%; animation: pad-squash 1.15s ease-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-frog .catch { transform-origin: 0% 100%; animation: tongue-snap 1.15s ease-in-out infinite; }
+
+  /* 꾸벅: 졸린 걸음 몇 번, 고개가 툭 떨어지며 Z가 커지고, 화들짝. 꼬리는 느릿느릿 */
+  .critter-art:is(:hover, :focus) .critter-stage:has(> .critter-raccoon) { transform-origin: 50% 92%; animation: gait-doze 3.4s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-raccoon .head { transform-origin: 50% 100%; animation: head-nod 3.4s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-raccoon .tail { transform-origin: 0% 100%; animation: tail-sway 1.7s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-raccoon .glyph { transform-origin: 0% 100%; animation: z-grow 3.4s ease-in-out infinite; }
+
+  /* 꼼지: 책이 모서리로 뒤뚱 걷고, 꼼지는 책 속에서 쏙 들어갔다 빼꼼 */
+  .critter-art:is(:hover, :focus) .critter-stage:has(> .critter-bookworm) { transform-origin: 50% 98%; animation: book-tip .7s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-bookworm .worm { transform-origin: 50% 100%; animation: worm-peek 1.4s ease-in-out infinite; }
+
+  /* 따끔: 몽실 머리털이 통통 튀며 걷다가, 몸을 말아 데굴 한 바퀴. 머리 연필은 스프링처럼 흔들 */
+  .critter-art:is(:hover, :focus) .critter-stage:has(> .critter-hedgehog) { transform-origin: 50% 62%; animation: hug-roll 2.8s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-hedgehog .fluff { transform-origin: 50% 100%; animation: fluff-bounce .35s ease-in-out infinite; }
+  .critter-art:is(:hover, :focus) .critter-stage .critter-hedgehog .pencil { transform-origin: 0% 100%; animation: pencil-spring .7s ease-in-out infinite; }
+}
