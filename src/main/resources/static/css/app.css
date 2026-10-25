@@ -10,6 +10,7 @@
   --line: #D8C9B4;
   --tape: #C9B8A0;
   --accent: #B8571A;
+  --mention: #2F6FD6;
   --accent-bright: #D2691E;
   --good: #4F6B3A;
   --danger: #B3261E;
@@ -41,6 +42,7 @@
   --line: #3B2F24;
   --tape: #6B5642;
   --accent: #E38544;
+  --mention: #7FB2FF;
   --accent-bright: #F29A57;
   --good: #93B574;
   --danger: #FF7A6B;
@@ -59,6 +61,7 @@
   --line: #3B2F24;
   --tape: #6B5642;
   --accent: #E38544;
+  --mention: #7FB2FF;
   --accent-bright: #F29A57;
   --good: #93B574;
   --danger: #FF7A6B;
@@ -862,9 +865,10 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .talk-foot .sound-toggle { margin-left: auto; }
 
 /* @부르기 칩 */
-.mention { display: inline-block; padding: 0 6px; margin: 0 1px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 700; white-space: nowrap; }
-.mention.me { background: var(--accent); color: var(--cream); }
-.mention.everyone { background: var(--ink); color: var(--card); }
+/* @이름: 글자 크기는 본문 그대로, 파란 글씨로만 구분한다. 나를 부른 것은 굵게 + 옅은 밑줄 */
+.mention { color: var(--mention); font-weight: 600; }
+.mention.me { font-weight: 800; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 2px; text-decoration-color: color-mix(in srgb, var(--mention) 45%, transparent); }
+.mention.everyone { font-weight: 800; }
 
 /* 대화 속 링크와 바깥 링크 안내 */
 .chat-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
