@@ -1192,9 +1192,8 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
   :root[data-gait="on"] .member.walking .avatar .critter-bookworm .worm { transform-origin: 50% 100%; animation: worm-hold 2.8s ease-in-out infinite; }
   :root[data-gait="on"] .member.walking .avatar .critter-bookworm .flap { transform-origin: 0% 50%; animation: flap-turn 2.8s ease-in-out infinite; }
 
-  /* 따끔: 몽실 머리털이 통통 튀며 걷다가, 몸을 동그랗게 말아 천천히 데굴 한 바퀴, 일어나면 하트 뿅(프리허그 담당자) */
+  /* 따끔: 몽실 머리털이 통통 튀며 걷다가, 몸을 동그랗게 말아 천천히 데굴 한 바퀴 */
   :root[data-gait="on"] .member.walking .avatar:has(> .critter-hedgehog) { transform-origin: 50% 62%; animation: hug-roll 4.2s ease-in-out infinite; }
-  :root[data-gait="on"] .member.walking .avatar .critter-hedgehog .heart { transform-origin: 50% 100%; animation: heart-pop 4.2s ease-out infinite; }
   :root[data-gait="on"] .member.walking .avatar .critter-hedgehog .fluff { transform-origin: 50% 100%; animation: fluff-bounce .35s ease-in-out infinite; }
   :root[data-gait="on"] .member.walking .avatar .critter-hedgehog .pencil { transform-origin: 0% 100%; animation: pencil-spring .7s ease-in-out infinite; }
 }
@@ -1205,7 +1204,6 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 @keyframes snot-bubble { 0%, 52%, 100% { opacity: 0; transform: scale(.2); } 58% { opacity: 1; transform: scale(.7); } 68% { transform: scale(1.1); } 74% { transform: scale(.9); } 82% { opacity: 1; transform: scale(1.8); } 85% { opacity: 0; transform: scale(2.4); } }
 @keyframes flap-turn { 0%, 28%, 82%, 100% { opacity: 0; transform: none; } 34% { opacity: 1; transform: none; } 50% { opacity: 1; transform: scaleX(-.35) skewY(-6deg); } 58% { opacity: 1; transform: scaleX(-.1); } 70% { opacity: 1; transform: scaleX(.6); } 78% { opacity: 1; transform: none; } }
 @keyframes worm-hold { 0%, 100% { transform: none; } 15% { transform: translateY(-2.5px) rotate(-6deg); } 30% { transform: none; } 52% { transform: translateY(4px) rotate(10deg); } 62% { transform: translateY(5px) rotate(12deg); } 76% { transform: translateY(-2px) rotate(-4deg); } 86% { transform: none; } }
-@keyframes heart-pop { 0%, 86%, 100% { opacity: 0; transform: scale(.3); } 90% { opacity: 1; transform: scale(1.25); } 95% { opacity: 1; transform: translateY(-3px) scale(1); } 99% { opacity: 0; transform: translateY(-6px); } }
 @keyframes gait-waddle { 0%, 100% { transform: rotate(-8deg); } 25% { transform: translateY(-3px); } 50% { transform: rotate(8deg); } 75% { transform: translateY(-3px); } }
 @keyframes flap-l { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(28deg); } }
 @keyframes flap-r { 0%, 100% { transform: rotate(-28deg); } 50% { transform: rotate(0); } }
@@ -1313,9 +1311,8 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
   .critter-art:is(:hover, :focus) .critter-stage .critter-bookworm .worm { transform-origin: 50% 100%; animation: worm-hold 2.8s ease-in-out infinite; }
   .critter-art:is(:hover, :focus) .critter-stage .critter-bookworm .flap { transform-origin: 0% 50%; animation: flap-turn 2.8s ease-in-out infinite; }
 
-  /* 따끔: 몽실 머리털이 통통 튀며 걷다가, 몸을 동그랗게 말아 천천히 데굴 한 바퀴, 일어나면 하트 뿅(프리허그 담당자) */
+  /* 따끔: 몽실 머리털이 통통 튀며 걷다가, 몸을 동그랗게 말아 천천히 데굴 한 바퀴 */
   .critter-art:is(:hover, :focus) .critter-stage:has(> .critter-hedgehog) { transform-origin: 50% 62%; animation: hug-roll 4.2s ease-in-out infinite; }
-  .critter-art:is(:hover, :focus) .critter-stage .critter-hedgehog .heart { transform-origin: 50% 100%; animation: heart-pop 4.2s ease-out infinite; }
   .critter-art:is(:hover, :focus) .critter-stage .critter-hedgehog .fluff { transform-origin: 50% 100%; animation: fluff-bounce .35s ease-in-out infinite; }
   .critter-art:is(:hover, :focus) .critter-stage .critter-hedgehog .pencil { transform-origin: 0% 100%; animation: pencil-spring .7s ease-in-out infinite; }
 }
