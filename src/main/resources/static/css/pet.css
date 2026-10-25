@@ -351,11 +351,17 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
   :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .roof { transform-origin: 50% 100%; animation: roof-bob .95s ease-in-out -.12s infinite; }
   :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-duck .glyph { transform-origin: 50% 50%; animation: notes-rise 1.9s ease-out infinite; }
 
-  /* 더듬: 낮게 웅크린 종종걸음. 헤드램프 불빛이 두리번 훑고 깜빡, 앞발은 다다닥 */
-  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-mole) { transform-origin: 50% 95%; animation: gait-scurry .22s linear infinite; }
-  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .beam { transform-origin: 0% 30%; animation: beam-sweep 1.8s ease-in-out infinite; }
+  /* 더듬: 낮엔 땅 파는 두더지라 땅속으로 쏙 들어가 흙더미째 밀고 가다가, 헤드램프부터 빼꼼 튀어나온다 */
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-mole) { animation: none; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .burrow { clip-path: inset(-40% -40% 9% -40%) view-box; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .digger { animation: mole-dig 2.6s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .mound { transform-origin: 50% 100%; animation: mound-ride 2.6s ease-in-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .dirt { animation: dirt-show 2.6s linear infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .dirt > * { transform-origin: 50% 50%; animation: dirt-fly .5s ease-out infinite; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .dirt > :nth-child(2) { animation-delay: -.17s; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .dirt > :nth-child(3) { animation-delay: -.33s; }
+  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .beam { transform-origin: 0% 30%; animation: beam-sweep 1.3s ease-in-out infinite; }
   :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .paws { animation: paws-patter .22s linear infinite; }
-  :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face .critter-mole .helmet { transform-origin: 50% 100%; animation: helmet-jiggle .44s ease-in-out infinite; }
 
   /* 개굴: 깔고 앉은 책은 두고 몸만 폴짝. 공중에서 혀로 책갈피를 낚아채고, 착지하면 책이 눌린다 */
   :root[data-gait="on"] .pet-avatar.walking:not(.excited):not(.called) .pet-face:has(> .critter-frog) { animation: none; }
@@ -393,6 +399,10 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 @keyframes flutter-r { from { transform: rotate(0); } to { transform: rotate(-32deg); } }
 @keyframes roof-bob { 0%, 100% { transform: none; } 30% { transform: translateY(-2.5px) rotate(-3deg); } 60% { transform: translateY(1px) rotate(2deg); } }
 @keyframes notes-rise { 0% { translate: 0 2px; opacity: 0; } 20% { opacity: 1; } 100% { translate: 0 -10px; opacity: 0; } }
+@keyframes mole-dig { 0%, 100% { transform: none; } 10% { transform: translateY(-3px); } 22%, 66% { transform: translateY(16px); } 44% { transform: translateY(15px) rotate(-3deg); } 76% { transform: translateY(-5px); } 86% { transform: translateY(1px); } }
+@keyframes mound-ride { 0%, 14%, 80%, 100% { opacity: 0; transform: scale(.6, .3); } 22% { opacity: 1; transform: scale(1.08, 1.1); } 34%, 58% { opacity: 1; transform: scale(1, .92); } 46% { opacity: 1; transform: scale(1.04, 1.04); } 70% { opacity: 1; transform: scale(1.1, 1.2); } }
+@keyframes dirt-show { 0%, 18%, 72%, 100% { opacity: 0; } 24%, 66% { opacity: 1; } }
+@keyframes dirt-fly { 0% { transform: translate(4px, 4px) scale(.6); opacity: 0; } 30% { opacity: 1; } 100% { transform: translate(-6px, -8px) scale(1); opacity: 0; } }
 @keyframes gait-scurry { 0%, 100% { transform: translateY(2px) scale(1.05, .92); } 50% { transform: translateY(0) scale(1.03, .95) rotate(calc(var(--dir) * 3deg)); } }
 @keyframes beam-sweep { 0%, 100% { transform: rotate(-14deg); opacity: .9; } 45% { transform: rotate(16deg); opacity: .8; } 50% { opacity: .2; } 55% { opacity: .9; } }
 @keyframes paws-patter { 0%, 100% { transform: none; } 50% { transform: translateY(-1.6px); } }
