@@ -696,9 +696,11 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .talk-body p { margin: 0; padding: 8px 12px; background: var(--paper); border: 1px solid var(--line); border-radius: 4px 14px 14px 14px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .talk-line.mine { flex-direction: row-reverse; }
 .talk-line.mine .talk-who { text-align: right; }
-/* 모임방에서 내 말은 카톡처럼: 얼굴·이름 없이 오른쪽 말풍선과 시각만. 이름은 화면 읽기용으로만 남긴다 */
+/* 모임방에서 내 말은 오른쪽 말풍선만: 얼굴·이름·시각 없이. 시각은 일부러 뺀다(답장을 재촉하는 메신저 느낌을 피한다). 이름은 화면 읽기용으로만 남긴다 */
 .talk > .talk-line.mine > .avatar { display: none; }
-.talk > .talk-line.mine .talk-who b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* 대화에는 날짜 구분만 두고 정확한 시각은 보이지 않는다(누구 말이든) */
+.talk .talk-who time { display: none; }
+.talk > .talk-line.mine .talk-who { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .talk-line.mine .talk-body p { background: color-mix(in srgb, var(--accent) 12%, var(--card)); border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius: 14px 4px 14px 14px; }
 .typing-line { min-height: 20px; margin: 0; padding: 0 18px; font-size: 12px; color: var(--muted); }
 .talk-form { display: flex; gap: 8px; align-items: flex-end; padding: 12px; border-top: 1px solid var(--line); }

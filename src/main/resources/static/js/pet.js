@@ -232,13 +232,14 @@
   menu.addEventListener('click', async (event) => {
     const item = event.target.closest('[data-menu]');
     if (!item) return;
+    // 화면 밝기·걸음 효과는 켜고 끄는 스위치라 메뉴를 닫지 않는다(바뀐 걸 보면서 또 누를 수 있게)
+    if (item.dataset.menu === 'theme') { cycleTheme(); return; }
+    if (item.dataset.menu === 'gait') { toggleGait(); return; }
     closeMenu({ keepSize: ['focus', 'dress', 'add', 'sound'].includes(item.dataset.menu) });
     switch (item.dataset.menu) {
       case 'dress': expand(true); openDresser(); break;
       case 'sound': expand(true); openSounds(); break;
       case 'bookmarks': window.open(current().element.dataset.bookmarks, '_blank'); break;
-      case 'theme': cycleTheme(); break;
-      case 'gait': toggleGait(); break;
       case 'focus': select(item.dataset.code); expand(true); closeDresser(); closeCreator(); closeSounds(); break;
       case 'add': expand(true); openCreator(); break;
       case 'quit':
