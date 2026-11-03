@@ -91,7 +91,7 @@
     <h2 th:text="'『' + ${a.bookTitle()} + '』'">『책』</h2>
     <p class="lib-card-sub" th:text="${a.bookAuthor()}">지은이</p>
     <p>우리 <b th:text="${v.total()}">0</b>명이 이 책을 읽고 있어요 · <b th:text="${v.submitted()}">0</b>편 냈어요</p>
-    <p class="lib-card-due" th:text="${v.due()}">마감 D-3</p>
+    <p class="lib-card-due" th:if="${v.due() != null}" th:text="${v.due()}">마감 D-3</p>
     <a class="lib-card-link" th:href="@{/anthologies/{c}/write(c=${a.code()})}">내 독후감 쓰러 가기 →</a>
   </template>
   <template data-card="board">

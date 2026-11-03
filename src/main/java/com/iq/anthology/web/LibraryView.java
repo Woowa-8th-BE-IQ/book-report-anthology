@@ -23,10 +23,13 @@ public record LibraryView(RoomView room, Anthology anthology, long submitted, in
                 anthology.contributors().size(), dueText(anthology, now.toLocalDate()), anthology.prompts(), stars);
     }
 
-    /** 마감까지 남은 날. 예: "마감 D-3", "오늘 마감", "마감했어요" */
+    /** 마감까지 남은 날. 예: "마감 D-3", "오늘 마감", "마감했어요". 마감일이 없으면 null. */
     static String dueText(Anthology anthology, LocalDate today) {
         if (anthology.isClosed()) {
             return "마감했어요";
+        }
+        if (anthology.dueDate() == null) {
+            return null; // 마감일을 정하지 않은 문집
         }
         long days = ChronoUnit.DAYS.between(today, anthology.dueDate());
         if (days < 0) {
