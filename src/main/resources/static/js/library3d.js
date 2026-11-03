@@ -1077,80 +1077,141 @@ function start() {
     blob.renderOrder = 1;
     return { root: rootG, yaw, body, hinge, parts, blob, hingeY: DOLL * HINGE, len: DOLL, head: DOLL * 0.92 };
   };
-  // ───────── 말랑 3D 인형(꼬깃단을 입체로): 그림의 색·볏·볼터치·눈썹·든 것을 그대로 옮긴다 ─────────
-  const soft = (parent, geo, color, { x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, line = 0.014, mat = null } = {}) => {
-    const g = solid(geo, color, { line, mat });
+  // ───────── 꼬깃 종이 인형(입체): 색종이를 접고 꾸겨 만든 꼬깃단. 몸은 각진 접힌 면, 얼굴은 원래 그림을 오려 붙인다 ─────────
+  // 구김 무늬: 종이 결 위에 접힌 자국(밝은 줄·어두운 줄)이 엇갈린다
+  const crumple = canvasTex(256, 256, (g, w, h) => {
+    const rand = seeded(13);
+    const img = g.createImageData(w, h);
+    for (let i = 0; i < img.data.length; i += 4) { const v = 236 + rand() * 19; img.data[i] = v; img.data[i + 1] = v; img.data[i + 2] = v - 3; img.data[i + 3] = 255; }
+    g.putImageData(img, 0, 0);
+    for (let i = 0; i < 26; i++) {
+      let x = rand() * w; let y = rand() * h; const a = rand() * Math.PI;
+      g.beginPath(); g.moveTo(x, y);
+      for (let k = 0; k < 4; k++) { x += Math.cos(a + (rand() - 0.5) * 0.9) * 40; y += Math.sin(a + (rand() - 0.5) * 0.9) * 40; g.lineTo(x, y); }
+      g.strokeStyle = rand() < 0.5 ? 'rgba(120,100,80,.22)' : 'rgba(255,255,255,.7)'; g.lineWidth = 1.5 + rand() * 1.5; g.stroke();
+    }
+  }, { repeat: [1, 1] });
+  const paperMats = new Map();
+  const paperMat = (color, side = THREE.FrontSide) => {
+    const key = `${color}|${side}`;
+    if (!paperMats.has(key)) paperMats.set(key, new THREE.MeshToonMaterial({ color, map: crumple, gradientMap: gradient, flatShading: true, side }));
+    return paperMats.get(key);
+  };
+  const foldInk = new THREE.LineBasicMaterial({ color: INK, transparent: true, opacity: 0.85 });
+  // 접힌 종이 한 조각: 각진 면 + 접힌 선(먹선)
+  const fold = (parent, geo, color, { x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, side = THREE.FrontSide, crease = 25 } = {}) => {
+    const g = new THREE.Group();
+    const m = new THREE.Mesh(geo, paperMat(color, side)); m.castShadow = true; g.add(m);
+    g.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, crease), foldInk));
     g.position.set(x, y, z); g.scale.set(sx, sy, sz); g.rotation.set(rx, ry, rz);
-    g.children[0].castShadow = true;
     parent.add(g);
     return g;
   };
-  const ball = (r, w = 28, h = 20) => new THREE.SphereGeometry(r, w, h);
-  const glossy = new THREE.MeshBasicMaterial({ color: 0x2E241C });
-  const shine = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  const blushMat = new THREE.MeshBasicMaterial({ color: 0xF49A93, transparent: true, opacity: 0.75, depthWrite: false });
-  const eye = (parent, x, y, z, r = 0.06) => {
-    const e = new THREE.Group(); e.position.set(x, y, z);
-    const pupil = new THREE.Mesh(ball(r, 16, 12), glossy); pupil.scale.z = 0.6; e.add(pupil);
-    const hi = new THREE.Mesh(ball(r * 0.32, 10, 8), shine); hi.position.set(r * 0.35, r * 0.38, r * 0.45); e.add(hi);
-    parent.add(e);
-    return e;
+  // 꾸김: 꼭짓점을 자리마다 조금씩 밀어 낸다(같은 자리의 꼭짓점은 같이 움직여 틈이 나지 않는다)
+  const crumpleGeo = (geo, amount, seed) => {
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i); const y = pos.getY(i); const z = pos.getZ(i);
+      const h = Math.sin(Math.round(x * 50) * 12.9898 + Math.round(y * 50) * 78.233 + Math.round(z * 50) * 37.719 + seed) * 43758.5453;
+      const n = (h - Math.floor(h)) - 0.5;
+      const len = Math.hypot(x, z) || 1;
+      pos.setXYZ(i, x + (x / len) * n * amount, y + n * amount * 0.5, z + (z / len) * n * amount);
+    }
+    geo.computeVertexNormals();
+    return geo;
   };
-  const blush = (parent, x, y, z, ry) => { const b = new THREE.Mesh(new THREE.CircleGeometry(0.055, 20), blushMat); b.scale.y = 0.55; b.position.set(x, y, z); b.rotation.y = ry; parent.add(b); return b; };
+  // 돌림판 몸통: 옆모습(반지름·높이)을 몇 번만 돌려 각지게
+  const lathe = (profile, segments, seed, amount = 0.025) => crumpleGeo(new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), segments), amount, seed);
+  const tri = (pts) => { const sh = new THREE.Shape(); pts.forEach(([x, y], i) => (i ? sh.lineTo(x, y) : sh.moveTo(x, y))); return new THREE.ShapeGeometry(sh); };
+  // 얼굴 스티커: 원래 그림에서 얼굴 부분만 모양대로 오려 낸다(눈 감은 판도 함께)
+  const faceSticker = (svgText, { cx, cy, rx, ry }, eyes) => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const S = 40; const pad = 0.8;
+      const w = Math.round((rx + pad) * 2 * S); const h = Math.round((ry + pad) * 2 * S);
+      const draw = (closed) => {
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const g = c.getContext('2d');
+        g.save(); g.beginPath(); g.ellipse(w / 2, h / 2, (rx + 0.35) * S, (ry + 0.35) * S, 0, 0, Math.PI * 2); g.clip();
+        g.drawImage(img, -(cx - rx - pad) * S, -(cy - ry - pad) * S, 64 * S, 64 * S);
+        g.restore();
+        if (closed) eyes.forEach(([ex, ey, er]) => {
+          const px = (ex - cx + rx + pad) * S; const py = (ey - cy + ry + pad) * S;
+          g.fillStyle = '#FFFDF8'; g.beginPath(); g.arc(px, py, er * S * 1.45, 0, Math.PI * 2); g.fill();
+          g.strokeStyle = '#2E241C'; g.lineWidth = S * 0.42; g.lineCap = 'round'; g.beginPath(); g.arc(px, py - er * S * 0.5, er * S * 1.1, Math.PI * 0.2, Math.PI * 0.8); g.stroke();
+        });
+        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+        return t;
+      };
+      resolve({ open: draw(false), closed: draw(true), aspect: w / h });
+    };
+    img.onerror = () => resolve(null);
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgText)}`;
+  });
   const MODELS = {
-    // 뒤뚱(펭귄): 남색 달걀 몸, 흰 배와 얼굴띠, 노란 볏, 굳은 눈썹, 주황 부리·발, 품에 안은 빨간 책, 가끔 땀 한 방울
-    penguin(d) {
-      const NAVY = 0x46536A; const ORANGE = 0xFF9E3D;
+    // 뒤뚱(펭귄): 남색 색종이를 접은 달걀 몸, 흰 종이 배, 노란 볏 두 가닥, 주황 부리·발, 품에 안은 종이책.
+    // 얼굴은 그림에서 오려 붙인 흰 얼굴띠(굳은 눈썹·눈·볼터치·부리)
+    penguin(d, svgText) {
+      const NAVY = 0x46536A; const WHITE = 0xFFFDF8; const ORANGE = 0xFF9E3D; const YELLOW = 0xF5C531;
       const B = d.body; const H = d.hinge;
-      const bodyGeo = (() => { const geo = ball(0.42, 36, 28); const pos = geo.attributes.position; for (let i = 0; i < pos.count; i++) { const y = pos.getY(i); const k = y < 0 ? 1 + (-y / 0.42) * 0.1 : 1 - (y / 0.42) * 0.04; pos.setX(i, pos.getX(i) * k); pos.setZ(i, pos.getZ(i) * k); } geo.computeVertexNormals(); return geo; })();
-      soft(B, bodyGeo, NAVY, { y: 0.66, sy: 1.25, sz: 0.94, line: 0.018 });
-      soft(B, ball(0.3), 0xFFFDF8, { y: 0.52, z: 0.17, sx: 1.0, sy: 1.12, sz: 0.62, line: 0.012 });
-      soft(B, ball(0.25), 0xFFFDF8, { y: 0.9, z: 0.2, sx: 1.18, sy: 0.72, sz: 0.62, line: 0.012 });
-      const eyes = [eye(B, -0.105, 0.95, 0.355), eye(B, 0.105, 0.95, 0.355)];
+      fold(B, lathe([[0, 0.1], [0.3, 0.14], [0.43, 0.38], [0.42, 0.66], [0.34, 0.96], [0.2, 1.15], [0, 1.22]], 8, 1), NAVY, { sz: 0.9, ry: Math.PI / 8 });
+      // 배: 앞에 덧댄 흰 종이(마름모로 접혀 있다)
+      fold(B, crumpleGeo(new THREE.IcosahedronGeometry(0.3, 1), 0.02, 3), WHITE, { y: 0.5, z: 0.2, sx: 0.95, sy: 1.15, sz: 0.5 });
+      // 얼굴: 오려 붙인 스티커를 몸에 맞게 살짝 휜다
+      const faceGeo = new THREE.PlaneGeometry(0.56, 0.33, 8, 1);
+      { const pos = faceGeo.attributes.position; for (let i = 0; i < pos.count; i++) { const x = pos.getX(i); pos.setZ(i, -x * x * 0.75); } }
+      const faceMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, alphaTest: 0.3, emissive: 0xffffff, emissiveIntensity: 0.25 });
+      const face = new THREE.Mesh(faceGeo, faceMat); face.position.set(0, 0.92, 0.37); face.rotation.x = -0.12; face.visible = false; B.add(face);
+      let faces = null;
+      faceSticker(svgText, { cx: 32, cy: 30.4, rx: 8.6, ry: 4.9 }, [[28, 28.6, 1.6], [36, 28.6, 1.6]]).then((f) => { if (!f) return; faces = f; faceMat.map = f.open; faceMat.emissiveMap = f.open; faceMat.needsUpdate = true; face.visible = true; });
+      // 볏: 노란 종이 두 장을 옆으로 뻗게 접어 꽂았다
       [-1, 1].forEach((k) => {
-        soft(B, new THREE.BoxGeometry(0.1, 0.022, 0.02), 0x2E241C, { x: k * 0.105, y: 1.035, z: 0.36, rz: k * -0.28, line: 0 }); // 굳은 눈썹
-        blush(B, k * 0.2, 0.86, 0.33, k * 0.45);
-        // 볏: 눈썹 위에서 옆으로 뻗친 노란 깃 두 가닥
-        [[0.55, 0.11, 0.035], [0.95, 0.09, 0.03]].forEach(([up, len, r]) => {
-          const spike = soft(B, new THREE.ConeGeometry(r, len, 10), 0xF5C531, { x: k * (0.2 + len * 0.45 * Math.sin(up + 0.6)), y: 1.06 + len * 0.45 * Math.cos(up + 0.6) * 0.5, z: 0.25, rz: -k * (Math.PI / 2 - up), line: 0.008 });
-          spike.rotation.y = k * 0.35;
+        [[0.42, 0.17], [0.0, 0.13]].forEach(([a, len]) => {
+          const crest = fold(B, tri([[0, -0.03], [len, 0.02], [0, 0.04]]), YELLOW, { x: k * 0.25, y: 1.02, z: 0.2, side: THREE.DoubleSide });
+          crest.rotation.set(0, k > 0 ? -0.5 : Math.PI + 0.5, a);
         });
       });
-      // 뒤: 짧은 꼬리깃
-      soft(B, new THREE.ConeGeometry(0.11, 0.2, 14), NAVY, { y: 0.2, z: -0.36, rx: -2.1, sx: 1.4, sz: 0.5, line: 0.012 });
-      soft(B, new THREE.OctahedronGeometry(0.065), ORANGE, { y: 0.88, z: 0.4, sx: 1.05, sy: 0.75, sz: 1.2, line: 0.01 });
-      // 책: 날개로 꼭 끌어안는다
-      const book = new THREE.Group(); book.position.set(0, 0.5, 0.36); book.rotation.set(-0.12, 0, -0.1); B.add(book);
-      soft(book, new THREE.BoxGeometry(0.44, 0.29, 0.08), 0xEE7A52, { line: 0.012 });
-      soft(book, new THREE.BoxGeometry(0.4, 0.03, 0.085), 0xFFD9C2, { y: 0.07, line: 0 });
-      soft(book, new THREE.BoxGeometry(0.4, 0.03, 0.085), 0xFFD9C2, { y: -0.07, line: 0 });
-      const wings = [-1, 1].map((k) => { const w = new THREE.Group(); w.position.set(k * 0.37, 0.8, 0.02); B.add(w); soft(w, ball(0.2), NAVY, { y: -0.2, x: k * 0.02, z: 0.06, sx: 0.32, sy: 1.0, sz: 0.62, rz: k * 0.35, rx: -0.35, line: 0.012 }); return w; });
-      const feet = [-1, 1].map((k) => { const f = new THREE.Group(); f.position.set(k * 0.15, -0.09, 0.06); H.add(f); soft(f, ball(0.1), ORANGE, { sx: 1.05, sy: 0.38, sz: 1.5, line: 0.01 }); return f; });
-      const sweat = new THREE.Mesh(ball(0.045, 12, 10), new THREE.MeshToonMaterial({ color: 0xBFE3F5, gradientMap: gradient, transparent: true }));
-      sweat.scale.y = 1.4; sweat.position.set(0.36, 1.18, 0.12); B.add(sweat);
-      d.hinge.position.y = 0.12; d.hingeY = 0.12; d.len = 1.4; d.head = 1.36;
+      // 날개: 남색 세모를 반으로 접은 것
+      const wingGeo = (() => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0.05, -0.42, 0.1, 0.02, -0.3, -0.12, 0, 0, 0, 0.02, -0.3, -0.12, 0.05, -0.42, 0.1], 3)); g.computeVertexNormals(); return g; })();
+      const wings = [-1, 1].map((k) => { const w = new THREE.Group(); w.position.set(k * 0.37, 0.78, 0.02); w.scale.x = k; B.add(w); fold(w, wingGeo, NAVY, { side: THREE.DoubleSide, crease: 1 }); return w; });
+      // 꼬리: 등 아래 작은 세모
+      fold(B, tri([[-0.12, 0], [0.12, 0], [0, -0.16]]), NAVY, { y: 0.2, z: -0.36, rx: -0.6, side: THREE.DoubleSide });
+      // 부리는 스티커에 그려져 있고, 옆에서 보이게 작은 종이 세모를 하나 더 붙인다
+      fold(B, new THREE.ConeGeometry(0.05, 0.11, 4), ORANGE, { y: 0.885, z: 0.37, rx: Math.PI / 2, sz: 0.7 });
+      // 책: 빨간 종이 표지를 반으로 접고 속지를 끼웠다
+      const book = new THREE.Group(); book.position.set(0, 0.5, 0.36); book.rotation.set(-0.12, 0, -0.08); B.add(book);
+      fold(book, new THREE.BoxGeometry(0.42, 0.29, 0.075), 0xEE7A52);
+      fold(book, new THREE.BoxGeometry(0.38, 0.03, 0.08), 0xFFD9C2, { y: 0.07 });
+      fold(book, new THREE.BoxGeometry(0.38, 0.03, 0.08), 0xFFD9C2, { y: -0.07 });
+      fold(book, new THREE.BoxGeometry(0.02, 0.26, 0.065), 0xFFF6E6, { x: 0.205 }); // 책장 끝(흰 종이)
+      const feet = [-1, 1].map((k) => { const f = new THREE.Group(); f.position.set(k * 0.15, -0.1, 0.08); H.add(f); fold(f, new THREE.ConeGeometry(0.11, 0.24, 3), ORANGE, { rx: Math.PI / 2, sy: 1, sx: 1, sz: 0.35, ry: 0 }); return f; });
+      const sweat = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), new THREE.MeshToonMaterial({ color: 0xBFE3F5, gradientMap: gradient, transparent: true, flatShading: true }));
+      sweat.scale.y = 1.5; sweat.position.set(0.36, 1.18, 0.12); B.add(sweat);
+      d.hinge.position.y = 0.12; d.hingeY = 0.12; d.len = 1.4; d.head = 1.34;
       let blinkAt = 2 + Math.random() * 3;
+      let shut = false;
       d.update = (person, dt, t, walking, phase) => {
         const w = walking ? Math.sin(phase) : 0;
-        wings.forEach((g, i) => { const k = i ? 1 : -1; g.rotation.z = k * (walking ? 0.25 + Math.abs(w) * 0.45 : 0.08 + Math.sin(t * 1.5 + i) * 0.04); });
-        feet.forEach((f, i) => { const s = i ? -w : w; f.position.y = -0.09 + Math.max(0, s) * 0.07; f.position.z = 0.06 + s * 0.06; });
-        book.rotation.z = -0.1 + w * 0.12;
-        blinkAt -= dt; const closing = blinkAt < 0.12; if (blinkAt < 0) blinkAt = 2.5 + Math.random() * 3.5;
-        eyes.forEach((e) => { e.scale.y = closing || person.pose === 'sleep' ? 0.12 : person.pose === 'doze' ? 0.45 : 1; });
+        wings.forEach((g, i) => { g.rotation.z = (walking ? 0.2 + Math.abs(w) * 0.5 : 0.06 + Math.sin(t * 1.5 + i) * 0.04) * (i ? 1 : 1); g.rotation.x = walking ? w * 0.2 : 0; });
+        feet.forEach((f, i) => { const s2 = i ? -w : w; f.position.y = -0.1 + Math.max(0, s2) * 0.07; f.position.z = 0.08 + s2 * 0.06; });
+        book.rotation.z = -0.08 + w * 0.12;
+        blinkAt -= dt; const blink = blinkAt < 0.12; if (blinkAt < 0) blinkAt = 2.5 + Math.random() * 3.5;
+        const want = blink || person.pose !== 'up';
+        if (faces && want !== shut) { shut = want; faceMat.map = faceMat.emissiveMap = shut ? faces.closed : faces.open; faceMat.needsUpdate = true; }
         const drip = walking ? (t * 0.7) % 2.6 : 9;
         sweat.visible = drip < 0.9; sweat.position.y = 1.18 - drip * 0.12; sweat.material.opacity = 1 - drip / 0.9;
       };
     },
   };
-  const makeModel = (critter) => {
+  const makeModel = (critter, svgText) => {
     const d = makeDoll();
     d.body.remove(d.parts.upper, d.parts.upperBack); d.hinge.remove(d.parts.lower, d.parts.lowerBack);
     d.parts = null;
     d.model = true;
-    MODELS[critter](d);
+    MODELS[critter](d, svgText);
     return d;
   };
-  const dollFor = (critter) => (MODELS[critter] ? makeModel(critter) : makeDoll());
+  const dollFor = (critter, svgText) => (MODELS[critter] ? makeModel(critter, svgText) : makeDoll());
   const dress = (person, paper) => {
     if (!paper || !person.doll.parts) return;
     const m = dollMats(paper);
@@ -1177,7 +1238,7 @@ function start() {
     label.querySelector('.lib-tag b').textContent = template.dataset.name;
     labels.appendChild(label);
     const person = {
-      id, name: template.dataset.name, label, doll: dollFor(critterOf(svgText)), critter: critterOf(svgText), heading: 0,
+      id, name: template.dataset.name, label, doll: dollFor(critterOf(svgText), svgText), critter: critterOf(svgText), heading: 0,
       place: 'hall', layer: 0, x: 0, z: 7, y: 0, tx: 0, tz: 7, tlevel: 0, seat: null, seated: null, status: 'read', pose: 'up',
       face: 1, flip: 1, walking: false, phase: 0, lift: 0, hop: null, act: null, fold: 0, lie: 0, nod: 0, squash: 0, clock: 0, trail: 0, placed: false,
     };
@@ -1616,7 +1677,7 @@ function start() {
         person.critter = critterOf(data.svg);
         const scene = person.doll.root.parent;
         person.doll.root.removeFromParent(); person.doll.blob.removeFromParent();
-        person.doll = dollFor(person.critter);
+        person.doll = dollFor(person.critter, template ? template.content.querySelector('svg').outerHTML : data.svg);
         if (scene) scene.add(person.doll.root, person.doll.blob);
         if (!person.doll.model) paperOf(template ? template.content.querySelector('svg').outerHTML : data.svg).then((paper) => dress(person, paper));
       }
