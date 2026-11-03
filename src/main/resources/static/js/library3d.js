@@ -1148,6 +1148,67 @@ function start() {
     img.onerror = () => resolve(null);
     img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgText)}`;
   });
+  // 얼굴만 고른 스티커: 그림(SVG)에서 keep에 맞는 것만 남기고 box(그림 좌표) 부분을 투명 바탕으로 오린다.
+  // 눈 감은 판은 hide(보통 .blink 눈동자)를 숨기고 eyes 자리에 감은 눈(∪)을 그린다
+  const sticker = (parent, svgText, { keep, hide = '.blink', box, eyes = [], w, y, z, x = 0, bend = 0.8, rx = 0 }) => {
+    const [bx0, by0, bx1, by1] = box;
+    const h = (w * (by1 - by0)) / (bx1 - bx0);
+    const geo = new THREE.PlaneGeometry(w, h, 10, 1);
+    { const pos = geo.attributes.position; for (let i = 0; i < pos.count; i++) { const px = pos.getX(i); pos.setZ(i, -px * px * bend); } }
+    const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, alphaTest: 0.25, emissive: 0xffffff, emissiveIntensity: 0.3, polygonOffset: true, polygonOffsetFactor: -2 });
+    const mesh = new THREE.Mesh(geo, mat); mesh.position.set(x, y, z); mesh.rotation.x = rx; mesh.visible = false; parent.add(mesh);
+    const render = (closed) => new Promise((resolve) => {
+      const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+      const svg = doc.documentElement;
+      const kept = [...svg.querySelectorAll(keep)];
+      const lift = new Set(); kept.forEach((k) => { for (let a = k.parentNode; a && a !== svg; a = a.parentNode) lift.add(a); });
+      svg.querySelectorAll('*').forEach((el) => { if (el.closest('defs') || lift.has(el) || kept.some((k) => k.contains(el))) return; el.setAttribute('display', 'none'); });
+      if (closed && hide) svg.querySelectorAll(hide).forEach((el) => el.setAttribute('display', 'none'));
+      const img = new Image();
+      img.onload = () => {
+        const S = 40; const c = document.createElement('canvas'); c.width = Math.round((bx1 - bx0) * S); c.height = Math.round((by1 - by0) * S);
+        const g = c.getContext('2d');
+        g.drawImage(img, -bx0 * S, -by0 * S, 64 * S, 64 * S);
+        if (closed) eyes.forEach(([ex, ey, er]) => { g.strokeStyle = '#2E241C'; g.lineWidth = S * 0.45; g.lineCap = 'round'; g.beginPath(); g.arc((ex - bx0) * S, (ey - by0) * S - er * S * 0.4, er * S * 1.05, Math.PI * 0.2, Math.PI * 0.8); g.stroke(); });
+        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; resolve(t);
+      };
+      img.onerror = () => resolve(null);
+      img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(svg))}`;
+    });
+    let open = null; let shut = null; let state = false;
+    Promise.all([render(false), eyes.length ? render(true) : Promise.resolve(null)]).then(([a, b]) => { if (!a) return; open = a; shut = b; mat.map = mat.emissiveMap = a; mat.needsUpdate = true; mesh.visible = true; });
+    return { mesh, setShut(v) { if (!open || !shut || v === state) return; state = v; mat.map = mat.emissiveMap = v ? shut : open; mat.needsUpdate = true; } };
+  };
+  const ico = (r, detail = 1, seed = 5, amt = 0.02) => crumpleGeo(new THREE.IcosahedronGeometry(r, detail), amt, seed);
+  const PAGE = 0xFFF6E6; const INKC = 0x2E241C;
+  // 펼친 종이책(V자): 여러 친구가 품에 든다
+  const openBook = (parent, { x = 0, y = 0.4, z = 0.4, w = 0.5, h = 0.32, tilt = -0.5, cover = 0xEE7A52 } = {}) => {
+    const b = new THREE.Group(); b.position.set(x, y, z); b.rotation.x = tilt; parent.add(b);
+    [-1, 1].forEach((k) => {
+      const half = new THREE.Group(); half.rotation.y = k * -0.35; b.add(half);
+      fold(half, new THREE.BoxGeometry(w / 2, h, 0.012), cover, { x: k * w / 4, z: -0.012 });
+      fold(half, new THREE.BoxGeometry(w / 2 - 0.03, h - 0.03, 0.01), PAGE, { x: k * (w / 4 - 0.005), z: 0.002 });
+    });
+    return b;
+  };
+  const flapGeo = (len = 0.36, wid = 0.24) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0.04, -len, wid * 0.4, 0.02, -len * 0.7, -wid * 0.5, 0, 0, 0, 0.02, -len * 0.7, -wid * 0.5, 0.04, -len, wid * 0.4], 3)); g.computeVertexNormals(); return g; };
+  const flaps = (B, color, { x, y, z = 0.02, len, wid }) => [-1, 1].map((k) => { const w = new THREE.Group(); w.position.set(k * x, y, z); w.scale.x = k; B.add(w); fold(w, flapGeo(len, wid), color, { side: THREE.DoubleSide, crease: 1 }); return w; });
+  const paperFeet = (H, color, { x = 0.15, z = 0.08, r = 0.1, len = 0.22 } = {}) => [-1, 1].map((k) => { const f = new THREE.Group(); f.position.set(k * x, -0.1, z); H.add(f); fold(f, new THREE.ConeGeometry(r, len, 3), color, { rx: Math.PI / 2, sz: 0.35 }); return f; });
+  // 걷기·깜빡임 공통 움직임
+  const motion = (d, { wings = [], feet = [], face = null, eyes3d = [], extra = null }) => {
+    let blinkAt = 2 + Math.random() * 3;
+    d.update = (person, dt, t, walking, phase) => {
+      const w = walking ? Math.sin(phase) : 0;
+      wings.forEach((g, i) => { g.rotation.z = walking ? 0.2 + Math.abs(w) * 0.5 : 0.06 + Math.sin(t * 1.5 + i) * 0.04; g.rotation.x = walking ? w * 0.2 : 0; });
+      feet.forEach((f, i) => { const s2 = i ? -w : w; f.position.y = -0.1 + Math.max(0, s2) * 0.07; f.position.z = (f.userData.z ?? (f.userData.z = f.position.z)) + s2 * 0.06; });
+      blinkAt -= dt; const blink = blinkAt < 0.12; if (blinkAt < 0) blinkAt = 2.5 + Math.random() * 3.5;
+      const shut = blink || person.pose !== 'up';
+      if (face) face.setShut(shut);
+      eyes3d.forEach((e) => { e.scale.y = shut ? 0.15 : 1; });
+      if (extra) extra(person, dt, t, walking, w);
+    };
+  };
+  const eyeBall = (parent, x, y, z, r = 0.05) => { const e = new THREE.Group(); e.position.set(x, y, z); const p2 = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), new THREE.MeshBasicMaterial({ color: INKC })); e.add(p2); const hi = new THREE.Mesh(new THREE.IcosahedronGeometry(r * 0.32, 0), new THREE.MeshBasicMaterial({ color: 0xffffff })); hi.position.set(r * 0.3, r * 0.35, r * 0.8); e.add(hi); parent.add(e); return e; };
   const MODELS = {
     // 뒤뚱(펭귄): 남색 색종이를 접은 달걀 몸, 흰 종이 배, 노란 볏 두 가닥, 주황 부리·발, 품에 안은 종이책.
     // 얼굴은 그림에서 오려 붙인 흰 얼굴띠(굳은 눈썹·눈·볼터치·부리)
@@ -1201,6 +1262,138 @@ function start() {
         const drip = walking ? (t * 0.7) % 2.6 : 9;
         sweat.visible = drip < 0.9; sweat.position.y = 1.18 - drip * 0.12; sweat.material.opacity = 1 - drip / 0.9;
       };
+    },
+    // 꽥(오리): 노란 종이 몸, 머리에 빨간 종이 지붕(안쪽은 크림색), 걸으면 처마에서 빗방울이 똑
+    duck(d, svgText) {
+      const YEL = 0xFFEB9E; const ORANGE = 0xFF9E3D;
+      const B = d.body; const H = d.hinge;
+      fold(B, lathe([[0, 0.1], [0.34, 0.14], [0.47, 0.36], [0.46, 0.62], [0.37, 0.86], [0.2, 1.0], [0, 1.04]], 8, 2), YEL, { sz: 0.92, ry: Math.PI / 8 });
+      const face = sticker(B, svgText, { keep: '.face, ellipse[fill="#F49A93"]', box: [20.5, 34.5, 43.5, 46.5], eyes: [[28.6, 37.4, 1.3], [38, 37.4, 1.3]], w: 0.66, y: 0.7, z: 0.425, bend: 0.75 });
+      const roof = new THREE.Group(); roof.position.y = 1.0; B.add(roof);
+      [-1, 1].forEach((k) => {
+        const slab = new THREE.Group(); slab.position.set(k * 0.27, 0.16, 0); slab.rotation.z = -k * 0.55; roof.add(slab);
+        fold(slab, new THREE.BoxGeometry(0.64, 0.025, 0.72), 0xEE7A52);
+        fold(slab, new THREE.BoxGeometry(0.6, 0.012, 0.68), 0xFFF6E6, { y: -0.02 });
+      });
+      const wings = flaps(B, YEL, { x: 0.43, y: 0.62, len: 0.3, wid: 0.22 });
+      const feet = paperFeet(H, ORANGE, { x: 0.16, r: 0.11 });
+      const drops = [-1, 1].map((k) => { const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.035, 0), new THREE.MeshToonMaterial({ color: 0x9FD3EE, gradientMap: gradient, transparent: true, flatShading: true })); m.scale.y = 1.5; m.position.set(k * 0.52, 0.98, 0.2); B.add(m); return m; });
+      d.hinge.position.y = 0.1; d.hingeY = 0.1; d.len = 1.3; d.head = 1.42;
+      motion(d, { wings, feet, face, extra: (person, dt, t, walking) => { drops.forEach((m, i) => { const k = walking ? (t * 1.4 + i * 0.5) % 1.2 : 9; m.visible = k < 0.6; m.position.y = 0.98 - k * 0.5; m.material.opacity = 1 - k / 0.6; }); roof.rotation.z = walking ? Math.sin(t * 9) * 0.04 : 0; } });
+    },
+    // 꼼지(두더지): 갈색 종이 몸, 노란 안전모와 이마 등불, 분홍 앞발로 펼친 책을 든다
+    mole(d, svgText) {
+      const BROWN = 0xB6A190; const PINK = 0xF3C6B8;
+      const B = d.body; const H = d.hinge;
+      fold(B, lathe([[0, 0.1], [0.36, 0.14], [0.48, 0.38], [0.46, 0.62], [0.36, 0.84], [0.18, 0.96], [0, 0.99]], 8, 3), BROWN, { sz: 0.92, ry: Math.PI / 8 });
+      const face = sticker(B, svgText, { keep: '.face, ellipse[fill="#F49A93"]', box: [21, 32.5, 43, 46], eyes: [[26.6, 35.6, 1.3], [37.4, 35.6, 1.3]], w: 0.64, y: 0.66, z: 0.43, bend: 0.75 });
+      const hat = new THREE.Group(); hat.position.y = 0.82; B.add(hat);
+      fold(hat, crumpleGeo(new THREE.SphereGeometry(0.41, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), 0.015, 4), 0xFFC93C, { sz: 0.94, ry: Math.PI / 8 });
+      fold(hat, new THREE.CylinderGeometry(0.5, 0.5, 0.035, 8), 0xFFC93C, { ry: Math.PI / 8 });
+      fold(hat, new THREE.BoxGeometry(0.13, 0.12, 0.08), 0xFFF6D6, { x: 0.12, y: 0.28, z: 0.3, rx: -0.5 });
+      const lampGlow = glow(hat, 0xFFF2B3, 0.5, 0.12, 0.3, 0.38);
+      openBook(B, { y: 0.4, z: 0.44, w: 0.5, h: 0.3, tilt: -0.55, cover: 0xD8C9B4 });
+      [-1, 1].forEach((k) => fold(B, ico(0.06), PINK, { x: k * 0.27, y: 0.42, z: 0.43, sz: 0.8 }));
+      const feet = paperFeet(H, PINK, { x: 0.17, r: 0.1 });
+      d.hinge.position.y = 0.1; d.hingeY = 0.1; d.len = 1.3; d.head = 1.36;
+      motion(d, { feet, face, extra: (person, dt, t) => { lampGlow.material.opacity = 0.7 + Math.sin(t * 3) * 0.2; } });
+    },
+    // 개굴(개구리): 납작한 초록 종이 몸, 머리 위 툭 튀어나온 두 눈, 펼친 책을 깔고 앉는다
+    frog(d, svgText) {
+      const GREEN = 0xBFE5A6;
+      const B = d.body; const H = d.hinge;
+      fold(B, lathe([[0, 0.12], [0.42, 0.16], [0.52, 0.32], [0.48, 0.5], [0.34, 0.64], [0, 0.69]], 8, 6), GREEN, { sz: 0.92, ry: Math.PI / 8 });
+      const eyes3d = [];
+      [-1, 1].forEach((k) => {
+        fold(B, ico(0.15, 1, 7 + k), GREEN, { x: k * 0.22, y: 0.7, z: 0.12 });
+        fold(B, ico(0.1, 1, 9 + k), 0xFFFFFF, { x: k * 0.23, y: 0.74, z: 0.22, sz: 0.7 });
+        eyes3d.push(eyeBall(B, k * 0.25, 0.77, 0.3, 0.045));
+      });
+      const face = sticker(B, svgText, { keep: '.face > path, ellipse[fill="#F49A93"]', box: [18, 38.5, 46, 43.5], w: 0.78, y: 0.47, z: 0.46, bend: 0.6 });
+      const pad = new THREE.Group(); pad.position.set(0, -0.08, 0.05); H.add(pad);
+      [-1, 1].forEach((k) => { const leaf = fold(pad, new THREE.BoxGeometry(0.42, 0.025, 0.5), PAGE, { x: k * 0.21 }); leaf.rotation.z = k * 0.12; });
+      const feet = paperFeet(H, GREEN, { x: 0.32, r: 0.1, z: 0.18 });
+      d.hinge.position.y = 0.12; d.hingeY = 0.12; d.len = 1.0; d.head = 1.0;
+      motion(d, { feet, face, eyes3d });
+    },
+    // 구름(너구리): 회색 종이 몸·머리, 눈 둘레 검은 가면, 빨간 털모자, 줄무늬 꼬리, 펼친 책
+    raccoon(d, svgText) {
+      const GRAY = 0xC8BFB5; const DARK = 0x7D736B;
+      const B = d.body; const H = d.hinge;
+      fold(B, lathe([[0, 0.1], [0.3, 0.14], [0.4, 0.3], [0.37, 0.5], [0.24, 0.6], [0, 0.62]], 8, 8), GRAY, { sz: 0.9, ry: Math.PI / 8 });
+      const head = new THREE.Group(); head.position.y = 0.95; B.add(head);
+      fold(head, ico(0.42, 1, 11, 0.02), GRAY, { sx: 1.12, sy: 0.82, sz: 0.92 });
+      [-1, 1].forEach((k) => { fold(head, new THREE.ConeGeometry(0.13, 0.26, 3), GRAY, { x: k * 0.32, y: 0.3, rz: -k * 0.35 }); fold(head, new THREE.ConeGeometry(0.06, 0.14, 3), DARK, { x: k * 0.32, y: 0.29, z: 0.04, rz: -k * 0.35 }); });
+      fold(head, crumpleGeo(new THREE.SphereGeometry(0.36, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), 0.015, 12), 0xEE7A52, { y: 0.14, sy: 0.75, ry: Math.PI / 8 });
+      fold(head, ico(0.08, 0, 13), 0xEE7A52, { x: 0.14, y: 0.44 });
+      const face = sticker(head, svgText, { keep: 'path[fill="#8F857C"], ellipse[fill="#FFFDF8"], .face', box: [16.5, 26, 47.5, 42], eyes: [[24.5, 31.4, 1.2], [39.3, 31.4, 1.2]], w: 0.84, y: -0.02, z: 0.37, bend: 0.75 });
+      const tail = new THREE.Group(); tail.position.set(0, 0.22, -0.3); B.add(tail);
+      for (let i = 0; i < 5; i++) fold(tail, new THREE.CylinderGeometry(0.1 - i * 0.012, 0.11 - i * 0.012, 0.13, 6), i % 2 ? DARK : GRAY, { y: i * 0.1, z: -i * 0.06, rx: -0.5 });
+      openBook(B, { y: 0.36, z: 0.38, w: 0.48, h: 0.3, tilt: -0.6 });
+      [-1, 1].forEach((k) => fold(B, ico(0.065), GRAY, { x: k * 0.25, y: 0.36, z: 0.38 }));
+      const feet = paperFeet(H, GRAY, { x: 0.15, r: 0.09 });
+      d.hinge.position.y = 0.1; d.hingeY = 0.1; d.len = 1.4; d.head = 1.55;
+      motion(d, { feet, face, extra: (person, dt, t, walking, w) => { tail.rotation.z = Math.sin(t * (walking ? 6 : 1.4)) * 0.18; head.rotation.z = walking ? w * 0.05 : Math.sin(t * 0.8) * 0.02; } });
+    },
+    // 책벌레: 세워 둔 빨간 종이책 위로 초록 애벌레가 고개를 내민다. 아래로 빨간 책갈피 끈
+    bookworm(d, svgText) {
+      const GREEN = 0xD6EDB8;
+      const B = d.body;
+      fold(B, new THREE.BoxGeometry(0.82, 0.9, 0.3), 0xEE7A52, { y: 0.47 });
+      fold(B, new THREE.BoxGeometry(0.74, 0.82, 0.02), PAGE, { y: 0.47, z: 0.16 });
+      [0.62, 0.52, 0.42, 0.32].forEach((yy, i) => fold(B, new THREE.BoxGeometry(i === 3 ? 0.36 : 0.56, 0.015, 0.005), 0xE2D3BB, { y: yy, z: 0.172, x: i === 3 ? -0.1 : 0 }));
+      fold(B, new THREE.BoxGeometry(0.76, 0.06, 0.26), 0xF2E6CF, { y: 0.93 });
+      const worm = new THREE.Group(); worm.position.set(0, 0.92, 0.02); B.add(worm);
+      fold(worm, new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(0, -0.05, -0.03), new THREE.Vector3(0, 0.15, 0), new THREE.Vector3(0, 0.32, 0.05)]), 6, 0.12, 6), GREEN);
+      const headW = new THREE.Group(); headW.position.y = 0.45; worm.add(headW);
+      fold(headW, ico(0.2, 1, 15), GREEN, { sz: 0.9 });
+      [-1, 1].forEach((k) => { fold(headW, new THREE.CylinderGeometry(0.012, 0.012, 0.22, 4), INKC, { x: k * 0.09, y: 0.25, rz: -k * 0.35 }); eyeBall(headW, k * 0.135, 0.36, 0, 0.04); fold(worm, ico(0.055), GREEN, { x: k * 0.17, y: 0.03, z: 0.12 }); });
+      const face = sticker(headW, svgText, { keep: '.face, ellipse[fill="#F49A93"]', hide: 'circle[cx="31.6"], circle[cx="36.4"]', box: [26.5, 19, 41.5, 26.5], eyes: [[31.6, 21.6, 1.25], [36.4, 21.6, 1.25]], w: 0.4, y: -0.02, z: 0.18, bend: 1.2 });
+      fold(B, new THREE.BoxGeometry(0.08, 0.3, 0.012), 0xE4572E, { x: 0.28, y: -0.08, z: 0.08 });
+      d.hinge.position.y = 0.02; d.hingeY = 0.02; d.len = 1.6; d.head = 1.72;
+      motion(d, { face, extra: (person, dt, t, walking, w) => { worm.rotation.z = walking ? w * 0.18 : Math.sin(t * 1.2) * 0.06; worm.rotation.x = walking ? Math.abs(w) * -0.15 : 0; } });
+    },
+    // 따끔(고슴도치): 크림색 종이 몸, 등에 접은 갈색 가시, 노란 연필과 펼친 책
+    hedgehog(d, svgText) {
+      const CREAM = 0xF6E6CF; const SPIKE = 0xC9A783;
+      const B = d.body; const H = d.hinge;
+      fold(B, lathe([[0, 0.1], [0.34, 0.14], [0.45, 0.34], [0.43, 0.56], [0.33, 0.74], [0.16, 0.84], [0, 0.87]], 8, 16), CREAM, { sz: 0.92, ry: Math.PI / 8 });
+      const spikeGeo = new THREE.ConeGeometry(0.075, 0.26, 4);
+      // 가시: 등과 정수리를 고르게 덮는다(얼굴 쪽은 비운다)
+      for (let i = 0; i < 90; i++) {
+        const yy = 1 - (i + 0.5) / 90 * 2; const r = Math.sqrt(1 - yy * yy); const th = i * 2.39996;
+        const dir = new THREE.Vector3(Math.cos(th) * r, yy, Math.sin(th) * r);
+        if (dir.y < -0.15 || (dir.z > -0.1 && dir.y < 0.55) || (dir.z > 0.35 && dir.y < 0.8)) continue;
+        const sp = fold(B, spikeGeo, i % 3 ? SPIKE : 0xB08E6A, { x: dir.x * 0.4, y: 0.5 + dir.y * 0.36, z: dir.z * 0.38 });
+        sp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+      }
+      const face = sticker(B, svgText, { keep: '.face, ellipse[fill="#F49A93"]', box: [21, 39, 43, 50.5], eyes: [[27.4, 42.8, 2.2], [36.6, 42.8, 2.2]], w: 0.64, y: 0.54, z: 0.42, bend: 0.8 });
+      openBook(B, { y: 0.3, z: 0.42, w: 0.46, h: 0.28, tilt: -0.6 });
+      [-1, 1].forEach((k) => fold(B, ico(0.06), CREAM, { x: k * 0.25, y: 0.3, z: 0.42 }));
+      const pencil = new THREE.Group(); pencil.position.set(0.42, 0.5, 0.2); pencil.rotation.set(0.3, 0, -0.9); B.add(pencil);
+      fold(pencil, new THREE.CylinderGeometry(0.035, 0.035, 0.42, 6), 0xFFD66B);
+      fold(pencil, new THREE.ConeGeometry(0.035, 0.09, 6), 0xF3DDBF, { y: 0.255 });
+      const feet = paperFeet(H, CREAM, { x: 0.15, r: 0.08 });
+      d.hinge.position.y = 0.1; d.hingeY = 0.1; d.len = 1.2; d.head = 1.15;
+      motion(d, { feet, face, extra: (person, dt, t, walking, w) => { pencil.rotation.z = -0.9 + (walking ? w * 0.15 : Math.sin(t * 2) * 0.05); } });
+    },
+    // 느릿(달팽이): 길쭉한 크림색 발, 우뚝 선 목과 더듬이 끝 눈, 등에 소용돌이 껍데기
+    snail(d, svgText) {
+      const SKIN = 0xF6E3C4; const SHELL = 0xE9C9A0;
+      const B = d.body;
+      fold(B, crumpleGeo(new THREE.SphereGeometry(0.5, 8, 5), 0.02, 17), SKIN, { y: 0.17, sx: 0.55, sy: 0.32, sz: 1.3 });
+      const neck = new THREE.Group(); neck.position.set(0, 0.15, 0.42); B.add(neck);
+      fold(neck, lathe([[0, 0], [0.2, 0.04], [0.22, 0.4], [0.18, 0.66], [0, 0.72]], 6, 18), SKIN);
+      const eyes3d = [];
+      const stalks = [-1, 1].map((k) => { const st = new THREE.Group(); st.position.set(k * 0.08, 0.66, 0); st.rotation.z = -k * 0.3; neck.add(st); fold(st, new THREE.CylinderGeometry(0.018, 0.022, 0.32, 5), INKC, { y: 0.16 }); eyes3d.push(eyeBall(st, 0, 0.34, 0.02, 0.06)); return st; });
+      const face = sticker(neck, svgText, { keep: '.face > path, ellipse[fill="#F49A93"]', box: [12, 35, 25, 42], w: 0.4, y: 0.38, z: 0.2, bend: 1.4 });
+      const shell = new THREE.Group(); shell.position.set(0, 0.62, -0.15); B.add(shell);
+      fold(shell, ico(0.42, 1, 19, 0.025), SHELL, { sx: 0.82 });
+      const swirl = canvasTex(256, 256, (g) => { g.strokeStyle = '#2E241C'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); for (let a = 0; a < Math.PI * 5.2; a += 0.05) { const r = 8 + a * 6.2; const px = 128 + Math.cos(a) * r; const py = 128 + Math.sin(a) * r; if (a) g.lineTo(px, py); else g.moveTo(px, py); } g.stroke(); });
+      const swirlMat = new THREE.MeshBasicMaterial({ map: swirl, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+      [-1, 1].forEach((k) => { const m = new THREE.Mesh(new THREE.CircleGeometry(0.32, 24), swirlMat); m.position.x = k * 0.35; m.rotation.y = k * Math.PI / 2; shell.add(m); });
+      d.hinge.position.y = 0.05; d.hingeY = 0.05; d.len = 1.3; d.head = 1.4;
+      motion(d, { face, eyes3d, extra: (person, dt, t, walking, w) => { stalks.forEach((st, i) => { st.rotation.x = Math.sin(t * 2 + i) * 0.12; }); neck.rotation.x = walking ? Math.sin(t * 3) * 0.06 : 0; shell.position.z = -0.15 + (walking ? Math.sin(t * 3 - 0.8) * 0.03 : 0); } });
     },
   };
   const makeModel = (critter, svgText) => {
