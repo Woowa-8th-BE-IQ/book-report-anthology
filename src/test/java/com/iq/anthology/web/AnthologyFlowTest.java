@@ -217,11 +217,16 @@ class AnthologyFlowTest {
         assertThat(mvc.perform(get("/anthologies/{code}/library", code).cookie(editor))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString())
                 .contains("꼬깃 서고", "data-spot=", "lib-gate", "avatar-svg", "글감 질문",
-                        "/js/library-sound", "data-manual", "소리와 함께 들어가기", "data-do=\"sfx\"");
+                        "/js/library-sound", "data-manual", "소리와 함께 들어가기", "data-do=\"sfx\"",
+                        "/js/library3d", "data-do=\"nap\"", "lib-cam", "모임방으로 갈까요?");
         mvc.perform(get("/anthologies/{code}/library", code))
                 .andExpect(status().is3xxRedirection());
         mvc.perform(post("/anthologies/{code}/library/spot", code).cookie(editor)
                         .param("x", "0.5").param("y", "0.8").param("seat", "bench-1").param("status", "write"))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/anthologies/{code}/library/spot", code).cookie(editor)
+                        .param("x", "0.2").param("y", "0.3").param("seat", "loft-futon")
+                        .param("place", "hall").param("level", "1").param("pose", "sleep"))
                 .andExpect(status().isNoContent());
         mvc.perform(post("/anthologies/{code}/library/act", code).cookie(editor).param("act", "bow"))
                 .andExpect(status().isNoContent());

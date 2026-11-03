@@ -234,14 +234,18 @@ public class RoomHub {
     }
 
     /**
-     * 꼬깃 서고 안의 한 사람. x·y는 서고 바닥에 대한 0~1 비율, seat는 앉은 자리 이름(서 있으면 null),
+     * 꼬깃 서고 안의 한 사람. x·y는 그 장소 바닥에 대한 0~1 비율, seat는 앉은(누운) 자리 이름(서 있으면 null),
      * status는 읽는 중(read)·쓰는 중(write)·쉬는 중(rest).
+     * place는 서고 안의 장소(hall 큰 서고, roof 옥상 정원…), level은 층(0 바닥, 1 다락),
+     * pose는 깨어 있음(up)·꾸벅꾸벅 조는 중(doze)·자는 중(sleep).
      */
-    public record Spot(Position at, String seat, String status) {
+    public record Spot(Position at, String seat, String status, String place, int level, String pose) {
 
         static final Set<String> STATUSES = Set.of("read", "write", "rest");
+        static final Set<String> POSES = Set.of("up", "doze", "sleep");
         static final Set<String> ACTS = Set.of("bow", "stretch", "flip");
         private static final java.util.regex.Pattern SEAT = java.util.regex.Pattern.compile("[a-z0-9-]{1,24}");
+        private static final java.util.regex.Pattern PLACE = java.util.regex.Pattern.compile("[a-z]{1,12}");
 
         public Spot {
             java.util.Objects.requireNonNull(at);
@@ -251,6 +255,18 @@ public class RoomHub {
             if (status == null || !STATUSES.contains(status)) {
                 status = "read";
             }
+            if (place == null || !PLACE.matcher(place).matches()) {
+                place = "hall";
+            }
+            level = Math.clamp(level, 0, 3);
+            if (pose == null || !POSES.contains(pose)) {
+                pose = "up";
+            }
+        }
+
+        /** 큰 서고 바닥에서 깨어 있는 사람(예전 화면이 보내는 모양). */
+        public Spot(Position at, String seat, String status) {
+            this(at, seat, status, "hall", 0, "up");
         }
 
         Map<String, Object> event(Long contributorId) {
@@ -259,6 +275,9 @@ public class RoomHub {
             event.put("x", at.x());
             event.put("y", at.y());
             event.put("status", status);
+            event.put("place", place);
+            event.put("level", level);
+            event.put("pose", pose);
             if (seat != null) {
                 event.put("seat", seat);
             }

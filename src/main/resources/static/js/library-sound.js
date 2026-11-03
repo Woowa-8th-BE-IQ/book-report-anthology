@@ -176,13 +176,18 @@
     cadence: (kind) => CADENCE[kind] || 0.3,
     step(kind, sp) {
       alt = 1 - alt;
-      play(sp, 0.6, (d, t) => (STEP[kind] || STEP.wood)(d, t, alt));
+      play(sp, 0.6, (d, t) => {
+        (STEP[kind] || STEP.wood)(d, t, alt);
+        if (sp && sp.stairs) { tone(d, t, { freq: 110, to: 60, level: 0.22, attack: 0.002, decay: 0.09 }); burst(d, t, { freq: 700, q: 1.6, level: 0.08, decay: 0.05 }); } // 계단: 속이 빈 나무 통통
+      });
     },
     sit(kind, sp) {
       play(sp, 1, (d, t) => {
         if (kind === 'chair') { creak(d, t, 0.26, 52, 0.15); thud(d, t + 0.2, 0.3); burst(d, t + 0.2, { freq: 900, q: 1.2, level: 0.1, decay: 0.05 }); }
         else if (kind === 'beanbag') { poof(d, t, 0.5, 0.36); beads(d, t + 0.03, 0.45, 0.1); thud(d, t + 0.04, 0.2); }
         else if (kind === 'bench') { poof(d, t, 0.38); thud(d, t + 0.02, 0.3); }
+        else if (kind === 'futon') { poof(d, t, 0.55, 0.4); thud(d, t + 0.03, 0.16); }
+        else if (kind === 'hammock') { creak(d, t + 0.05, 0.45, 38, 0.08); poof(d, t, 0.22, 0.2); }
         else { poof(d, t, 0.42, 0.22); tone(d, t + 0.05, { freq: 330, to: 250, level: 0.05, decay: 0.12 }); }
       });
     },
@@ -206,6 +211,23 @@
         }
       });
     },
+    /** 문을 열고 다른 장소로: 삐걱 열리고 바람이 휙 */
+    door(sp) {
+      play(sp, 1, (d, t) => {
+        creak(d, t, 0.42, 34, 0.1);
+        burst(d, t + 0.25, { freq: 500, to: 2600, q: 0.7, level: 0.16, attack: 0.12, decay: 0.35 });
+        bellHit(d, t + 0.5, 1175, 0.05);
+      });
+    },
+    /** 잠들 때 하품: 길게 내려가는 소리 */
+    yawn(sp) {
+      play(sp, 1, (d, t) => {
+        tone(d, t, { type: 'triangle', freq: 520, to: 230, glide: 0.9, level: 0.07, attack: 0.15, decay: 0.85 });
+        burst(d, t + 0.1, { type: 'lowpass', freq: 900, to: 300, level: 0.08, attack: 0.2, decay: 0.7 });
+      });
+    },
+    /** 깜짝 깨기 */
+    wake(sp) { play(sp, 1, (d, t) => { tone(d, t, { freq: 600, to: 1300, glide: 0.08, level: 0.08, attack: 0.003, decay: 0.1 }); }); },
     /** 입구 종: 딸랑 */
     bell(sp) { play(sp, 1, (d, t) => { bellHit(d, t, 1320, 0.11); bellHit(d, t + 0.13, 1480, 0.08); bellHit(d, t + 0.27, 1320, 0.05); }); },
     pop(sp) { play(sp, 1, (d, t) => tone(d, t, { freq: 420, to: 980, glide: 0.05, level: 0.11, attack: 0.003, decay: 0.07 })); },

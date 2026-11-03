@@ -3,6 +3,8 @@
 // (큰 서점 광장의 분위기만 빌린 원래 그림이다. 실제 장소의 이름·로고·사진은 쓰지 않는다)
 // 좌표는 세계 픽셀(2400×1450)이고, 서버에는 0~1 비율로 보낸다. 사람의 발끝이 그 좌표에 놓인다.
 (() => {
+  // 3D 서고(library3d.js)가 뜨는 화면이면 기다린다. 3D가 실패하면 그쪽에서 startLibrary2D()를 부른다.
+  const start = () => {
   const root = document.getElementById('library');
   if (!root) return;
 
@@ -817,6 +819,9 @@
     if (id === meId) return;
     const person = people.get(id) || createPerson(id);
     if (!person) return;
+    // 3D 서고의 다른 장소(옥상)나 다락에 있는 사람은 2D 바닥에 없다
+    person.el.hidden = Boolean((data.place && data.place !== 'hall') || Number(data.level) > 0);
+    if (person.el.hidden) return;
     const before = person.seat;
     person.tx = data.x * W; person.ty = data.y * H;
     person.seat = data.seat || null;
@@ -1124,4 +1129,7 @@
     stage.focus({ preventScroll: true });
     setTimeout(() => root.querySelector('.lib-hint').classList.add('fade'), 9000);
   });
+  };
+  if (document.documentElement.dataset.lib === '3d') { window.startLibrary2D = start; return; }
+  start();
 })();

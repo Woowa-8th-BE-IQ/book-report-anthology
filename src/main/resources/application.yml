@@ -24,6 +24,10 @@ spring:
             paths: /css/**,/js/**
 
 server:
+  # three.js(700KB) 같은 큰 스크립트를 gzip으로 줄여 보낸다. 실시간 연결(text/event-stream)은 목록에 없어 그대로 흐른다.
+  compression:
+    enabled: true
+    mime-types: text/html,text/css,text/javascript,application/javascript,application/json,image/svg+xml
   servlet:
     encoding:
       charset: UTF-8

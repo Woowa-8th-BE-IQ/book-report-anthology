@@ -194,10 +194,14 @@ public class RoomService {
 
     /** 꼬깃 서고 안에서 걷거나 앉는다. 이미 누가 앉은 자리면 false. */
     public boolean moveInLibrary(String code, String token, double x, double y, String seat, String status) {
+        return moveInLibrary(code, token, new RoomHub.Spot(new RoomHub.Position(x, y), seat, status));
+    }
+
+    /** 장소(place)·층(level)·자세(pose)까지 담은 자리. */
+    public boolean moveInLibrary(String code, String token, RoomHub.Spot spot) {
         Anthology anthology = anthologyService.get(code);
         Contributor me = AnthologyService.requireContributor(anthology, token);
-        return hub.moveInLibrary(anthology.id(), me.id(),
-                new RoomHub.Spot(new RoomHub.Position(x, y), seat, status));
+        return hub.moveInLibrary(anthology.id(), me.id(), spot);
     }
 
     /** 꼬깃 서고에서 짧은 몸짓을 한다. */

@@ -1,6 +1,7 @@
 package com.iq.anthology.web;
 
 import com.iq.anthology.essay.EssayService;
+import com.iq.anthology.room.RoomHub;
 import com.iq.anthology.room.RoomMessage;
 import com.iq.anthology.room.RoomService;
 import com.iq.anthology.room.RoomService.Room;
@@ -92,9 +93,13 @@ public class RoomController {
                                                     @RequestParam double y,
                                                     @RequestParam(required = false) String seat,
                                                     @RequestParam(required = false) String status,
+                                                    @RequestParam(required = false) String place,
+                                                    @RequestParam(defaultValue = "0") int level,
+                                                    @RequestParam(required = false) String pose,
                                                     HttpServletRequest request) {
         try {
-            if (roomService.moveInLibrary(code, cookies.read(request, code), x, y, seat, status)) {
+            RoomHub.Spot spot = new RoomHub.Spot(new RoomHub.Position(x, y), seat, status, place, level, pose);
+            if (roomService.moveInLibrary(code, cookies.read(request, code), spot)) {
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
             }
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "누가 먼저 앉았어요."));

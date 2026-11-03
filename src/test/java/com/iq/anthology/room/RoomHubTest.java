@@ -79,6 +79,19 @@ class RoomHubTest {
     }
 
     @Test
+    void 서고_장소_층_자세도_정해진_모양만_받는다() {
+        RoomHub.Spot odd = new RoomHub.Spot(new Position(0.1, 0.1), null, "rest", "Roof!", 9, "dance");
+        RoomHub.Spot loft = new RoomHub.Spot(new Position(0.1, 0.1), "loft-futon", "rest", "hall", 1, "sleep");
+
+        assertThat(odd.place()).isEqualTo("hall");
+        assertThat(odd.level()).isEqualTo(3);
+        assertThat(odd.pose()).isEqualTo("up");
+        assertThat(loft.level()).isEqualTo(1);
+        assertThat(loft.pose()).isEqualTo("sleep");
+        assertThat(new RoomHub.Spot(new Position(0.1, 0.1), null, "read").place()).isEqualTo("hall");
+    }
+
+    @Test
     void 서고에서_나가면_서고_자리도_지워진다() {
         hub.join(1L, 10L, true);
         hub.join(1L, 11L, true);

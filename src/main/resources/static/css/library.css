@@ -260,3 +260,53 @@
   .lib .member.walking .lib-body { rotate: none; }
   .lib-dust { opacity: .4; }
 }
+
+/* ───────── 3D 종이 디오라마(html[data-lib=3d]) ───────── */
+.lib-3d-only, .lib-hint-3d { display: none; }
+[data-lib="3d"] .lib-3d-only { display: inline-flex; }
+[data-lib="3d"] .lib-hint-3d { display: inline; }
+[data-lib="3d"] .lib-hint-2d, [data-lib="3d"] .lib-world { display: none; }
+[data-lib="3d"] .lib-stage::after { display: none; }
+[data-lib="3d"] .lib-stage { background: #1E140D; }
+.lib-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.lib.turning .lib-canvas { cursor: grabbing; }
+.lib-place { font-weight: 700; color: #6E8B74; }
+[data-lib="2d"] .lib-place, [data-lib="2d"] .lib-place + .dot { display: none; }
+
+/* 이름표·말풍선: 인형 머리 위에 붙는다. 가까운 사람은 또렷하게, 먼 사람은 작고 흐리게 */
+.lib3-labels { position: absolute; inset: 0; z-index: 5; overflow: hidden; pointer-events: none; }
+.lib3-label { position: absolute; left: 0; top: 0; display: grid; justify-items: center; gap: 4px; transform-origin: 50% 100%; will-change: transform; }
+.lib3-label[hidden] { display: none; }
+.lib3-label .lib-tag { font-size: 12.5px; padding: 2px 9px; border-width: 1.5px; gap: 4px; }
+.lib3-label .lib-tag small { font-size: 11px; }
+.lib3-label.me .lib-tag { border-color: #B8571A; }
+.lib3-label.me .lib-tag b { color: #B8571A; }
+.lib3-label .lib-bubble { max-width: 230px; margin-bottom: 4px; padding: 7px 12px; border-radius: 14px; border-width: 2px; font-size: 13.5px; }
+.lib3-label .lib-bubble::after { bottom: -8px; width: 11px; height: 11px; border-width: 2px; }
+.lib3-label.far .lib-bubble { max-width: 120px; font-size: 11.5px; padding: 4px 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .85; }
+.lib3-label.far .lib-tag small { display: none; }
+.lib3-label.near .lib-bubble { box-shadow: 0 6px 16px rgba(46, 28, 14, .3); }
+.lib3-z { display: none; position: absolute; left: 62%; top: -6px; font-family: var(--hand); color: #4F6D8A; text-shadow: 0 1px 0 #FFFDF8; }
+.lib3-label.sleepy .lib3-z { display: block; }
+.lib3-z i { position: absolute; font-style: normal; font-size: 16px; opacity: 0; animation: lib-z 2.6s ease-out infinite; }
+.lib3-z i:nth-child(2) { animation-delay: .85s; font-size: 19px; }
+.lib3-z i:nth-child(3) { animation-delay: 1.7s; font-size: 23px; }
+.lib3-label:not(.deep) .lib3-z i:nth-child(3) { display: none; }
+@keyframes lib-z { 0% { opacity: 0; translate: 0 0; } 20% { opacity: 1; } 100% { opacity: 0; translate: 16px -34px; } }
+.lib3-pop { position: absolute; left: 50%; top: -14px; translate: -50% 0; font-family: var(--hand); font-size: 26px; color: #B8571A; text-shadow: 0 2px 0 #FFFDF8, 0 0 6px #FFFDF8; white-space: nowrap; animation: lib-pop 1.3s ease-out forwards; }
+
+/* 시점 단추, 가리킨 것 이름, 장소를 오가는 막 */
+.lib-cam { position: absolute; right: 14px; bottom: 16px; z-index: 21; display: none; gap: 4px; padding: 4px; border-radius: 14px; background: rgba(255, 250, 240, .92); box-shadow: 0 4px 14px rgba(20, 12, 6, .2); }
+[data-lib="3d"] .lib.entered .lib-cam, [data-lib="3d"] .entered .lib-cam { display: flex; }
+.lib-cam button { width: 34px; height: 34px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-size: 17px; color: #2E241C; cursor: pointer; }
+.lib-cam button:hover { background: rgba(184, 87, 26, .1); }
+.lib-tip { position: absolute; left: 0; top: 0; z-index: 25; margin: 0; padding: 4px 10px; border-radius: 999px; background: rgba(30, 20, 12, .85); color: #FFF3DC; font-size: 12.5px; pointer-events: none; white-space: nowrap; }
+.lib-tip[hidden] { display: none; }
+.lib-fade { position: absolute; inset: 0; z-index: 45; background: #1E140D; opacity: 0; pointer-events: none; transition: opacity .4s; }
+.lib-fade.on { opacity: 1; }
+@media (max-width: 720px) {
+  .lib-cam { bottom: auto; top: 58px; right: 14px; flex-direction: column; }
+  [data-lib="3d"] .lib-people { top: 62px; right: 62px; }
+  .lib3-label .lib-bubble { max-width: 170px; }
+}
+@media (prefers-reduced-motion: reduce) { .lib3-z i { animation: none; opacity: .8; } }
