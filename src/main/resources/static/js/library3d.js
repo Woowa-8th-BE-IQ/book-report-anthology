@@ -1313,8 +1313,16 @@ function start() {
       const pad = new THREE.Group(); pad.position.set(0, -0.08, 0.05); H.add(pad);
       [-1, 1].forEach((k) => { const leaf = fold(pad, new THREE.BoxGeometry(0.42, 0.025, 0.5), PAGE, { x: k * 0.21 }); leaf.rotation.z = k * 0.12; });
       const feet = paperFeet(H, GREEN, { x: 0.32, r: 0.1, z: 0.18 });
+      // 혀: 입에서 쭉 뻗어 빨간 책갈피를 낚아챘다(개굴의 생명)
+      const tongue = new THREE.Group(); tongue.position.set(0.0, 0.45, 0.47); B.add(tongue);
+      const tongueCurve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.14, -0.05, 0.12), new THREE.Vector3(0.34, 0.02, 0.14), new THREE.Vector3(0.44, 0.22, 0.08)]);
+      fold(tongue, new THREE.TubeGeometry(tongueCurve, 16, 0.032, 6), 0xF49A93, { crease: 60 });
+      const mark = new THREE.Group(); mark.position.set(0.45, 0.25, 0.08); mark.rotation.z = 0.25; tongue.add(mark);
+      const ribbon = new THREE.Shape(); ribbon.moveTo(-0.07, 0.2); ribbon.lineTo(0.07, 0.2); ribbon.lineTo(0.07, -0.06); ribbon.lineTo(0, 0); ribbon.lineTo(-0.07, -0.06); ribbon.lineTo(-0.07, 0.2);
+      fold(mark, new THREE.ExtrudeGeometry(ribbon, { depth: 0.015, bevelEnabled: false }), 0xEE7A52);
+      fold(mark, new THREE.BoxGeometry(0.07, 0.012, 0.02), 0xFFD9C2, { y: 0.14, z: 0.008 });
       d.hinge.position.y = 0.12; d.hingeY = 0.12; d.len = 1.0; d.head = 1.0;
-      motion(d, { feet, face, eyes3d });
+      motion(d, { feet, face, eyes3d, extra: (person, dt, t, walking) => { tongue.rotation.z = Math.sin(t * (walking ? 7 : 1.8)) * 0.08; tongue.rotation.y = Math.sin(t * 1.3) * 0.12; mark.rotation.z = 0.25 + Math.sin(t * 2.4) * 0.15; } });
     },
     // 구름(너구리): 회색 종이 몸·머리, 눈 둘레 검은 가면, 빨간 털모자, 줄무늬 꼬리, 펼친 책
     raccoon(d, svgText) {
@@ -1358,7 +1366,7 @@ function start() {
       const CREAM = 0xF6E6CF; const SPIKE = 0xC9A783;
       const B = d.body; const H = d.hinge;
       fold(B, lathe([[0, 0.1], [0.34, 0.14], [0.45, 0.34], [0.43, 0.56], [0.33, 0.74], [0.16, 0.84], [0, 0.87]], 8, 16), CREAM, { sz: 0.92, ry: Math.PI / 8 });
-      const spikeGeo = new THREE.ConeGeometry(0.075, 0.26, 4);
+      const spikeGeo = new THREE.CylinderGeometry(0.03, 0.085, 0.17, 5); // 끝이 뭉툭한 가시(안아도 안 따가운)
       // 가시: 등과 정수리를 고르게 덮는다(얼굴 쪽은 비운다)
       for (let i = 0; i < 90; i++) {
         const yy = 1 - (i + 0.5) / 90 * 2; const r = Math.sqrt(1 - yy * yy); const th = i * 2.39996;
