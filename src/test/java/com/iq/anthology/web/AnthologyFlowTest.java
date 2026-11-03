@@ -212,6 +212,20 @@ class AnthologyFlowTest {
                 .andReturn().getResponse().getContentAsString();
         assertThat(page).contains("어서 오세요 &lt;b&gt;", "두 번째 말", "avatar-svg", "data-seat-x=\"0.5\"").doesNotContain("어서 오세요 <b>");
 
+        // 꼬깃 서고: 참여자만 들어오고, 걷기·몸짓은 조용히 받는다(서고에 연결하지 않았으면 무시)
+        assertThat(mvc.perform(get("/anthologies/{code}/library", code).cookie(editor))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString())
+                .contains("꼬깃 서고", "data-spot=", "lib-gate", "avatar-svg", "글감 질문");
+        mvc.perform(get("/anthologies/{code}/library", code))
+                .andExpect(status().is3xxRedirection());
+        mvc.perform(post("/anthologies/{code}/library/spot", code).cookie(editor)
+                        .param("x", "0.5").param("y", "0.8").param("seat", "bench-1").param("status", "write"))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/anthologies/{code}/library/act", code).cookie(editor).param("act", "bow"))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/anthologies/{code}/library/spot", code).param("x", "0.5").param("y", "0.8"))
+                .andExpect(status().isForbidden());
+
         // 데스크톱 펫: 개인 링크에 ?to=pet을 붙이면 펫 화면으로 간다
         String token = editor.getValue();
         mvc.perform(get("/me/{token}", token).param("to", "pet"))

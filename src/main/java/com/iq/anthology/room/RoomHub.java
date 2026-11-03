@@ -125,12 +125,12 @@ public class RoomHub {
     }
 
     /**
-     * 서고 안에서 걷거나 앉는다. 서고에 없는 사람은 움직일 수 없다.
+     * 서고 안에서 걷거나 앉는다. 서고에 없는 사람의 움직임은 조용히 무시한다.
      * 자리(방석·의자) 하나에는 한 사람만 앉는다. 이미 누가 앉은 자리면 false를 돌려주고 아무것도 바꾸지 않는다.
      */
     public boolean moveInLibrary(Long anthologyId, Long contributorId, Spot spot) {
         if (!inLibrary(anthologyId).contains(contributorId)) {
-            return false;
+            return true;
         }
         Map<Long, Spot> spots = librarySpots.computeIfAbsent(anthologyId, id -> new ConcurrentHashMap<>());
         synchronized (spots) {
