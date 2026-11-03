@@ -35,6 +35,8 @@ public class RoomHub {
     private final Map<Long, List<Connection>> rooms = new ConcurrentHashMap<>();
     /** 방 안에서 걸어간 자리. 방을 완전히 나가면 지워지고 다시 들어오면 제자리에서 시작한다. */
     private final Map<Long, Map<Long, Position>> positions = new ConcurrentHashMap<>();
+    /** 꼬깃 서고(문집마다 하나 있는 넓은 공간) 안의 자리·앉은 곳·상태. 모임방 자리와 따로 둔다. 저장하지 않는다. */
+    private final Map<Long, Map<Long, Spot>> librarySpots = new ConcurrentHashMap<>();
     private volatile java.util.function.BiConsumer<Long, Long> leaveListener = (anthologyId, contributorId) -> { };
 
     /** 한 사람의 마지막 연결이 끊길 때 불린다(마지막 접속 기록용). */
@@ -44,8 +46,16 @@ public class RoomHub {
 
     /** 방에 들어온다. 들어온 사람에게 지금 있는 사람들을, 방 전체에 새 얼굴을 알린다. */
     public SseEmitter join(Long anthologyId, Long contributorId) {
+        return join(anthologyId, contributorId, false);
+    }
+
+    /**
+     * library가 참이면 꼬깃 서고 화면에서 붙은 연결이다. 서고에 있는 사람도 모임방에 있는 것으로 센다
+     * (같은 대화를 나누고 펫의 "몇 명 있어요"에도 잡힌다). 서고 안의 자리는 서고에 있는 사람끼리만 보인다.
+     */
+    public SseEmitter join(Long anthologyId, Long contributorId, boolean library) {
         SseEmitter emitter = new SseEmitter(CONNECTION_TTL.toMillis());
-        Connection connection = new Connection(contributorId, emitter);
+        Connection connection = new Connection(contributorId, emitter, library);
         List<Connection> room = rooms.computeIfAbsent(anthologyId, id -> new CopyOnWriteArrayList<>());
         room.add(connection);
         Runnable leave = () -> leave(anthologyId, connection);
@@ -54,8 +64,11 @@ public class RoomHub {
         emitter.onError(error -> leave.run());
 
         send(anthologyId, connection, "hello", Map.of("online", online(anthologyId),
-                "positions", positionsOf(anthologyId), "build", BUILD));
+                "positions", positionsOf(anthologyId), "build", BUILD, "library", library(anthologyId)));
         broadcast(anthologyId, "presence", Map.of("online", online(anthologyId)));
+        if (library) {
+            broadcast(anthologyId, "library", library(anthologyId));
+        }
         return emitter;
     }
 
@@ -99,6 +112,52 @@ public class RoomHub {
         return Map.copyOf(positions.getOrDefault(anthologyId, Map.of()));
     }
 
+    /** 지금 꼬깃 서고에 들어와 있는 참여자 id. */
+    public Set<Long> inLibrary(Long anthologyId) {
+        Set<Long> ids = new LinkedHashSet<>();
+        rooms.getOrDefault(anthologyId, List.of()).stream().filter(Connection::library)
+                .forEach(connection -> ids.add(connection.contributorId()));
+        return ids;
+    }
+
+    public Map<Long, Spot> librarySpotsOf(Long anthologyId) {
+        return Map.copyOf(librarySpots.getOrDefault(anthologyId, Map.of()));
+    }
+
+    /**
+     * 서고 안에서 걷거나 앉는다. 서고에 없는 사람은 움직일 수 없다.
+     * 자리(방석·의자) 하나에는 한 사람만 앉는다. 이미 누가 앉은 자리면 false를 돌려주고 아무것도 바꾸지 않는다.
+     */
+    public boolean moveInLibrary(Long anthologyId, Long contributorId, Spot spot) {
+        if (!inLibrary(anthologyId).contains(contributorId)) {
+            return false;
+        }
+        Map<Long, Spot> spots = librarySpots.computeIfAbsent(anthologyId, id -> new ConcurrentHashMap<>());
+        synchronized (spots) {
+            if (spot.seat() != null && spots.entrySet().stream()
+                    .anyMatch(e -> !e.getKey().equals(contributorId) && spot.seat().equals(e.getValue().seat()))) {
+                return false;
+            }
+            spots.put(contributorId, spot);
+        }
+        broadcast(anthologyId, "library-move", spot.event(contributorId));
+        return true;
+    }
+
+    /** 서고에서 짧은 몸짓(인사·기지개·책장 넘기기)을 한다. 저장하지 않고 알리기만 한다. */
+    public void actInLibrary(Long anthologyId, Long contributorId, String act) {
+        if (!inLibrary(anthologyId).contains(contributorId) || !Spot.ACTS.contains(act)) {
+            return;
+        }
+        broadcast(anthologyId, "library-act", Map.of("contributorId", contributorId, "act", act));
+    }
+
+    private Map<String, Object> library(Long anthologyId) {
+        Map<String, Object> spots = new java.util.HashMap<>();
+        librarySpotsOf(anthologyId).forEach((id, spot) -> spots.put(id.toString(), spot.event(id)));
+        return Map.of("here", inLibrary(anthologyId), "spots", spots);
+    }
+
     /** 내보낸 사람의 연결을 끊는다. */
     public void kick(Long anthologyId, Long contributorId) {
         rooms.getOrDefault(anthologyId, List.of()).stream()
@@ -139,9 +198,17 @@ public class RoomHub {
             return;
         }
         boolean gone = !online(anthologyId).contains(connection.contributorId());
+        boolean leftLibrary = connection.library() && !inLibrary(anthologyId).contains(connection.contributorId());
+        if (leftLibrary) {
+            Map<Long, Spot> walked = librarySpots.get(anthologyId);
+            if (walked != null) {
+                walked.remove(connection.contributorId());
+            }
+        }
         if (room.isEmpty()) {
             rooms.remove(anthologyId, room);
             positions.remove(anthologyId);
+            librarySpots.remove(anthologyId);
         } else if (gone) {
             // 아무도 걷지 않은 방에는 자리 표가 없다(빈 Map.of()에 remove하면 예외가 나서 나간 사람이 계속 남았다)
             Map<Long, Position> walked = positions.get(anthologyId);
@@ -157,9 +224,46 @@ public class RoomHub {
             }
         }
         broadcast(anthologyId, "presence", Map.of("online", online(anthologyId)));
+        if (leftLibrary) {
+            broadcast(anthologyId, "library", library(anthologyId));
+        }
     }
 
-    private record Connection(Long contributorId, SseEmitter emitter) {
+    /** library: 꼬깃 서고 화면에서 붙은 연결인가. */
+    private record Connection(Long contributorId, SseEmitter emitter, boolean library) {
+    }
+
+    /**
+     * 꼬깃 서고 안의 한 사람. x·y는 서고 바닥에 대한 0~1 비율, seat는 앉은 자리 이름(서 있으면 null),
+     * status는 읽는 중(read)·쓰는 중(write)·쉬는 중(rest).
+     */
+    public record Spot(Position at, String seat, String status) {
+
+        static final Set<String> STATUSES = Set.of("read", "write", "rest");
+        static final Set<String> ACTS = Set.of("bow", "stretch", "flip");
+        private static final java.util.regex.Pattern SEAT = java.util.regex.Pattern.compile("[a-z0-9-]{1,24}");
+
+        public Spot {
+            java.util.Objects.requireNonNull(at);
+            if (seat != null && (seat.isBlank() || !SEAT.matcher(seat).matches())) {
+                seat = null;
+            }
+            if (status == null || !STATUSES.contains(status)) {
+                status = "read";
+            }
+        }
+
+        Map<String, Object> event(Long contributorId) {
+            Map<String, Object> event = new java.util.HashMap<>();
+            event.put("contributorId", contributorId);
+            event.put("x", at.x());
+            event.put("y", at.y());
+            event.put("status", status);
+            if (seat != null) {
+                event.put("seat", seat);
+            }
+            return event;
+        }
     }
 
     /** 방 안의 자리. 0~1 밖의 값은 가장자리로 붙인다. */

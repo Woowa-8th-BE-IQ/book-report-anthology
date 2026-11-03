@@ -57,10 +57,58 @@ public class RoomController {
     }
 
     @GetMapping(path = "/anthologies/{code}/room/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(@PathVariable String code, HttpServletRequest request, HttpServletResponse response) {
+    public SseEmitter stream(@PathVariable String code, @RequestParam(defaultValue = "false") boolean library,
+                             HttpServletRequest request, HttpServletResponse response) {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("X-Accel-Buffering", "no");
-        return roomService.connect(code, cookies.read(request, code));
+        return roomService.connect(code, cookies.read(request, code), library);
+    }
+
+    /**
+     * 꼬깃 서고: 문집마다 하나 있는 넓은 서고. 걸어 다니고, 자리에 앉고, 한마디를 말풍선으로 띄운다.
+     * 대화는 모임방과 같은 것이라 서고에서 한 말도 모임방·펫에 그대로 보인다.
+     */
+    @GetMapping("/anthologies/{code}/library")
+    public String library(@PathVariable String code, HttpServletRequest request, Model model) {
+        Room room;
+        try {
+            room = roomService.enter(code, cookies.read(request, code));
+        } catch (DomainException e) {
+            if (e.type() == ErrorType.FORBIDDEN) {
+                return "redirect:/anthologies/" + code; // 참여 폼으로
+            }
+            throw e;
+        }
+        model.addAttribute("library", LibraryView.of(room, essayService.shelf(room.anthology()), roomService.now()));
+        model.addAttribute("bodyMax", RoomMessage.BODY_MAX);
+        model.addAttribute("build", com.iq.anthology.room.RoomHub.BUILD);
+        return "anthologies/library";
+    }
+
+    /** 서고 안에서 걷거나 앉는다. 이미 누가 앉은 자리면 409. */
+    @PostMapping("/anthologies/{code}/library/spot")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> spot(@PathVariable String code, @RequestParam double x,
+                                                    @RequestParam double y,
+                                                    @RequestParam(required = false) String seat,
+                                                    @RequestParam(required = false) String status,
+                                                    HttpServletRequest request) {
+        try {
+            if (roomService.moveInLibrary(code, cookies.read(request, code), x, y, seat, status)) {
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+            }
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "누가 먼저 앉았어요."));
+        } catch (DomainException e) {
+            return ResponseEntity.status(e.type().status()).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /** 서고에서 짧은 몸짓(인사·기지개·책장 넘기기). */
+    @PostMapping("/anthologies/{code}/library/act")
+    @ResponseBody
+    public ResponseEntity<Void> act(@PathVariable String code, @RequestParam String act, HttpServletRequest request) {
+        roomService.actInLibrary(code, cookies.read(request, code), act);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /** JS가 없을 때: 폼 제출 뒤 방으로 돌아온다. */

@@ -113,10 +113,15 @@ public class RoomService {
 
 
     public SseEmitter connect(String code, String token) {
+        return connect(code, token, false);
+    }
+
+    /** library가 참이면 꼬깃 서고에 들어온다(모임방 대화는 그대로 함께 받는다). */
+    public SseEmitter connect(String code, String token, boolean library) {
         Anthology anthology = anthologyService.get(code);
         Contributor me = AnthologyService.requireContributor(anthology, token);
         anthologyService.seen(me);
-        SseEmitter emitter = hub.join(anthology.id(), me.id());
+        SseEmitter emitter = hub.join(anthology.id(), me.id(), library);
         news.greet(anthology, me); // 마감이 가까우면 들어오자마자 알린다
         return emitter;
     }
@@ -185,6 +190,21 @@ public class RoomService {
         Anthology anthology = anthologyService.get(code);
         Contributor me = AnthologyService.requireContributor(anthology, token);
         hub.move(anthology.id(), me.id(), new RoomHub.Position(x, y));
+    }
+
+    /** 꼬깃 서고 안에서 걷거나 앉는다. 이미 누가 앉은 자리면 false. */
+    public boolean moveInLibrary(String code, String token, double x, double y, String seat, String status) {
+        Anthology anthology = anthologyService.get(code);
+        Contributor me = AnthologyService.requireContributor(anthology, token);
+        return hub.moveInLibrary(anthology.id(), me.id(),
+                new RoomHub.Spot(new RoomHub.Position(x, y), seat, status));
+    }
+
+    /** 꼬깃 서고에서 짧은 몸짓을 한다. */
+    public void actInLibrary(String code, String token, String act) {
+        Anthology anthology = anthologyService.get(code);
+        Contributor me = AnthologyService.requireContributor(anthology, token);
+        hub.actInLibrary(anthology.id(), me.id(), act);
     }
 
     public java.util.Set<Long> online(Anthology anthology) {

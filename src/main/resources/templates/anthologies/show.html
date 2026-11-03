@@ -201,6 +201,19 @@
         <span class="room-door-arrow" aria-hidden="true">→</span>
       </a>
 
+      <!-- 꼬깃 서고: 걸어 다니며 쉬어 가는 넓은 서고 -->
+      <a class="paper tape room-door library-door" th:if="${view.isContributor()}"
+         th:href="@{/anthologies/{code}/library(code=${a.code()})}">
+        <span class="library-door-art" aria-hidden="true">
+          <svg viewBox="0 0 48 48"><path d="M6 44V8h12v36M30 44V8h12v36" fill="#7A4E33" stroke="#2E241C" stroke-width="2.4" stroke-linejoin="round"/><path d="M9 14h6M9 20h6M9 26h6M9 32h6M9 38h6M33 14h6M33 20h6M33 26h6M33 32h6M33 38h6" stroke="#E3A857" stroke-width="2.6"/><path d="M24 40c-4-1-7-4-8-9 4 1 6 3 8 6 2-3 4-5 8-6-1 5-4 8-8 9z" fill="#E4572E" stroke="#2E241C" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 44h40" stroke="#2E241C" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </span>
+        <span class="room-door-text">
+          <b>꼬깃 서고</b>
+          <small>높은 책장 사이를 거닐다 자리에 앉아 쉬어 가요</small>
+        </span>
+        <span class="room-door-arrow" aria-hidden="true">→</span>
+      </a>
+
       <div class="paper" th:if="${view.isContributor()}">
         <h3>함께 쓰는 사람</h3>
         <ol class="seats" id="seats">
