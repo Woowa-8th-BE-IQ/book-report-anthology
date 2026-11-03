@@ -622,9 +622,34 @@ figure.quote .underline { position: absolute; inset: auto 18px -7px 18px; width:
 .room-door-text small { font-size: 12.5px; color: var(--muted); }
 .room-door-arrow { font-size: 20px; color: var(--accent); transition: transform .25s; }
 .room-door:hover .room-door-arrow { transform: translateX(4px); }
-.library-door { margin-top: 14px; }
-.library-door-art { width: 44px; height: 44px; flex: none; }
-.library-door-art svg { width: 100%; height: 100%; display: block; }
+/* 꼬깃 서고 입구: 나무 책장 빛깔의 어두운 문. 종이 카드들 사이에서 눈에 띄게 */
+.library-door-art { width: 48px; height: 48px; flex: none; }
+.library-door-art svg, .library-cta svg { width: 100%; height: 100%; display: block; }
+.paper.library-door, .library-cta {
+  position: relative; overflow: hidden; color: #FFF3DC;
+  background:
+    radial-gradient(circle at 78% 30%, rgba(255, 226, 150, .9) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 88% 70%, rgba(255, 226, 150, .7) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 64% 82%, rgba(255, 226, 150, .6) 0 1px, transparent 2px),
+    radial-gradient(120% 140% at 0% 0%, #6B4430, #3B2618 60%, #2B1C12);
+  box-shadow: 0 12px 28px rgba(46, 28, 14, .3), inset 0 0 0 2px rgba(227, 168, 87, .35);
+}
+.paper.library-door { margin-top: 14px; }
+.paper.library-door .room-door-text b, .library-cta b { font-family: var(--hand); font-size: 27px; font-weight: 400; line-height: 1.05; color: #FFE2A6; }
+.paper.library-door .room-door-text small, .library-cta small { font-size: 12.5px; color: #E8D3B0; }
+.paper.library-door .room-door-arrow, .library-cta-arrow { font-size: 22px; color: #F2D16B; transition: transform .25s; }
+.paper.library-door::after, .library-cta::after { /* 문틈으로 새는 빛이 천천히 지나간다 */
+  content: ""; position: absolute; inset: -40% auto -40% -30%; width: 30%; rotate: 18deg; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 226, 150, .16), transparent);
+  animation: door-glint 5.5s ease-in-out infinite;
+}
+@keyframes door-glint { 0%, 55% { translate: 0 0; } 100% { translate: 520% 0; } }
+.library-cta { display: flex; align-items: center; gap: 14px; max-width: 560px; margin: 14px 0 4px; padding: 14px 18px; border-radius: 16px; text-decoration: none; transition: transform .25s, box-shadow .25s; }
+.library-cta > svg { width: 48px; height: 48px; flex: none; }
+.library-cta > span:not(.library-cta-arrow) { display: grid; gap: 3px; flex: 1; }
+.library-cta:hover, .library-cta:focus-visible { transform: translateY(-2px); box-shadow: 0 16px 34px rgba(46, 28, 14, .36), inset 0 0 0 2px rgba(242, 209, 107, .6); }
+.library-cta:hover .library-cta-arrow, .library-door:hover .room-door-arrow { transform: translateX(5px); }
+@media (prefers-reduced-motion: reduce) { .paper.library-door::after, .library-cta::after { animation: none; display: none; } }
 
 .pet-link { margin-top: 14px; max-width: 560px; font-size: 13.5px; }
 .pet-link summary { cursor: pointer; color: var(--accent); font-weight: 600; width: fit-content; }

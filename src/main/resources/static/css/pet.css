@@ -88,6 +88,8 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-sub { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
 .pet-sub small { font-size: 11px; color: var(--muted); }
 .pet-open { font-size: 12px; color: var(--accent); text-decoration: none; white-space: nowrap; }
+.pet-library { margin-left: auto; padding: 2px 9px; border-radius: 999px; background: #3B2618; color: #FFE2A6; font-weight: 600; }
+.pet-library:hover { background: #4A2F20; }
 .pet-plus { display: grid; place-items: center; width: 28px; height: 28px; margin-bottom: 2px; padding: 0; border: 1px solid var(--line); border-radius: 9px; background: var(--card); color: var(--ink-soft); cursor: pointer; transition: color .15s, border-color .15s, transform .2s; }
 .pet-plus:hover { color: var(--accent); border-color: var(--accent); transform: rotate(90deg); }
 .pet-plus .i { width: 15px; height: 15px; }

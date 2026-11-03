@@ -31,7 +31,8 @@
 
   // ───────── 자리(앉을 수 있는 곳)와 장애물 ─────────
   const SEATS = [
-    ...[860, 990, 1410, 1540].map((x, i) => ({ id: `bench-${i + 1}`, x, y: 560, kind: 'bench', from: [x, 600] })),
+    // 벤치는 앉는 판이 높다: 발끝 좌표는 벤치 바로 앞, 몸은 rise(세계 픽셀)만큼 올라가 판 위에 앉는다
+    ...[860, 990, 1410, 1540].map((x, i) => ({ id: `bench-${i + 1}`, x, y: 556, rise: 18, kind: 'bench', from: [x, 600] })),
     ...[430, 570, 710, 850].map((x, i) => ({ id: `tl-${i + 1}`, x, y: 950, kind: 'chair', from: [x, 915] })),
     ...[1550, 1690, 1830, 1970].map((x, i) => ({ id: `tr-${i + 1}`, x, y: 950, kind: 'chair', from: [x, 915] })),
     { id: 'nook-l', x: 330, y: 690, kind: 'beanbag', from: [330, 740] },
@@ -264,9 +265,11 @@
   };
 
   // ───────── 가구(사람과 깊이 순서를 다투는 것들) ─────────
-  const lamp = (x, y) => `<g><rect x="${x - 4}" y="${y - 38}" width="8" height="38" fill="#C9A15E" stroke="${INK}" stroke-width="2.5"/>`
+  // 스탠드: 그 테이블 의자에 누가 앉으면 딸깍 켜진다
+  const lamp = (x, y, id) => `<g class="lib-lamp" data-lamp="${id}"><rect x="${x - 4}" y="${y - 38}" width="8" height="38" fill="#C9A15E" stroke="${INK}" stroke-width="2.5"/>`
     + `<ellipse class="lib-lamp-glow" cx="${x}" cy="${y - 20}" rx="70" ry="34"/>`
     + `<path d="M${x - 36} ${y - 34}q0-22 36-22t36 22z" fill="#3F6B4F" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>`
+    + `<ellipse class="lib-bulb" cx="${x}" cy="${y - 33}" rx="15" ry="4.5"/>`
     + `<ellipse cx="${x}" cy="${y + 2}" rx="20" ry="6" fill="#C9A15E" stroke="${INK}" stroke-width="2.5"/></g>`;
   const props = [];
   const prop = (x, y, w, h, base, body, attrs = {}) => props.push({ x, y, w, h, base, body, attrs });
@@ -296,13 +299,14 @@
       <rect x="8" y="112" width="604" height="18" fill="#8C5A3B" stroke="${INK}" stroke-width="4"/>
       <rect x="34" y="130" width="20" height="64" fill="#8C5A3B" stroke="${INK}" stroke-width="4"/>
       <rect x="566" y="130" width="20" height="64" fill="#8C5A3B" stroke="${INK}" stroke-width="4"/>
-      ${lamp(160, 92)}${lamp(460, 92)}
+      ${lamp(160, 92, `${x0}-a`)}${lamp(460, 92, `${x0}-b`)}
       <g stroke="${INK}" stroke-width="2.5" stroke-linejoin="round">
         <path d="M262 96l38-7 38 7-38 6z" fill="#FFF6E6"/><path d="M300 89v13" />
         <rect x="360" y="84" width="42" height="12" rx="2" fill="#4F6D8A"/><rect x="364" y="74" width="34" height="10" rx="2" fill="#E3A857"/>
         <path d="M528 78h18v18h-18z" fill="#FFFDF8"/><path d="M546 82q8 0 8 6t-8 6" fill="none"/>
       </g>`);
     SEATS.filter((seat) => seat.kind === 'chair' && seat.x > x0 && seat.x < x0 + 620).forEach((seat) => {
+      seat.lamp = seat.x - x0 < 310 ? `${x0}-a` : `${x0}-b`;
       prop(seat.x - 46, seat.y - 124, 92, 130, seat.y - 1, `
         <g stroke="${INK}" stroke-width="4" stroke-linejoin="round">
           <rect x="10" y="8" width="72" height="22" rx="10" fill="#8C5A3B"/>
@@ -386,6 +390,15 @@
   const STATUS = { read: '읽는 중', write: '쓰는 중', rest: '쉬는 중' };
   const depth = (y) => 0.7 + (0.46 * (y - FLOOR.top)) / (FLOOR.bottom - FLOOR.top);
 
+  const critterOf = (el) => ((el.querySelector('.avatar svg') || { getAttribute: () => '' }).getAttribute('class') || '').match(/critter-([a-z]+)/)?.[1] || 'wood';
+  // 앉아 있을 때 손에 든 것: 읽는 중이면 책장이 넘어가고, 쓰는 중이면 연필이 움직이고, 쉬는 중이면 김이 오른다
+  const HOLD = {
+    read: `<svg viewBox="0 0 48 34"><path d="M24 8C18 4 10 3 3 5v24c7-2 15-1 21 3 6-4 14-5 21-3V5c-7-2-15-1-21 3z" fill="#FFFDF8" stroke="${INK}" stroke-width="2.4" stroke-linejoin="round"/><path d="M8 12h11M8 17h11M8 22h8" stroke="#C9B9A0" stroke-width="1.8"/><path class="hold-page" d="M24 8c4-3 10-4 17-3v22c-7-1-13 0-17 3z" fill="#F4EBDD" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><path d="M24 8v24" stroke="${INK}" stroke-width="2"/></svg>`,
+    write: `<svg viewBox="0 0 48 34"><rect x="5" y="6" width="30" height="25" rx="2" fill="#FFFDF8" stroke="${INK}" stroke-width="2.4"/><path d="M10 13h20M10 18h20M10 23h12" stroke="#9BB7D4" stroke-width="1.8"/><g class="hold-pencil"><path d="M28 27l12-17 5 3.4-12 17-5.6 1.4z" fill="#F2D16B" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round"/><path d="M40 10l5 3.4" stroke="#E4572E" stroke-width="3.2"/></g></svg>`,
+    rest: `<svg viewBox="0 0 48 40"><g class="hold-steam" fill="none" stroke="#B5A28C" stroke-width="2.6" stroke-linecap="round"><path d="M17 13c-3-3 3-5 0-9"/><path d="M25 13c-3-3 3-5 0-9"/></g><path d="M9 16h24v14a6 6 0 0 1-6 6H15a6 6 0 0 1-6-6z" fill="#C9604A" stroke="${INK}" stroke-width="2.4" stroke-linejoin="round"/><path d="M33 19h3a5 5 0 0 1 0 10h-3" fill="none" stroke="${INK}" stroke-width="2.4"/><path d="M13 21v8" stroke="#FFF6E6" stroke-width="2.4" stroke-linecap="round" opacity=".6"/></svg>`,
+  };
+  const seatOf = (id) => SEATS.find((s) => s.id === id) || null;
+
   const createPerson = (id) => {
     const template = faceOf(id);
     if (!template) return null;
@@ -393,11 +406,11 @@
     el.className = 'member online lib-who' + (id === meId ? ' me' : '');
     el.dataset.id = id;
     el.style.setProperty('--d', String(id % 7));
-    el.innerHTML = `<span class="lib-bubble" hidden></span><span class="lib-tag"><b></b><small></small></span>`;
+    el.innerHTML = '<span class="lib-bubble" hidden></span><span class="lib-tag"><b></b><small></small></span><span class="lib-body"><span class="lib-hold" aria-hidden="true"></span></span>';
     el.querySelector('.lib-tag b').textContent = template.dataset.name;
-    el.appendChild(template.content.firstElementChild.cloneNode(true));
+    el.querySelector('.lib-body').prepend(template.content.firstElementChild.cloneNode(true));
     world.appendChild(el);
-    const person = { id, el, x: 1200, y: 1200, tx: 1200, ty: 1200, seat: null, status: 'read', walking: false };
+    const person = { id, el, x: 1200, y: 1200, tx: 1200, ty: 1200, seat: null, seated: null, status: 'read', walking: false, critter: critterOf(el) };
     people.set(id, person);
     return person;
   };
@@ -408,18 +421,173 @@
     el.style.setProperty('--s', depth(person.y).toFixed(3));
     el.style.zIndex = String(Math.round(person.y));
   };
+  // seat는 잡은 자리(서버와 같다), seated는 실제로 엉덩이를 붙인 자리(뛰어올라 내려앉은 뒤)
   const label = (person) => {
     person.el.querySelector('.lib-tag small').textContent = STATUS[person.status] || STATUS.read;
-    person.el.classList.toggle('sitting', Boolean(person.seat));
+    const seat = person.seated ? seatOf(person.seated) : null;
+    person.el.classList.toggle('sitting', Boolean(seat));
+    ['chair', 'bench', 'beanbag', 'cushion'].forEach((kind) => person.el.classList.toggle(`seat-${kind}`, Boolean(seat) && seat.kind === kind));
+    const hold = person.el.querySelector('.lib-hold');
+    if (hold.dataset.status !== person.status) { hold.dataset.status = person.status; hold.innerHTML = HOLD[person.status] || HOLD.read; }
   };
   const setWalking = (person, walking) => {
     if (person.walking === walking) return;
     person.walking = walking;
     person.el.classList.toggle('walking', walking);
-    if (!walking) { person.el.classList.add('arrived'); setTimeout(() => person.el.classList.remove('arrived'), 450); }
+    if (walking) {
+      person.clock = cadence(person.critter) * 0.7; // 첫 발소리는 곧바로
+      if (!reduceMotion) puff(person.x, person.y, 'dust', person.y - 1, 2, 1.6);
+    } else {
+      person.el.classList.add('arrived');
+      setTimeout(() => person.el.classList.remove('arrived'), 450);
+    }
   };
   const face = (person, dx) => {
     if (Math.abs(dx) > 0.6) person.el.classList.toggle('facing-left', dx < 0);
+  };
+
+  // ───────── 효과: 소리·먼지·발자국 ─────────
+  const sound = window.LibSound;
+  const sfx = (name, ...args) => { if (sound && sound.on) sound[name](...args); };
+  const cadence = (kind) => (sound ? sound.cadence(kind) : 0.3);
+  const onRug = (x, y) => ((x - 1200) / 540) ** 2 + ((y - 780) / 150) ** 2 < 1 || (x > 1060 && x < 1340 && y > 1222 && y < 1292);
+  const restart = (el, cls, ms) => {
+    el.classList.remove(cls);
+    void el.getBoundingClientRect(); // 같은 효과를 처음부터 다시
+    el.classList.add(cls);
+    clearTimeout(el[`_${cls}`]);
+    el[`_${cls}`] = setTimeout(() => el.classList.remove(cls), ms);
+  };
+  // 발밑에서 피어오르는 먼지(러그 위에서는 보풀)
+  const puff = (x, y, type, z, count = 3, spread = 1) => {
+    const el = document.createElement('span');
+    el.className = `lib-puff ${type}`;
+    el.style.cssText = `left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;z-index:${Math.round(z)};scale:${depth(y).toFixed(2)}`;
+    for (let k = 0; k < count; k++) {
+      const bit = document.createElement('i');
+      bit.style.setProperty('--a', ((k - (count - 1) / 2) * spread).toFixed(2));
+      bit.style.setProperty('--k', String(k));
+      el.appendChild(bit);
+    }
+    world.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  };
+  // 발자국: 마루에 찍혔다가 천천히 사라진다(느릿은 반짝이는 점액 자국)
+  const marks = [];
+  const mark = (person, ux, uy) => {
+    const kind = person.critter;
+    const rug = onRug(person.x, person.y);
+    const s = depth(person.y);
+    if (!rug) {
+      const el = document.createElement('span');
+      el.className = kind === 'snail' ? 'lib-slime' : 'lib-print';
+      const off = kind === 'snail' ? 0 : (person.foot ? 7 : -7) * s;
+      el.style.cssText = `left:${(person.x - uy * off).toFixed(1)}px;top:${(person.y + ux * off * 0.6).toFixed(1)}px;rotate:${Math.atan2(uy * 0.6, ux).toFixed(3)}rad;scale:${s.toFixed(2)}`;
+      world.appendChild(el);
+      marks.push(el);
+      if (marks.length > 110) marks.shift().remove();
+      setTimeout(() => { el.remove(); const i = marks.indexOf(el); if (i >= 0) marks.splice(i, 1); }, kind === 'snail' ? 4200 : 2600);
+    }
+    person.steps = (person.steps || 0) + 1;
+    if (!reduceMotion && kind !== 'snail' && person.steps % 3 === 0) puff(person.x - ux * 16, person.y, rug ? 'fluff' : 'dust', person.y - 1);
+  };
+  // 한 프레임 걸은 만큼: 일정 거리마다 발자국, 꼬깃단마다 다른 박자로 발소리
+  const stride = (person, mx, my, dt) => {
+    const d = Math.hypot(mx, my);
+    if (d < 0.05) return;
+    const kind = person.critter;
+    person.trail = (person.trail || 0) + d;
+    if (person.trail >= (kind === 'snail' ? 24 : kind === 'frog' ? 72 : 44)) {
+      person.trail = 0;
+      person.foot = !person.foot;
+      mark(person, mx / d, my / d);
+    }
+    person.clock = (person.clock || 0) + dt;
+    if (person.clock >= cadence(kind)) {
+      person.clock = 0;
+      const sp = hear(person);
+      sp.soft = onRug(person.x, person.y);
+      sfx('step', kind, sp);
+    }
+  };
+  const popWord = (person, word) => {
+    if (!word) return;
+    const pop = document.createElement('span');
+    pop.className = 'lib-pop';
+    pop.textContent = word;
+    person.el.appendChild(pop);
+    setTimeout(() => pop.remove(), 1300);
+  };
+
+  // ───────── 앉는 순간·일어서는 순간 ─────────
+  const HOP_HEIGHT = { chair: 46, bench: 34, beanbag: 30, cushion: 26 };
+  const SIT_WORD = { chair: '털썩', bench: '털썩', beanbag: '폭신', cushion: '폭신' };
+  const lit = new Set();
+  const updateLamps = (by) => {
+    const now = new Set();
+    people.forEach((p) => { const seat = p.seated && seatOf(p.seated); if (seat && seat.lamp) now.add(seat.lamp); });
+    world.querySelectorAll('.lib-lamp').forEach((el) => {
+      const on = now.has(el.dataset.lamp);
+      if (on !== lit.has(el.dataset.lamp) && by) sfx('lamp', hear(by));
+      el.classList.toggle('on', on);
+    });
+    lit.clear();
+    now.forEach((id) => lit.add(id));
+  };
+  // 깡충 뛰어 자리로(또는 자리에서 내려와): 발끝 좌표는 미끄러지고, 몸은 포물선으로 뜬다
+  // r0·r1: 뛰기 시작할 때와 내려앉을 때 몸이 바닥에서 떠 있는 높이(벤치처럼 높은 자리)
+  const startHop = (person, to, height, done, r0 = 0, r1 = 0) => {
+    const dist = Math.hypot(to[0] - person.x, to[1] - person.y);
+    person.hop = { fx: person.x, fy: person.y, tx: to[0], ty: to[1], t0: performance.now(), dur: reduceMotion ? 1 : 300 + Math.min(260, dist * 0.8), h: reduceMotion ? 0 : height, r0, r1, done };
+  };
+  const stepHop = (person, now) => {
+    const h = person.hop;
+    const t = Math.min(1, (now - h.t0) / h.dur);
+    const e = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
+    person.x = h.fx + (h.tx - h.fx) * e;
+    person.y = h.fy + (h.ty - h.fy) * e;
+    const lift = Math.sin(Math.PI * t) * h.h + h.r0 + (h.r1 - h.r0) * e;
+    person.el.style.setProperty('--lift', `${(-lift).toFixed(1)}px`);
+    person.el.style.setProperty('--liftk', (lift / 60).toFixed(3));
+    place(person);
+    if (t < 0.85) person.el.style.zIndex = String(Math.round(Math.max(h.fy, h.ty))); // 뛰는 동안은 의자 등받이 앞으로
+    if (t >= 1) {
+      person.hop = null;
+      person.el.style.removeProperty('--lift');
+      person.el.style.removeProperty('--liftk');
+      place(person);
+      const next = person.queued;
+      person.queued = null;
+      if (h.done) h.done();
+      if (next) next();
+    }
+  };
+  // 내려앉는 순간: 몸이 납작 눌렸다 튀어 오르고, 의자는 삐걱 흔들리고, 방석은 꺼졌다 부푼다
+  const snap = (person) => { // 자리 높이가 바뀌는 순간에는 미끄러지지 않고 딱 맞게
+    person.el.classList.add('snap');
+    requestAnimationFrame(() => requestAnimationFrame(() => person.el.classList.remove('snap')));
+  };
+  const land = (person, seat) => {
+    person.seated = seat.id;
+    snap(person);
+    label(person);
+    restart(person.el, 'plop', 650);
+    const target = world.querySelector(`[data-seat="${seat.id}"]`);
+    if (target) restart(target, seat.kind === 'chair' ? 'bump' : 'squish', 700);
+    if (!reduceMotion) puff(seat.x, seat.y - (seat.kind === 'chair' ? 4 : 12), seat.kind === 'chair' ? 'dust' : 'fluff', seat.y + 1, 6, 1.4);
+    popWord(person, SIT_WORD[seat.kind]);
+    sfx('sit', seat.kind, hear(person));
+    updateLamps(person);
+  };
+  const getUp = (person, seat) => {
+    person.seated = null;
+    snap(person);
+    label(person);
+    updateLamps(person);
+    if (!seat) return;
+    const target = world.querySelector(`[data-seat="${seat.id}"]`);
+    if (target) restart(target, seat.kind === 'chair' ? 'bump' : 'squish', 700);
+    sfx('stand', seat.kind, hear(person));
   };
 
   // ───────── 나 ─────────
@@ -428,6 +596,7 @@
   let pending = null; // 도착하면 할 일: { seat } 또는 { hot }
   const keys = new Set();
   let entered = false;
+  let greeted = false; // 처음 받은 명단으로는 종을 울리지 않는다
 
   // ───────── 카메라 ─────────
   let scale = 1;
@@ -451,6 +620,16 @@
   applyCam();
   window.addEventListener('resize', () => { resize(); cam = camTarget(); applyCam(); });
 
+  // 소리가 나는 자리: 내 화면 가운데서 멀수록 작게, 왼쪽·오른쪽으로 나눠 들린다
+  const hear = (person) => {
+    if (!person || person === me) return { gain: 1, pan: 0 };
+    const v = view();
+    const dx = person.x - (cam.x + v.w / 2);
+    const dy = person.y - (cam.y + v.h / 2);
+    const d = Math.hypot(dx, dy * 1.4);
+    return { gain: Math.max(0, 1 - d / 1200) ** 1.5, pan: clamp(dx / (v.w * 0.6), -0.85, 0.85) };
+  };
+
   // ───────── 서버로 보내기 ─────────
   const post = (url, data) => fetch(url, {
     method: 'POST',
@@ -469,7 +648,8 @@
       return Promise.resolve(null);
     }
     lastSent = at;
-    const data = { x: (me.x / W).toFixed(4), y: (me.y / H).toFixed(4), status: me.status };
+    const [x, y] = me.hop ? [me.hop.tx, me.hop.ty] : [me.x, me.y];
+    const data = { x: (x / W).toFixed(4), y: (y / H).toFixed(4), status: me.status };
     if (me.seat) data.seat = me.seat;
     return post(root.dataset.spot, data).catch(() => null);
   };
@@ -485,40 +665,61 @@
 
   // ───────── 앉기·일어서기 ─────────
   const seatTaken = (id) => [...people.values()].some((p) => p !== me && p.seat === id);
-  const sit = async (seat) => {
-    if (seatTaken(seat.id)) { say('누가 앉아 있어요'); return; }
-    me.x = seat.x; me.y = seat.y; me.seat = seat.id;
+  const nope = (text) => { say(text); sfx('nope'); };
+  const sit = (seat) => {
+    if (seatTaken(seat.id)) { nope('누가 앉아 있어요'); return; }
+    me.seat = seat.id; // 자리부터 잡고(서버에도 바로) 깡충 뛰어오른다
     if (seat.kind === 'bench' || seat.kind === 'chair') me.el.classList.remove('facing-left');
-    place(me); label(me);
-    const response = await sendSpot(true);
-    if (response && response.status === 409) {
+    startHop(me, [seat.x, seat.y], HOP_HEIGHT[seat.kind], () => land(me, seat), 0, seat.rise || 0);
+    sendSpot(true).then((response) => {
+      if (!response || response.status !== 409 || me.seat !== seat.id) return;
       me.seat = null;
-      const [fx, fy] = seat.from; me.x = fx; me.y = fy;
-      place(me); label(me);
-      say('한발 늦었어요. 누가 먼저 앉았어요');
-    }
+      const back = () => { const up = me.seated ? seat.rise || 0 : 0; if (me.seated) getUp(me, seat); startHop(me, seat.from, 26, () => sendSpot(true), up); };
+      if (me.hop) me.hop.done = back; else back();
+      nope('한발 늦었어요. 누가 먼저 앉았어요');
+    });
   };
-  const stand = () => {
-    if (!me.seat) return;
-    const seat = SEATS.find((s) => s.id === me.seat);
+  const stand = (then = null) => {
+    if (!me.seat) { if (then) then(); return; }
+    const seat = seatOf(me.seat);
+    const up = me.seated && seat ? seat.rise || 0 : 0;
     me.seat = null;
-    if (seat) { [me.x, me.y] = seat.from; }
-    place(me); label(me);
+    getUp(me, seat);
+    startHop(me, seat ? seat.from : [me.x, me.y + 30], 24, () => { sendSpot(true); if (then) then(); }, up);
     sendSpot(true);
   };
   const goTo = (target, then = null) => {
-    if (!me) return;
-    if (me.seat) stand();
+    if (!me) return null;
+    if (me.hop) { me.queued = () => goTo(target, then); return null; }
+    if (me.seat) { stand(() => goTo(target, then)); return null; }
     const spot = nearestFree(target[0], target[1]);
-    if (!spot) return;
+    if (!spot) return null;
     path = findPath([me.x, me.y], spot);
     pending = then;
-    if (!path) { pending = null; say('거기는 갈 수 없어요'); }
+    if (!path) { pending = null; nope('거기는 갈 수 없어요'); return null; }
+    return spot;
   };
   const goSit = (seat) => {
     if (me.seat === seat.id) return;
-    if (seatTaken(seat.id)) { say('누가 앉아 있어요'); return; }
+    if (seatTaken(seat.id)) { nope('누가 앉아 있어요'); return; }
+    clearGoal();
     goTo(seat.from, { seat });
+  };
+  // 바닥을 누른 곳에 꽂히는 작은 깃발: 도착하면 사라진다
+  let goal = null;
+  const clearGoal = () => {
+    if (!goal) return;
+    const old = goal;
+    goal = null;
+    old.classList.add('done');
+    setTimeout(() => old.remove(), 300);
+  };
+  const showGoal = (x, y) => {
+    clearGoal();
+    goal = document.createElement('span');
+    goal.className = 'lib-goal';
+    goal.style.cssText = `left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;scale:${depth(y).toFixed(2)}`;
+    world.appendChild(goal);
   };
   const nearestSeat = () => {
     let best = null;
@@ -537,9 +738,10 @@
     const body = card.querySelector('.lib-card-body');
     body.replaceChildren(template.content.cloneNode(true));
     card.hidden = false;
+    sfx('paper', true);
     card.querySelector('.lib-card-close').focus({ preventScroll: true });
   };
-  const closeCard = () => { card.hidden = true; stage.focus({ preventScroll: true }); };
+  const closeCard = () => { if (!card.hidden) sfx('paper', false); card.hidden = true; stage.focus({ preventScroll: true }); };
   card.querySelector('.lib-card-close').addEventListener('click', closeCard);
 
   // ───────── 몸짓 ─────────
@@ -550,6 +752,7 @@
     el.classList.remove('act-bow', 'act-stretch', 'act-flip');
     void el.offsetWidth;
     el.classList.add(`act-${act}`);
+    sfx('act', act, hear(person));
     const pop = document.createElement('span');
     pop.className = 'lib-pop';
     pop.textContent = ACT_LABEL[act] || '';
@@ -576,6 +779,7 @@
     const b = person.el.querySelector('.lib-bubble');
     b.textContent = text.length > 80 ? `${text.slice(0, 80)}…` : text;
     b.hidden = false;
+    sfx('pop', hear(person));
     b.classList.remove('fade');
     clearTimeout(b._timer);
     b._timer = setTimeout(() => { b.classList.add('fade'); setTimeout(() => { b.hidden = true; }, 400); }, 7000);
@@ -613,16 +817,33 @@
     if (id === meId) return;
     const person = people.get(id) || createPerson(id);
     if (!person) return;
+    const before = person.seat;
     person.tx = data.x * W; person.ty = data.y * H;
     person.seat = data.seat || null;
     person.status = data.status || 'read';
-    if (snap || !person.placed) { person.x = person.tx; person.y = person.ty; person.placed = true; place(person); }
+    if (snap || !person.placed) {
+      person.hop = null;
+      person.x = person.tx; person.y = person.ty; person.placed = true; person.seated = person.seat;
+      place(person);
+    } else if (before !== person.seat) { // 앉거나 일어섰다: 나와 똑같이 깡충
+      const seat = seatOf(person.seat);
+      const old = person.seated ? seatOf(person.seated) : null;
+      if (old) getUp(person, old);
+      startHop(person, [person.tx, person.ty], seat ? HOP_HEIGHT[seat.kind] : 24, seat ? () => land(person, seat) : null, (old && old.rise) || 0, (seat && seat.rise) || 0);
+    }
     label(person);
   };
   const applyLibrary = (library) => {
     const here = new Set((library.here || []).map(Number));
     [...people.keys()].forEach((id) => {
-      if (id !== meId && !here.has(id)) { people.get(id).el.remove(); people.delete(id); }
+      if (id !== meId && !here.has(id)) { // 나간 사람은 먼지 한 줌 남기고 사라진다
+        const gone = people.get(id);
+        people.delete(id);
+        if (!reduceMotion) puff(gone.x, gone.y, 'dust', gone.y + 1, 5, 1.2);
+        gone.el.classList.add('leaving');
+        setTimeout(() => gone.el.remove(), 400);
+        updateLamps();
+      }
     });
     here.forEach((id) => {
       if (id === meId || people.has(id)) return;
@@ -630,9 +851,12 @@
       if (person) { // 아직 걷지 않은 사람은 입구 매트 근처에 선다
         person.x = person.tx = 1120 + (id % 9) * 20; person.y = person.ty = 1190; person.placed = true;
         place(person); label(person);
+        if (greeted) { sfx('bell', { gain: 0.4 }); if (!reduceMotion) puff(person.x, person.y, 'fluff', person.y + 1, 5, 1.2); }
       }
     });
     Object.values(library.spots || {}).forEach((spot) => applySpot(spot, true));
+    greeted = true;
+    updateLamps();
     renderPeople();
   };
   const connect = () => {
@@ -659,7 +883,7 @@
     source.addEventListener('avatar', (event) => {
       const data = parse(event);
       const person = data && people.get(Number(data.contributorId));
-      if (person) person.el.querySelector('.avatar').innerHTML = data.svg;
+      if (person) { person.el.querySelector('.avatar').innerHTML = data.svg; person.critter = critterOf(person.el); }
       const template = data && faceOf(data.contributorId);
       if (template) template.content.firstElementChild.innerHTML = data.svg;
     });
@@ -670,19 +894,27 @@
   const tick = (now) => {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
-    if (me) {
+    if (me && me.hop) {
+      setWalking(me, false);
+      stepHop(me, now);
+    } else if (me) {
       let dx = 0; let dy = 0;
       if (keys.has('left')) dx -= 1;
       if (keys.has('right')) dx += 1;
       if (keys.has('up')) dy -= 1;
       if (keys.has('down')) dy += 1;
       let moved = false;
-      if (dx || dy) {
-        if (me.seat) stand();
-        path = null; pending = null;
+      const ox = me.x; const oy = me.y;
+      // 처음 몇 걸음은 천천히, 금방 제 속도로
+      me.v = dx || dy || (path && path.length) ? Math.min(1, (me.v || 0) + dt * 4) : 0;
+      const speed = SPEED * (0.45 + 0.55 * (1 - (1 - me.v) ** 2));
+      if ((dx || dy) && me.seat) {
+        stand();
+      } else if (dx || dy) {
+        path = null; pending = null; clearGoal();
         const len = Math.hypot(dx, dy);
-        const nx = me.x + (dx / len) * SPEED * dt;
-        const ny = me.y + (dy / len) * SPEED * 0.8 * dt;
+        const nx = me.x + (dx / len) * speed * dt;
+        const ny = me.y + (dy / len) * speed * 0.8 * dt;
         if (free(nx, ny)) { me.x = nx; me.y = ny; moved = true; }
         else if (free(nx, me.y)) { me.x = nx; moved = true; }
         else if (free(me.x, ny)) { me.y = ny; moved = true; }
@@ -691,11 +923,13 @@
         const [tx, ty] = path[0];
         const ddx = tx - me.x; const ddy = ty - me.y;
         const dist = Math.hypot(ddx, ddy);
-        const step = SPEED * dt;
+        const step = speed * dt;
+        face(me, ddx); // 앉을 때 앞을 보게 돌려 놓으므로 그보다 먼저
         if (dist <= step) {
           me.x = tx; me.y = ty; path.shift();
           if (!path.length) {
             path = null;
+            clearGoal();
             const todo = pending; pending = null;
             if (todo && todo.seat) sit(todo.seat);
             if (todo && todo.hot) openCard(HOTSPOTS[todo.hot].card);
@@ -703,15 +937,15 @@
         } else {
           me.x += (ddx / dist) * step; me.y += (ddy / dist) * step;
         }
-        face(me, ddx);
         moved = true;
       }
-      if (moved) { place(me); sendSpot(false); }
+      if (moved) { place(me); stride(me, me.x - ox, me.y - oy, dt); sendSpot(false); }
       if (!moved && me.walking) sendSpot(true);
-      setWalking(me, moved);
+      setWalking(me, moved && !me.hop);
     }
     people.forEach((person) => {
       if (person === me) return;
+      if (person.hop) { setWalking(person, false); stepHop(person, now); return; }
       const ddx = person.tx - person.x; const ddy = person.ty - person.y;
       const dist = Math.hypot(ddx, ddy);
       if (dist > 700) { person.x = person.tx; person.y = person.ty; place(person); setWalking(person, false); return; }
@@ -721,6 +955,7 @@
         face(person, ddx);
         place(person);
         setWalking(person, !person.seat);
+        if (!person.seat) stride(person, (ddx / dist) * step, (ddy / dist) * step, dt);
       } else {
         setWalking(person, false);
       }
@@ -745,12 +980,15 @@
     const hot = event.target.closest('[data-hot]');
     if (hot) { goTo(HOTSPOTS[hot.dataset.hot].at, { hot: hot.dataset.hot }); return; }
     const [x, y] = toWorld(event);
-    goTo([x, y]);
-    const mark = document.createElement('span');
-    mark.className = 'lib-click';
-    mark.style.cssText = `left:${x}px;top:${y}px`;
-    world.appendChild(mark);
-    setTimeout(() => mark.remove(), 600);
+    const spot = goTo([x, y]);
+    if (spot) showGoal(spot[0], spot[1]);
+    else if (me.seat || me.hop) showGoal(...(nearestFree(x, y) || [x, y]));
+    sfx('tick');
+    const ring = document.createElement('span');
+    ring.className = 'lib-click';
+    ring.style.cssText = `left:${x}px;top:${y}px`;
+    world.appendChild(ring);
+    setTimeout(() => ring.remove(), 600);
   });
   stage.addEventListener('keydown', (event) => {
     const hot = event.target.closest && event.target.closest('[data-hot]');
@@ -764,7 +1002,7 @@
     const dir = KEYMAP[event.key];
     if (dir) { keys.add(dir); event.preventDefault(); return; }
     const k = event.key.toLowerCase();
-    if (k === 'z') { if (me.seat) stand(); else { const seat = nearestSeat(); if (seat) goSit(seat); else say('가까운 빈자리가 없어요'); } }
+    if (k === 'z') { if (me.seat) stand(); else { const seat = nearestSeat(); if (seat) goSit(seat); else nope('가까운 빈자리가 없어요'); } }
     else if (k === 'e') act('bow');
     else if (k === 'q') act('stretch');
     else if (k === 'r') act('flip');
@@ -777,8 +1015,9 @@
     const button = event.target.closest('[data-do]');
     if (!button || !me) return;
     const what = button.dataset.do;
-    if (what === 'sit') { if (me.seat) stand(); else { const seat = nearestSeat(); if (seat) goSit(seat); else say('가까운 빈자리가 없어요. 의자나 방석을 눌러 보세요'); } }
-    else if (what === 'sound') toggleSound(button);
+    if (what === 'sit') { if (me.seat) stand(); else { const seat = nearestSeat(); if (seat) goSit(seat); else nope('가까운 빈자리가 없어요. 의자나 방석을 눌러 보세요'); } }
+    else if (what === 'music') { setMusic(!music); keep('music', music); }
+    else if (what === 'sfx') { setSfx(!(sound && sound.on)); keep('sfx', Boolean(sound && sound.on)); sfx('pop', {}); }
     else if (what === 'gait') toggleGait(button);
     else act(what);
   });
@@ -786,6 +1025,7 @@
     if (!me) return;
     me.status = event.target.value;
     label(me); renderPeople(); sendSpot(true);
+    sfx('scribble');
     stage.focus({ preventScroll: true });
   });
 
@@ -804,15 +1044,37 @@
   });
 
   // ───────── 소리·걸음 효과·시간 ─────────
-  const toggleSound = (button) => {
+  // 배경음은 시간대마다 다르게 섞고, 멀리서 책장 넘기는 소리가 가끔 들린다. 효과음은 따로 켜고 끈다.
+  // 고른 것은 이 브라우저에 기억한다(끈 것만 적어 둔다).
+  const MIX = {
+    dawn: { grass: 0.28, piano: 0.4, writing: 0.15 },
+    day: { piano: 0.42, writing: 0.24, grass: 0.16, noise: 0.08 },
+    dusk: { piano: 0.4, city: 0.18, writing: 0.2 },
+    night: { rain: 0.42, piano: 0.34, writing: 0.14 },
+  };
+  const wants = (what) => { try { return localStorage.getItem(`lib-${what}`) !== 'off'; } catch (e) { return true; } };
+  const keep = (what, on) => { try { if (on) localStorage.removeItem(`lib-${what}`); else localStorage.setItem(`lib-${what}`, 'off'); } catch (e) { /* 이번만 */ } };
+  let music = false;
+  let tod = 'day';
+  let murmur = null;
+  const paintSound = () => {
+    root.querySelector('[data-do="music"]').setAttribute('aria-pressed', String(music));
+    root.querySelector('[data-do="sfx"]').setAttribute('aria-pressed', String(Boolean(sound && sound.on)));
+  };
+  const setMusic = (on) => {
     const ambience = window.Ambience;
-    if (!ambience) { say('이 브라우저에서는 소리를 낼 수 없어요'); return; }
-    const on = button.getAttribute('aria-pressed') !== 'true';
-    button.setAttribute('aria-pressed', String(on));
-    if (on) {
-      const night = root.classList.contains('tod-night') || root.classList.contains('tod-dusk');
-      ambience.scene(night ? { rain: 0.45, piano: 0.4, writing: 0.2 } : { piano: 0.45, writing: 0.3, grass: 0.2 });
-    } else ambience.clear();
+    if (on && !ambience) { say('이 브라우저에서는 소리를 낼 수 없어요'); on = false; }
+    music = on;
+    if (ambience) { if (on) ambience.scene(MIX[tod]); else ambience.clear(); }
+    clearTimeout(murmur);
+    const again = () => { murmur = setTimeout(() => { if (music) { sfx('distant'); again(); } }, 6000 + Math.random() * 9000); };
+    if (on) again();
+    paintSound();
+  };
+  const setSfx = (on) => {
+    if (on && !sound) { say('이 브라우저에서는 소리를 낼 수 없어요'); on = false; }
+    if (sound) sound.enable(on);
+    paintSound();
   };
   const gaitButton = root.querySelector('[data-do="gait"]');
   const paintGait = () => gaitButton.setAttribute('aria-pressed', String(document.documentElement.dataset.gait === 'on'));
@@ -825,23 +1087,34 @@
   paintGait();
   const timeOfDay = () => {
     const hour = new Date().getHours();
-    const tod = hour >= 5 && hour < 8 ? 'dawn' : hour < 17 && hour >= 8 ? 'day' : hour >= 17 && hour < 19 ? 'dusk' : 'night';
+    const next = hour >= 5 && hour < 8 ? 'dawn' : hour < 17 && hour >= 8 ? 'day' : hour >= 17 && hour < 19 ? 'dusk' : 'night';
     root.classList.remove('tod-dawn', 'tod-day', 'tod-dusk', 'tod-night');
-    root.classList.add(`tod-${tod}`);
+    root.classList.add(`tod-${next}`);
+    if (next !== tod) { tod = next; if (music && window.Ambience) window.Ambience.scene(MIX[tod]); }
   };
   timeOfDay();
   setInterval(timeOfDay, 5 * 60 * 1000);
 
-  root.querySelector('[data-lib="stars"]').addEventListener('click', () => openCard('stars'));
+  root.querySelector('[data-lib="stars"]').addEventListener('click', () => { sfx('twinkle'); openCard('stars'); });
 
   // ───────── 들어가기 ─────────
   const gate = root.querySelector('.lib-gate');
+  const gateSound = root.querySelector('[data-lib="sound"]');
+  if (gateSound) gateSound.checked = wants('music') || wants('sfx');
   root.querySelector('[data-lib="enter"]').addEventListener('click', () => {
     if (entered) return;
     entered = true;
+    // 소리: 문 앞에서 고른 대로(들어가기를 누르는 순간이라 브라우저가 소리를 허락한다)
+    const withSound = !gateSound || gateSound.checked;
+    if (!withSound) { keep('music', false); keep('sfx', false); }
+    else if (!wants('music') && !wants('sfx')) { keep('music', true); keep('sfx', true); }
+    setSfx(withSound && wants('sfx'));
+    setMusic(withSound && wants('music'));
+    sfx('bell', {});
     me = createPerson(meId);
     me.x = 1140 + Math.random() * 120; me.y = 1185; me.placed = true;
     place(me); label(me);
+    if (!reduceMotion) puff(me.x, me.y, 'fluff', me.y + 1, 5, 1.2);
     cam = camTarget(); applyCam();
     gate.classList.add('gone');
     setTimeout(() => { gate.hidden = true; }, 500);

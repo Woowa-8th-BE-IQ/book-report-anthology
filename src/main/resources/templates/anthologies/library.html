@@ -5,7 +5,8 @@
 <!-- 캐릭터 그림의 손그림 흔들림 필터. 숨겨진 그림보다 먼저 와야 한다(Avatar.WOBBLE) -->
 <svg class="wobble-defs" width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute" th:utext="${wobble}"></svg>
 <link rel="stylesheet" th:href="@{/css/library.css}">
-<script th:src="@{/js/ambience.js}" defer></script>
+<script th:src="@{/js/ambience.js}" data-manual defer></script>
+<script th:src="@{/js/library-sound.js}" defer></script>
 <script th:src="@{/js/library.js}" defer></script>
 
 <main class="lib" id="library"
@@ -60,7 +61,8 @@
       <button type="button" data-do="bow"><span>인사</span><kbd>E</kbd></button>
       <button type="button" data-do="stretch"><span>기지개</span><kbd>Q</kbd></button>
       <button type="button" data-do="flip"><span>사락사락</span><kbd>R</kbd></button>
-      <button type="button" data-do="sound" aria-pressed="false"><span>소리</span></button>
+      <button type="button" data-do="music" aria-pressed="false"><span>배경음</span></button>
+      <button type="button" data-do="sfx" aria-pressed="false"><span>효과음</span></button>
       <button type="button" data-do="gait" aria-pressed="false"><span>걸음 효과</span></button>
     </nav>
   </div>
@@ -73,6 +75,7 @@
       <h1 id="lib-gate-title">꼬깃 서고</h1>
       <p class="lib-gate-lead">높은 책장 사이를 거닐다<br>마음에 드는 자리에 앉아 쉬어 가요</p>
       <p class="lib-gate-me"><b th:text="${room.me().nickname()}">감자</b>, 어서 와요</p>
+      <label class="lib-gate-sound"><input type="checkbox" data-lib="sound" checked> 소리와 함께 들어가기 <small>배경음 · 발소리</small></label>
       <button type="button" class="lib-gate-go" data-lib="enter">들어가기</button>
       <a class="lib-gate-back" th:href="@{/anthologies/{c}/room(c=${a.code()})}">모임방으로 돌아가기</a>
     </div>

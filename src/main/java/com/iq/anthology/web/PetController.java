@@ -121,7 +121,7 @@ public class PetController {
                 tabs.add(new Tab(room.anthology().code(), room.anthology().title(), view,
                         Avatar.critterOf(room.me()).slug(),
                         Critter.derived(room.me().joinOrder()).slug(),
-                        room.anthology().id()));
+                        room.anthology().id(), room.me().token()));
             } catch (DomainException e) {
                 cookies.clear(request, response, pass.getKey()); // 링크가 바뀌었거나 내보내진 문집은 잊는다
             }
@@ -182,8 +182,9 @@ public class PetController {
     }
 
     /** 펫 탭 하나. meCritter는 지금 내 캐릭터, originalCritter는 참여 순서로 받은 캐릭터(slug). */
+    /** token: 브라우저에서 서고를 바로 열 때 쓰는 개인 링크용(펫 쿠키가 이미 가진 값이다). */
     public record Tab(String code, String title, RoomView room, String meCritter, String originalCritter,
-                      Long anthologyId) {
+                      Long anthologyId, String token) {
 
         public List<RoomView.Line> lines() {
             return room.lastLines(PET_HISTORY);

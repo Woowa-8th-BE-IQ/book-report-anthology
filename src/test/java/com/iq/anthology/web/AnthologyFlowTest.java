@@ -211,11 +211,13 @@ class AnthologyFlowTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         assertThat(page).contains("어서 오세요 &lt;b&gt;", "두 번째 말", "avatar-svg", "data-seat-x=\"0.5\"").doesNotContain("어서 오세요 <b>");
+        assertThat(page).contains("꼬깃 서고로 가기", "/anthologies/" + code + "/library");
 
         // 꼬깃 서고: 참여자만 들어오고, 걷기·몸짓은 조용히 받는다(서고에 연결하지 않았으면 무시)
         assertThat(mvc.perform(get("/anthologies/{code}/library", code).cookie(editor))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString())
-                .contains("꼬깃 서고", "data-spot=", "lib-gate", "avatar-svg", "글감 질문");
+                .contains("꼬깃 서고", "data-spot=", "lib-gate", "avatar-svg", "글감 질문",
+                        "library-sound.js", "data-manual", "소리와 함께 들어가기", "data-do=\"sfx\"");
         mvc.perform(get("/anthologies/{code}/library", code))
                 .andExpect(status().is3xxRedirection());
         mvc.perform(post("/anthologies/{code}/library/spot", code).cookie(editor)
@@ -226,8 +228,12 @@ class AnthologyFlowTest {
         mvc.perform(post("/anthologies/{code}/library/spot", code).param("x", "0.5").param("y", "0.8"))
                 .andExpect(status().isForbidden());
 
-        // 데스크톱 펫: 개인 링크에 ?to=pet을 붙이면 펫 화면으로 간다
+        // 데스크톱 펫: 개인 링크에 ?to=pet을 붙이면 펫 화면으로, ?to=library면 꼬깃 서고로 간다
         String token = editor.getValue();
+        mvc.perform(get("/me/{token}", token).param("to", "library"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
+                        .isEqualTo("/anthologies/" + code + "/library"));
         mvc.perform(get("/me/{token}", token).param("to", "pet"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
@@ -265,7 +271,8 @@ class AnthologyFlowTest {
         assertThat(mvc.perform(get("/pet").cookie(editor))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString())
-                .contains("pet-avatar", "두 번째 말", "data-face=", "모임방 문집", "캐릭터 바꾸기", "걸음 효과");
+                .contains("pet-avatar", "두 번째 말", "data-face=", "모임방 문집", "캐릭터 바꾸기", "걸음 효과",
+                        "꼬깃 서고 가기", "data-library=\"/me/" + token + "?to=library\"");
         assertThat(mvc.perform(get("/pet"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString())

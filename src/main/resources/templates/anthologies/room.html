@@ -7,7 +7,11 @@
 <section class="page-hero narrow" style="padding-bottom:8px">
   <a class="kicker" th:href="@{/anthologies/{code}(code=${a.code()})}" th:text="'← ' + ${a.title()}">← 문집</a>
   <h1 data-reveal>모임방</h1>
-  <a class="room-dress" th:href="@{/anthologies/{code}/library(code=${room.anthology().code()})}"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V5h5v15M15 20V5h5v15M3 20h18"/><path d="M5.5 9h2M5.5 13h2M16.5 9h2M16.5 13h2"/></svg> 꼬깃 서고</a>
+  <a class="library-cta" th:href="@{/anthologies/{code}/library(code=${room.anthology().code()})}">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 44V8h12v36M30 44V8h12v36" fill="#7A4E33" stroke="#2E241C" stroke-width="2.4" stroke-linejoin="round"/><path d="M9 14h6M9 20h6M9 26h6M9 32h6M9 38h6M33 14h6M33 20h6M33 26h6M33 32h6M33 38h6" stroke="#E3A857" stroke-width="2.6"/><path d="M24 40c-4-1-7-4-8-9 4 1 6 3 8 6 2-3 4-5 8-6-1 5-4 8-8 9z" fill="#E4572E" stroke="#2E241C" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    <span><b>꼬깃 서고로 가기</b><small>높은 책장 사이를 거닐고, 앉아서 쉬어 가요</small></span>
+    <span class="library-cta-arrow" aria-hidden="true">→</span>
+  </a>
   <a class="room-dress" th:href="@{/anthologies/{code}/room/bookmarks(code=${room.anthology().code()})}"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15l-5-3.6-5 3.6z"/></svg> 책갈피 모음</a>
   <a class="room-dress" th:href="@{/anthologies/{code}/avatar(code=${room.anthology().code()}, back='room')}"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4.5l5 5-7.8 7.8-5-5z"/><path d="M6.7 12.3c-2.2.3-3 2-3 3.7 0 1.6-.7 2.6-1.2 3 2.6.6 6.2.2 7.7-1.7.9-1.1.8-2.4.2-3.3"/></svg> 내 캐릭터 바꾸기</a>
   <button type="button" class="room-dress room-gait" data-gait-toggle hidden aria-pressed="false"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 18.5c-1.6 0-2.6-1.4-2.2-3l1.4-5.6c.4-1.6 2.2-2.2 3.2-1L12 11"/><path d="M15.5 15.5c1.6 0 2.6-1.4 2.2-3l-1-4c-.4-1.6-2.2-2.2-3.2-1"/></svg> 걸음 효과 <b class="gait-label">꺼짐</b></button>

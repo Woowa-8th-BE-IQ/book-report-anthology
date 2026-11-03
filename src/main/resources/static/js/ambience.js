@@ -1,4 +1,5 @@
 // 배경음: 여러 소리를 겹쳐 틀고, 소리마다 음량을 따로 정한다. 펫이 쓴다.
+// <script data-manual>로 부르면(꼬깃 서고) 저장된 소리를 이어 틀지도, 고른 소리를 저장하지도 않는다.
 // 녹음 소리는 Freesound의 CC0 녹음(docs/sound-credits.md), 피아노와 포근한 소음은 여기서 직접 합성한다.
 // 녹음은 끝과 처음을 겹쳐(크로스페이드) 이어서 반복할 때 끊기는 소리가 나지 않게 한다.
 (() => {
@@ -24,16 +25,17 @@
     { name: '바람 부는 오후', mix: { grass: 0.6, piano: 0.35 } },
   ];
   const KEY = 'pet-ambience';
+  const manual = Boolean(document.currentScript && document.currentScript.hasAttribute('data-manual'));
   const FADE = 1.6; // 반복할 때 겹치는 초
 
   const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
-  const saved = load();
+  const saved = manual ? {} : load();
   const state = {
     playing: Boolean(saved.playing),
     master: Number.isFinite(saved.master) ? saved.master : 0.7,
     mix: saved.mix && typeof saved.mix === 'object' ? saved.mix : {},
   };
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* 이번만 */ } };
+  const save = () => { if (manual) return; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* 이번만 */ } };
 
   let audio = null;
   let masterGain = null;
@@ -275,7 +277,7 @@
 
   // 다시 켜지면(펫 재시작·화면 새로 고침) 듣던 소리를 이어서 튼다.
   // 브라우저가 소리를 막으면 처음 누를 때 이어서 튼다.
-  if (state.playing) {
+  if (state.playing && !manual) {
     sync();
     const resume = () => {
       if (audio?.state === 'suspended') audio.resume().catch(() => {});

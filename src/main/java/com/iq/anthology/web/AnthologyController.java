@@ -337,6 +337,9 @@ public class AnthologyController extends FormSupport {
         if ("pet".equals(to)) {
             return "redirect:/pet?focus=" + anthology.code();
         }
+        if ("library".equals(to)) { // 펫에서 꼬깃 서고를 열 때: 브라우저에 아직 이 문집이 없어도 바로 들어간다
+            return "redirect:/anthologies/" + anthology.code() + "/library";
+        }
         redirect.addFlashAttribute("notice", "이 기기에서도 이어서 쓸 수 있어요.");
         return "redirect:/anthologies/" + anthology.code();
     }

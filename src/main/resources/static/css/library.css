@@ -69,14 +69,90 @@
 @keyframes lib-click { from { scale: .3; opacity: 1; } to { scale: 1.2; opacity: 0; } }
 
 /* ───────── 사람(모임방의 .member를 서고 크기로) ───────── */
-.lib .member { translate: -50% -100%; scale: var(--s, 1); transform-origin: 50% 100%; width: 160px; gap: 2px; transition: none; pointer-events: none; }
+.lib .member { translate: -50% calc(-100% + var(--lift, 0px)); scale: var(--s, 1); transform-origin: 50% 100%; width: 160px; gap: 2px; transition: opacity .35s; pointer-events: none; }
+.lib .member.leaving { opacity: 0; }
+.lib-body { position: relative; display: grid; justify-items: center; transform-origin: 50% 100%; transition: rotate .25s ease-out; }
 .lib .member .avatar { width: 112px; height: 112px; filter: none; opacity: 1; margin-bottom: -4px; transition: margin .3s; }
 .lib .member .avatar::after { display: none; }
 .lib .member.me .avatar { outline: none; }
-.lib .member::before { content: ""; position: absolute; left: 50%; bottom: -6px; width: 84px; height: 18px; translate: -50% 0; border-radius: 50%; background: rgba(46, 28, 14, .28); z-index: -1; }
+.lib .member::before { content: ""; position: absolute; left: 50%; bottom: -6px; width: 84px; height: 18px; translate: -50% calc(-1 * var(--lift, 0px)); scale: calc(1 - var(--liftk, 0) * .4); border-radius: 50%; background: rgba(46, 28, 14, .28); z-index: -1; transition: opacity .2s; }
 .lib .member.sitting::before { opacity: 0; }
 .lib .member.sitting .avatar { margin-bottom: -26px; }
+.lib .member.seat-chair .avatar { margin-bottom: -20px; }
+.lib .member.seat-bench .avatar { margin-bottom: 25px; } /* 벤치 판 높이(rise 18 ÷ 그 자리 크기 .71) */
+.lib .member.seat-bench .lib-tag { translate: none; }
+.lib .member.snap .avatar { transition: none; }
+.lib .member.seat-cushion .avatar { margin-bottom: -22px; }
+.lib .member.seat-beanbag .avatar { margin-bottom: -38px; }
+.lib .member.seat-beanbag .lib-body { rotate: calc(var(--dir, 1) * -7deg); } /* 빈백에는 푹 기대 앉는다 */
 .lib .member.sitting .lib-tag { translate: 0 22px; }
+
+/* 걷기: 콩콩 뛰며 좌우로 살짝 뒤뚱, 가는 쪽으로 몸이 기운다. 그림자는 발을 디딜 때마다 커졌다 작아진다
+   (꼬깃단 걸음 효과를 켜면 캐릭터마다의 걸음이 이 위에 얹힌다) */
+.lib .member.walking .avatar { transform-origin: 50% 100%; animation: lib-walk .54s ease-in-out infinite; animation-delay: calc(var(--d) * -.07s); }
+.lib .member.walking .lib-body { rotate: calc(var(--dir, 1) * 5deg); }
+.lib .member.walking::before { animation: lib-shadow .27s ease-in-out infinite alternate; }
+.lib .member.arrived .avatar { transform-origin: 50% 100%; animation: lib-arrive .4s ease-out; }
+@keyframes lib-walk {
+  0%, 100% { translate: 0 0; scale: 1.05 .95; rotate: -3deg; }
+  25%, 75% { translate: 0 -11px; scale: .97 1.04; rotate: 0deg; }
+  50% { translate: 0 0; scale: 1.05 .95; rotate: 3deg; }
+}
+@keyframes lib-shadow { from { scale: 1; opacity: 1; } to { scale: .8; opacity: .7; } }
+@keyframes lib-arrive { 0% { scale: 1.08 .9; } 50% { scale: .97 1.04; } 100% { scale: 1 1; } }
+
+/* 앉는 순간: 엉덩이가 닿으며 납작 → 통 */
+.lib .member.plop .avatar { transform-origin: 50% 100%; animation: lib-plop .6s ease-out; }
+@keyframes lib-plop { 0% { transform: scale(1.24, .74); } 35% { transform: scale(.9, 1.1); } 65% { transform: scale(1.05, .96); } 100% { transform: none; } }
+/* 가구: 의자는 삐걱 흔들리고, 방석·빈백은 꺼졌다 부푼다 */
+.lib-prop.bump > svg { transform-origin: 50% 100%; animation: lib-bump .55s ease-out; }
+.lib-prop.squish > svg, .lib-prop svg [data-seat].squish { transform-origin: 50% 100%; transform-box: fill-box; animation: lib-squish .62s ease-out; }
+@keyframes lib-bump { 0% { rotate: 0deg; } 20% { rotate: -4deg; translate: 0 3px; } 45% { rotate: 3deg; translate: 0 0; } 70% { rotate: -1.5deg; } 100% { rotate: 0deg; } }
+@keyframes lib-squish { 0% { scale: 1 1; } 25% { scale: 1.13 .72; } 55% { scale: .95 1.08; } 80% { scale: 1.03 .97; } 100% { scale: 1 1; } }
+/* 스탠드: 앉으면 딸깍 */
+.lib .lib-lamp .lib-lamp-glow { transition: opacity .25s; }
+.lib .lib-lamp.on .lib-lamp-glow { opacity: .75; }
+.lib.tod-night .lib-lamp.on .lib-lamp-glow, .lib.tod-dusk .lib-lamp.on .lib-lamp-glow { opacity: 1; }
+.lib .lib-bulb { fill: #6B5A3A; transition: fill .2s; }
+.lib .lib-lamp.on .lib-bulb, .lib.tod-night .lib-bulb { fill: #FFF1B5; }
+
+/* 앉아서 든 것 */
+/* 얼굴을 가리지 않게 바라보는 쪽 옆구리에 든다 */
+.lib-hold { position: absolute; left: 50%; top: 58px; z-index: 1; width: 42px; translate: calc(-50% + var(--dir, 1) * 38px) 0; opacity: 0; scale: .4; transition: opacity .2s, scale .3s cubic-bezier(.3, 1.6, .5, 1); pointer-events: none; }
+.lib .member.sitting .lib-hold { opacity: 1; scale: 1; transition-delay: .3s; }
+.lib-hold svg { display: block; width: 100%; height: auto; overflow: visible; }
+.lib-hold .hold-page { transform-box: fill-box; transform-origin: 0% 50%; animation: hold-page 4.6s ease-in-out infinite; animation-delay: calc(var(--d) * -.6s); }
+.lib-hold .hold-pencil { transform-box: fill-box; transform-origin: 15% 90%; animation: hold-pencil .45s ease-in-out infinite alternate; }
+.lib-hold .hold-steam path { animation: hold-steam 2.4s ease-out infinite; }
+.lib-hold .hold-steam path + path { animation-delay: -1.2s; }
+@keyframes hold-page { 0%, 66% { scale: 1 1; opacity: 1; } 80% { scale: -1 1; opacity: 1; } 88% { scale: -1 1; opacity: 0; } 89% { scale: 1 1; opacity: 0; } 100% { scale: 1 1; opacity: 1; } }
+@keyframes hold-pencil { from { rotate: -9deg; translate: -2px 0; } to { rotate: 6deg; translate: 3px 1px; } }
+@keyframes hold-steam { 0% { opacity: 0; translate: 0 6px; } 30% { opacity: .9; } 100% { opacity: 0; translate: 0 -10px; } }
+
+/* 발자국·점액 자국·먼지 */
+.lib-print, .lib-slime { position: absolute; z-index: 2; translate: -50% -50%; pointer-events: none; }
+.lib-print {
+  width: 17px; height: 12px;
+  background:
+    radial-gradient(circle at 34% 50%, rgba(86, 54, 30, .3) 0 3.6px, transparent 4.1px),
+    radial-gradient(circle at 80% 20%, rgba(86, 54, 30, .3) 0 1.9px, transparent 2.3px),
+    radial-gradient(circle at 88% 50%, rgba(86, 54, 30, .3) 0 1.9px, transparent 2.3px),
+    radial-gradient(circle at 80% 80%, rgba(86, 54, 30, .3) 0 1.9px, transparent 2.3px);
+  animation: lib-mark 2.6s ease-in forwards;
+}
+.lib-slime { width: 40px; height: 7px; border-radius: 50%; background: linear-gradient(180deg, rgba(214, 236, 255, .42), rgba(150, 196, 226, .16)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45); animation: lib-mark 4.2s ease-in forwards; }
+@keyframes lib-mark { 0%, 40% { opacity: 1; } 100% { opacity: 0; } }
+.lib-puff { position: absolute; width: 0; height: 0; pointer-events: none; }
+.lib-puff i { position: absolute; left: 0; top: 0; width: 18px; height: 18px; margin: -14px -9px; border-radius: 50%; background: rgba(226, 200, 160, .8); animation: lib-puff .75s ease-out forwards; animation-delay: calc(var(--k) * 25ms); opacity: 0; }
+.lib-puff.fluff i { background: rgba(255, 250, 240, .92); box-shadow: 0 0 0 2px rgba(46, 36, 28, .12); }
+@keyframes lib-puff { 0% { opacity: .95; scale: .35; translate: 0 0; } 100% { opacity: 0; scale: 1.5; translate: calc(var(--a) * 22px) calc(-12px - var(--k) * 2px); } }
+
+/* 가려는 곳 깃발 */
+.lib-goal { position: absolute; z-index: 3; width: 48px; height: 18px; translate: -50% -50%; border-radius: 50%; border: 3px dashed rgba(255, 246, 214, .9); pointer-events: none; animation: lib-goal-in .25s ease-out; transition: opacity .25s; }
+.lib-goal::after { content: ""; position: absolute; left: 50%; bottom: 10px; width: 14px; height: 14px; margin-left: -7px; rotate: 45deg; border-radius: 50% 50% 0 50%; background: #F2D16B; border: 2.5px solid #2E241C; animation: lib-goal-bob .6s ease-in-out infinite alternate; }
+.lib-goal.done { opacity: 0; }
+@keyframes lib-goal-in { from { scale: .3; opacity: 0; } }
+@keyframes lib-goal-bob { from { translate: 0 0; } to { translate: 0 -9px; } }
 .lib-tag { display: flex; align-items: baseline; gap: 6px; padding: 3px 12px; border-radius: 999px; background: rgba(255, 253, 248, .92); border: 2px solid rgba(46, 36, 28, .18); font-size: 19px; line-height: 1.3; white-space: nowrap; box-shadow: 0 2px 6px rgba(46, 28, 14, .18); }
 .lib-tag b { font-weight: 700; }
 .lib-tag small { font-size: 15px; color: #8A7660; }
@@ -164,6 +240,9 @@
 .lib-gate-lead { margin: 0 0 14px; font-size: 14.5px; line-height: 1.7; color: #4A3020; }
 .lib-gate-me { margin: 0 0 14px; font-size: 13.5px; color: #8A7660; }
 .lib-gate-me b { color: #B8571A; }
+.lib-gate-sound { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0 0 12px; font-size: 13px; color: #4A3020; cursor: pointer; }
+.lib-gate-sound input { width: 16px; height: 16px; accent-color: #B8571A; }
+.lib-gate-sound small { color: #8A7660; font-size: 11.5px; }
 .lib-gate-go { width: 100%; padding: 14px; border: 0; border-radius: 14px; background: #B8571A; color: #fff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 16px rgba(184, 87, 26, .35); }
 .lib-gate-go:hover { filter: brightness(1.06); }
 .lib-gate-back { display: inline-block; margin-top: 12px; font-size: 12.5px; color: #8A7660; }
@@ -177,6 +256,7 @@
   .lib-hint { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .lib-star, .lib-dust, .lib-bird, .lib-gate-face svg { animation: none; }
+  .lib-star, .lib-dust, .lib-bird, .lib-gate-face svg, .lib .member.walking .avatar, .lib .member.walking::before, .lib-hold *, .lib-goal::after { animation: none; }
+  .lib .member.walking .lib-body { rotate: none; }
   .lib-dust { opacity: .4; }
 }

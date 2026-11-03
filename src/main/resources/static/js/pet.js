@@ -240,6 +240,7 @@
       case 'dress': expand(true); openDresser(); break;
       case 'sound': expand(true); openSounds(); break;
       case 'bookmarks': window.open(current().element.dataset.bookmarks, '_blank'); break;
+      case 'library': window.open(current().element.dataset.library, '_blank'); break;
       case 'focus': select(item.dataset.code); expand(true); closeDresser(); closeCreator(); closeSounds(); break;
       case 'add': expand(true); openCreator(); break;
       case 'quit':
