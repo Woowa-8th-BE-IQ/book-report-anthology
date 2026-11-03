@@ -997,6 +997,7 @@ function start() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
   const narrow = () => stage.clientWidth < 720;
+  if (narrow()) Object.values(PLACES).forEach((P) => P.sun.shadow.mapSize.set(1024, 1024)); // 휴대폰은 그림자를 가볍게
   // 들어가기 전에는 방 전체를 멀리서 보여 주고, 들어가면 내 인형 쪽으로 다가간다
   const cam = { yaw: -0.18, pitch: 0.8, dist: narrow() ? 30 : 25, yawT: 0, pitchT: 0.84, distT: narrow() ? 30 : 25, target: new THREE.Vector3(0, 0.5, -0.5) };
   const resize = () => {

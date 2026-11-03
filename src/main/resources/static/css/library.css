@@ -182,6 +182,8 @@
 .lib-top > * { pointer-events: auto; }
 .lib-spacer { flex: 1; }
 .lib-back { width: 36px; height: 36px; padding: 0; justify-content: center; font-size: 16px; }
+.lib-where { white-space: nowrap; }
+.lib-stars { white-space: nowrap; }
 .lib-where b { font-family: var(--hand); font-size: 20px; font-weight: 400; line-height: 1; }
 .lib-where .lib-count { font-family: var(--sans); font-size: 13.5px; font-weight: 700; color: #B8571A; }
 .lib-where .dot { color: #B5A28C; }
@@ -250,7 +252,10 @@
 .lib-noscript { position: absolute; inset: auto 0 40px; z-index: 60; text-align: center; color: #FFF3DC; }
 
 @media (max-width: 720px) {
-  .lib-bar kbd, .lib-title, .lib-where .dot:first-of-type { display: none; }
+  .lib-bar kbd, .lib-title, .lib-title + .dot { display: none; }
+  [data-lib="2d"] .lib-where .dot:first-of-type { display: none; }
+  .lib-stars { font-size: 0; gap: 4px; }
+  .lib-stars b { font-size: 13px; }
   .lib-people { width: 150px; }
   .lib-bar button, .lib-status select { padding: 7px 8px; font-size: 12.5px; }
   .lib-hint { display: none; }
