@@ -217,7 +217,7 @@ class AnthologyFlowTest {
         assertThat(mvc.perform(get("/anthologies/{code}/library", code).cookie(editor))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString())
                 .contains("꼬깃 서고", "data-spot=", "lib-gate", "avatar-svg", "글감 질문",
-                        "library-sound.js", "data-manual", "소리와 함께 들어가기", "data-do=\"sfx\"");
+                        "/js/library-sound", "data-manual", "소리와 함께 들어가기", "data-do=\"sfx\"");
         mvc.perform(get("/anthologies/{code}/library", code))
                 .andExpect(status().is3xxRedirection());
         mvc.perform(post("/anthologies/{code}/library/spot", code).cookie(editor)
