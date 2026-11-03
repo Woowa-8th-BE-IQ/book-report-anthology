@@ -245,11 +245,12 @@ function start() {
     stairs: STAIR,
     layers: {
       0: {
-        rect: [-10.9, -7.0, 10.9, 7.75],
+        rect: [-11.85, -7.0, 10.9, 7.75], // 왼쪽 끝은 계단 앞 층계참까지
         blocks: [
           { r: [-12, -8, -4.6, -5.6] }, { r: [4.6, -8, 12, -7.0] }, { r: [-4.4, -8, 4.4, -7.25] }, // 다락 밑 책장, 오른쪽 책장, 창가 벤치
           { r: [STAIR.x0 - 0.1, STAIR.zTop - 0.1, STAIR.x1 + 0.12, STAIR.zBottom], tight: true }, // 계단 옆·밑은 못 지나간다(앞에서만 오른다)
           { r: [5.8, -7.0, 6.6, -6.35] }, // 사다리
+          { r: [-12, 2.6, -11.4, 7.7] }, // 왼쪽 벽 책장(계단 앞은 비워 둔다)
           { e: [0, -3.92, 1.95, 1.3] }, // 펼친 책 조형물
           { r: [-8.5, 1.35, -2.5, 2.75] }, { r: [2.5, 1.35, 8.5, 2.75] }, // 열람 테이블
           { r: [-9.95, -1.85, -8.45, -1.35] }, { r: [6.7, -1.95, 8.5, -1.1] }, // 게시판, 북 카트
@@ -582,8 +583,8 @@ function start() {
     // 왼쪽 벽: 계단 앞쪽 벽에 책장
     const left = new THREE.Group();
     box(left, 0.3, 7.2, 16.6, 0xE9DCC6, -12.15, 0, 0, { line: 0.04, cast: false });
-    box(left, 0.6, 5.4, 6.4, 0x55361F, -11.7, 0, 4.45, { line: 0.04, cast: false });
-    shelfFace(P, left, 6.2, 5.2, 7, 51, -11.395, 0.1, 4.45, Math.PI / 2);
+    box(left, 0.6, 5.4, 5.05, 0x55361F, -11.7, 0, 5.125, { line: 0.04, cast: false });
+    shelfFace(P, left, 4.85, 5.2, 7, 51, -11.395, 0.1, 5.125, Math.PI / 2);
     left.add(roofDoor);
     block(P, left);
     S.add(left);
@@ -2037,6 +2038,6 @@ function start() {
     stage.focus({ preventScroll: true });
     setTimeout(() => root.querySelector('.lib-hint').classList.add('fade'), 12000);
   });
-  window.__lib3 = { people, PLACES, cam, me: () => me, goTo, goSit, nap, goPlace, current: () => current };
+  window.__lib3 = { people, PLACES, cam, me: () => me, goTo, goSit, nap, goPlace, current: () => current, findPath, free, stepTo };
   requestAnimationFrame(tick);
 }
