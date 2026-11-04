@@ -1384,24 +1384,10 @@ function start() {
       const bubMat = new THREE.MeshLambertMaterial({ color: 0xCFEAF7, transparent: true, opacity: 0.55, emissive: 0x9FD3EE, emissiveIntensity: 0.25, depthWrite: false });
       const bub = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 2), bubMat); bubble.add(bub);
       const shine = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 0), new THREE.MeshBasicMaterial({ color: 0xffffff })); shine.position.set(-0.4, 0.45, 0.6); bub.add(shine);
-      // 포인트: 이마에 올려 쓴 하늘색 수면 안대(감은 눈 수놓음). 졸면 스르륵 내려와 눈을 덮는다
-      const mask = new THREE.Group(); head.add(mask);
-      const strap = new THREE.Mesh(new THREE.TorusGeometry(1, 0.022, 5, 24), new THREE.MeshToonMaterial({ color: 0x5E6F9E, gradientMap: gradient })); strap.scale.set(0.385, 0.365, 1); strap.rotation.x = Math.PI / 2; strap.position.y = 0.13; mask.add(strap);
-      const lobe = new THREE.Shape(); lobe.moveTo(0, 0.045); lobe.quadraticCurveTo(0.03, 0.09, 0.11, 0.085); lobe.quadraticCurveTo(0.2, 0.075, 0.2, 0); lobe.quadraticCurveTo(0.2, -0.075, 0.11, -0.08); lobe.quadraticCurveTo(0.03, -0.085, 0, -0.035); lobe.lineTo(0, 0.045);
-      const lobeGeo = new THREE.ExtrudeGeometry(lobe, { depth: 0.035, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 1 });
-      const stitch = new THREE.MeshBasicMaterial({ color: 0x2E241C });
-      [-1, 1].forEach((k) => {
-        const side = new THREE.Group(); side.position.set(0, 0.15, 0.355); side.rotation.y = k * 0.42; side.scale.set(k * 1.2, 1.25, 1); mask.add(side);
-        fold(side, lobeGeo, 0x9DB4E0, { x: 0.005, side: THREE.DoubleSide, crease: 50 });
-        const lid = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.008, 4, 10, Math.PI), stitch); lid.rotation.z = Math.PI; lid.position.set(0.105, 0.012, 0.05); side.add(lid);
-      });
-      let maskT = 0;
       let bubT = Math.random() * 4;
       motion(d, { feet, face, extra: (person, dt, t, walking, w) => {
         tail.rotation.z = Math.sin(t * (walking ? 6 : 1.4)) * 0.18; head.rotation.z = walking ? w * 0.05 : Math.sin(t * 0.8) * 0.02;
-        const drowsy = !walking && (person.pose === 'doze' || person.pose === 'sleep');
-        maskT += ((drowsy ? 1 : 0) - maskT) * Math.min(1, dt * 3); mask.rotation.x = maskT * 0.27;
-        if (!drowsy) { bubT = 0; bubble.visible = false; return; }
+        if (walking || person.pose === 'up' || !person.pose) { bubT = 0; bubble.visible = false; return; }
         bubT += dt; const cyc = bubT % 5.2; // 4.6초 숨 쉬며 커지다 0.6초 쉬고 다시
         bubble.visible = cyc < 4.6;
         const grow = Math.min(1, cyc / 4.6); const s2 = 0.03 + grow * 0.09 + Math.sin(cyc * 2.6) * 0.008 * grow;
