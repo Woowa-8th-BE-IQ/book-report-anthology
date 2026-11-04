@@ -760,13 +760,13 @@
         form.requestSubmit();
       }
     });
-    let sending = false;
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const body = input.value.trim();
-      if (!body || sending) return;
-      sending = true;
-      view.status.textContent = '';
+    // 보내는 순간 입력칸을 비우고, 연달아 보내면 차례로 줄 세운다.
+    // (예전에는 서버 답이 온 뒤에 비워서, 그사이 친 다음 말의 앞부분이 함께 지워져 잘린 채 보내졌다)
+    let composing = false;
+    input.addEventListener('compositionstart', () => { composing = true; });
+    input.addEventListener('compositionend', () => { composing = false; });
+    let queue = Promise.resolve();
+    const send = async (body) => {
       try {
         const response = await fetch(view.element.dataset.say, {
           method: 'POST',
@@ -775,19 +775,25 @@
           credentials: 'same-origin',
         });
         const result = await response.json().catch(() => ({}));
-        if (response.ok) {
-          input.value = '';
-          fit();
-          receive(view, result);
-        } else {
-          view.status.textContent = result.message || '보내지 못했어요.';
-        }
+        if (response.ok) receive(view, result);
+        else { view.status.textContent = result.message || '보내지 못했어요.'; giveBack(body); }
       } catch (error) {
         view.status.textContent = '연결이 끊겨 보내지 못했어요.';
-      } finally {
-        sending = false;
-        input.focus();
+        giveBack(body);
       }
+    };
+    // 못 보낸 말은 입력칸 앞에 되돌려 둔다(그사이 쓴 말은 뒤에 남긴다)
+    const giveBack = (body) => { input.value = input.value.trim() ? `${body}\n${input.value}` : body; fit(); };
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (composing) { input.addEventListener('compositionend', () => setTimeout(() => form.requestSubmit(), 0), { once: true }); return; }
+      const body = input.value.trim();
+      if (!body) return;
+      input.value = '';
+      fit();
+      view.status.textContent = '';
+      queue = queue.then(() => send(body));
+      input.focus();
     });
   });
 

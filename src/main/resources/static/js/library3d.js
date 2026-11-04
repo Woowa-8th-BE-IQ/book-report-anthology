@@ -2051,17 +2051,19 @@ function start() {
     stage.focus({ preventScroll: true });
   });
   const sayForm = root.querySelector('.lib-say');
+  { const field = sayForm.querySelector('input'); field.addEventListener('compositionstart', () => { field.dataset.composing = '1'; }); field.addEventListener('compositionend', () => { field.dataset.composing = ''; }); }
   sayForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const input = sayForm.querySelector('input');
+    if (event.isTrusted !== false && input.dataset.composing === '1') return; // 한글 조합 중 Enter는 보내지 않는다
     const body = input.value.trim();
     if (!body) { stage.focus({ preventScroll: true }); return; }
     wake();
     input.value = '';
     try {
       const response = await post(root.dataset.say, { body });
-      if (!response.ok) { const result = await response.json().catch(() => ({})); say(result.message || '보내지 못했어요'); input.value = body; }
-    } catch (error) { say('연결이 끊겨 보내지 못했어요'); input.value = body; }
+      if (!response.ok) { const result = await response.json().catch(() => ({})); say(result.message || '보내지 못했어요'); input.value = input.value.trim() ? `${body} ${input.value}` : body; }
+    } catch (error) { say('연결이 끊겨 보내지 못했어요'); input.value = input.value.trim() ? `${body} ${input.value}` : body; }
   });
   root.querySelector('[data-lib="stars"]').addEventListener('click', () => { sfx('twinkle'); openCard('stars'); });
 
