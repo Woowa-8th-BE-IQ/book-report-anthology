@@ -14,6 +14,8 @@ java {
 }
 
 repositories {
+    // Render 빌드 서버가 Maven Central에서 429(요청 과다)로 막힐 때가 있어 구글 미러를 먼저 본다
+    maven { url = 'https://maven-central.storage-download.googleapis.com/maven2/' }
     mavenCentral()
 }
 
