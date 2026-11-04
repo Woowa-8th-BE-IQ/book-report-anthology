@@ -331,3 +331,6 @@
 .lib-menu button small { font-size: 12px; color: #8A7660; }
 .lib-menu button.on { border-color: #6E8B74; box-shadow: inset 3px 0 0 #6E8B74; }
 .lib-menu-none { margin-top: 8px; border: 0; background: none; color: #8A7660; font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }
+/* 토론방 연단에 선 사람: 이 층 모두에게 크게 */
+.lib3-label.loud .lib-bubble { font-size: 1.12em; border-color: #D9654B; box-shadow: 0 0 0 3px rgba(217, 101, 75, .25), 0 6px 16px rgba(20, 12, 6, .25); }
+.lib3-label.loud .lib-tag::after { content: "🎤"; margin-left: 4px; }
