@@ -243,7 +243,7 @@ public class RoomHub {
 
         static final Set<String> STATUSES = Set.of("read", "write", "rest");
         static final Set<String> POSES = Set.of("up", "doze", "sleep");
-        static final Set<String> ACTS = Set.of("bow", "stretch", "flip");
+        static final Set<String> ACTS = Set.of("bow", "stretch", "flip", "jump");
         private static final java.util.regex.Pattern SEAT = java.util.regex.Pattern.compile("[a-z0-9-]{1,24}");
         private static final java.util.regex.Pattern PLACE = java.util.regex.Pattern.compile("[a-z]{1,12}");
 

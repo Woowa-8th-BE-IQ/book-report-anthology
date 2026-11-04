@@ -83,7 +83,18 @@
     view.log.querySelectorAll(`.pet-who[data-who="${id}"]`).forEach((who) => { who.innerHTML = svg; });
   };
   const current = () => views.get(selected);
-  const scrollLog = (view) => { view.log.scrollTop = view.log.scrollHeight; };
+  const scrollLog = (view) => { view.log.scrollTop = view.log.scrollHeight; view.stuck = true; };
+  // 대화창 맨 아래에 붙어 있었으면, 입력칸이 늘어나 대화창이 줄거나 말이 늦게 그려져도 마지막 말이 가려지지 않게 다시 맨 아래로
+  const keepBottom = (view) => {
+    view.stuck = true;
+    view.log.addEventListener('scroll', () => { view.stuck = view.log.scrollHeight - view.log.scrollTop - view.log.clientHeight < 24; }, { passive: true });
+    if (!window.ResizeObserver) return;
+    const ro = new ResizeObserver(() => { if (view.stuck) view.log.scrollTop = view.log.scrollHeight; });
+    ro.observe(view.log);
+    new MutationObserver((list) => list.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) ro.observe(n); }))).observe(view.log, { childList: true });
+    view.log.querySelectorAll(':scope > li').forEach((li) => ro.observe(li));
+  };
+  views.forEach(keepBottom);
 
   // 나를 부른 말이 있으면 숫자 앞에 "@"를 붙이고 색을 바꾼다
   const label = (count, called) => (called ? '@' : '') + (count > 99 ? '99+' : count);
@@ -546,7 +557,28 @@
     while (bubbles.querySelectorAll('.pet-news, .pet-bubble.called').length > 3) {
       bubbles.querySelector('.pet-news, .pet-bubble.called').remove();
     }
+    fitBubbles();
   };
+  // 접어 둔 펫 창(260×300)은 작아서 말풍선이 쌓이면 위로 밀려 창 밖에서 잘렸다.
+  // 보이는 높이에 맞게 오래된 말풍선부터 치우고(대화창에는 남아 있다), 그래도 넘치면 긴 말을 줄여 '더 보기'를 단다.
+  const fitBubbles = () => {
+    const room = () => bubbles.parentElement.clientHeight - avatar.offsetHeight - 16;
+    const markMore = () => bubbles.querySelectorAll('.pet-bubble p').forEach((p) => {
+      const cut = p.scrollHeight > p.clientHeight + 1;
+      const bubble = p.closest('.pet-bubble');
+      bubble.classList.toggle('cut', cut);
+    });
+    bubbles.querySelectorAll('.pet-bubble.tight').forEach((x) => x.classList.remove('tight'));
+    const order = () => [...bubbles.querySelectorAll('.pet-bubble:not(.pet-update):not(.called)'), ...bubbles.querySelectorAll('.pet-bubble.called')];
+    while (bubbles.scrollHeight > room() && bubbles.children.length > 1) {
+      const oldest = order()[0];
+      if (!oldest || oldest === bubbles.lastElementChild) break;
+      oldest.remove();
+    }
+    if (bubbles.scrollHeight > room()) bubbles.querySelectorAll('.pet-bubble').forEach((x) => x.classList.add('tight'));
+    markMore();
+  };
+  window.addEventListener('resize', () => fitBubbles());
   const fadeOut = (bubble, ms) => setTimeout(() => {
     bubble.classList.add('leaving');
     setTimeout(() => bubble.remove(), 320);

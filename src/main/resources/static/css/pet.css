@@ -50,7 +50,11 @@ body { font-family: var(--sans); color: var(--ink); user-select: none; -webkit-u
 .pet-bubble .mini { width: 26px; height: 26px; flex: none; line-height: 0; }
 .pet-bubble .mini svg { width: 100%; height: 100%; }
 .pet-bubble b { display: block; font-size: 11.5px; color: var(--accent); }
-.pet-bubble p { margin: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.pet-bubble p { margin: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.pet-bubble.tight p { -webkit-line-clamp: 3; }
+/* 다 못 보여 준 말에는 끝에 표시를 단다(누르면 대화창에서 전부 보인다) */
+.pet-bubble.cut > div::after { content: "눌러서 전부 보기 ›"; display: block; margin-top: 3px; font-size: 11px; font-weight: 600; color: var(--accent); }
+.pet-bubble > div { min-width: 0; }
 .pet-update { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
 .pet-update .u-bar { height: 5px; margin-top: 6px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 18%, transparent); overflow: hidden; }
 .pet-update .u-bar[hidden], .pet-update .u-actions[hidden] { display: none; }

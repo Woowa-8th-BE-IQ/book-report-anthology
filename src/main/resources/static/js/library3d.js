@@ -1361,20 +1361,22 @@ function start() {
       d.hinge.position.y = 0.02; d.hingeY = 0.02; d.len = 1.6; d.head = 1.72;
       motion(d, { face, extra: (person, dt, t, walking, w) => { worm.rotation.z = walking ? w * 0.18 : Math.sin(t * 1.2) * 0.06; worm.rotation.x = walking ? Math.abs(w) * -0.15 : 0; } });
     },
-    // 따끔(고슴도치): 크림색 종이 몸, 등에 접은 갈색 가시, 노란 연필과 펼친 책
+    // 따끔(고슴도치): 크림색 종이 몸, 등을 덮은 꾸긴 종이 솜털, 노란 연필과 펼친 책
     hedgehog(d, svgText) {
       const CREAM = 0xF6E6CF; const SPIKE = 0xC9A783;
       const B = d.body; const H = d.hinge;
       fold(B, lathe([[0, 0.1], [0.34, 0.14], [0.45, 0.34], [0.43, 0.56], [0.33, 0.74], [0.16, 0.84], [0, 0.87]], 8, 16), CREAM, { sz: 0.92, ry: Math.PI / 8 });
-      const spikeGeo = new THREE.CylinderGeometry(0.03, 0.085, 0.17, 5); // 끝이 뭉툭한 가시(안아도 안 따가운)
-      // 가시: 등과 정수리를 고르게 덮는다(얼굴 쪽은 비운다)
-      for (let i = 0; i < 90; i++) {
-        const yy = 1 - (i + 0.5) / 90 * 2; const r = Math.sqrt(1 - yy * yy); const th = i * 2.39996;
+      // 털: 꾸긴 종이 솜뭉치가 등·정수리·옆을 몽글몽글 덮는다(얼굴 둘레는 비우고, 이마에는 앞머리 세 뭉치)
+      const TUFT = [0xC9A783, 0xD6B690, 0xB99670, 0xE0C49E];
+      const tuftGeos = [0, 1, 2].map((k) => ico(1, 1, 30 + k, 0.12));
+      for (let i = 0; i < 70; i++) {
+        const yy = 1 - ((i + 0.5) / 70) * 2; const r = Math.sqrt(1 - yy * yy); const th = i * 2.39996;
         const dir = new THREE.Vector3(Math.cos(th) * r, yy, Math.sin(th) * r);
-        if (dir.y < -0.15 || (dir.z > -0.1 && dir.y < 0.55) || (dir.z > 0.35 && dir.y < 0.8)) continue;
-        const sp = fold(B, spikeGeo, i % 3 ? SPIKE : 0xB08E6A, { x: dir.x * 0.4, y: 0.5 + dir.y * 0.36, z: dir.z * 0.38 });
-        sp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+        if (dir.y < -0.35 || (dir.z > 0.05 && dir.y < 0.62)) continue;
+        const size = 0.13 + ((i * 37) % 7) * 0.008;
+        fold(B, tuftGeos[i % 3], TUFT[i % 4], { x: dir.x * 0.4, y: 0.5 + dir.y * 0.36, z: dir.z * 0.37, sx: size, sy: size * 0.9, sz: size });
       }
+      [-0.13, 0, 0.13].forEach((x, i) => fold(B, tuftGeos[i], TUFT[(i + 1) % 4], { x, y: 0.82 - Math.abs(x) * 0.4, z: 0.28 - Math.abs(x) * 0.3, sx: 0.12, sy: 0.1, sz: 0.1 }));
       const face = sticker(B, svgText, { keep: '.face, ellipse[fill="#F49A93"]', box: [21, 39, 43, 50.5], eyes: [[27.4, 42.8, 2.2], [36.6, 42.8, 2.2]], w: 0.64, y: 0.54, z: 0.42, bend: 0.8 });
       openBook(B, { y: 0.3, z: 0.42, w: 0.46, h: 0.28, tilt: -0.6 });
       [-1, 1].forEach((k) => fold(B, ico(0.06), CREAM, { x: k * 0.25, y: 0.3, z: 0.42 }));
@@ -1441,7 +1443,7 @@ function start() {
     const person = {
       id, name: template.dataset.name, label, doll: dollFor(critterOf(svgText), svgText), critter: critterOf(svgText), heading: 0,
       place: 'hall', layer: 0, x: 0, z: 7, y: 0, tx: 0, tz: 7, tlevel: 0, seat: null, seated: null, status: 'read', pose: 'up',
-      face: 1, flip: 1, walking: false, phase: 0, lift: 0, hop: null, act: null, fold: 0, lie: 0, nod: 0, squash: 0, clock: 0, trail: 0, placed: false,
+      face: 1, flip: 1, walking: false, running: false, air: 0, jumpV: 0, phase: 0, lift: 0, hop: null, act: null, fold: 0, lie: 0, nod: 0, squash: 0, clock: 0, trail: 0, placed: false,
     };
     if (!person.doll.model) paperOf(svgText).then((paper) => dress(person, paper));
     hall.scene.add(person.doll.root); hall.scene.add(person.doll.blob);
@@ -1508,7 +1510,7 @@ function start() {
       if (prints.length > 120) { const old = prints.shift(); old.m.parent?.remove(old.m); old.m.material.dispose(); }
     }
     person.steps = (person.steps || 0) + 1;
-    if (person.critter !== 'snail' && person.steps % 3 === 0) spawnBits(P, person.x - ux * 0.2, person.y + 0.08, person.z - uz * 0.2, { count: 2, color: onRug ? 0xfff2e6 : 0xe2c8a0, spread: 0.3, up: 0.25, size: 0.18, life: 0.6 });
+    if (person.critter !== 'snail' && person.steps % (person.running ? 1 : 3) === 0) spawnBits(P, person.x - ux * 0.2, person.y + 0.08, person.z - uz * 0.2, { count: 2, color: onRug ? 0xfff2e6 : 0xe2c8a0, spread: 0.3, up: 0.25, size: 0.18, life: 0.6 });
   };
   const stride = (person, mx, mz, dt) => {
     const d = Math.hypot(mx, mz);
@@ -1519,7 +1521,7 @@ function start() {
       footprint(person, mx / d, mz / d);
     }
     person.clock += dt;
-    if (person.clock >= cadence(person.critter)) {
+    if (person.clock >= cadence(person.critter) * (person.running ? 0.6 : 1)) {
       person.clock = 0;
       const sp = hear(person);
       const P = PLACES[person.place];
@@ -1746,14 +1748,32 @@ function start() {
 
   // ───────── 몸짓 ─────────
   const ACT_WORD = { bow: '꾸벅', stretch: '으쌰', flip: '사락' };
+  // 폴짝: 위로 튀었다가 중력에 내려앉는다(걷거나 달리면서도)
+  const startJump = (person) => {
+    if (person.air > 0 || person.jumpV > 0 || person.hop || person.seated) return false;
+    person.jumpV = 4.9;
+    person.squash = 0.5;
+    sfx('jump', hear(person));
+    return true;
+  };
   const play = (person, act) => {
     if (!person) return;
+    if (act === 'jump') { if (startJump(person)) popWord(person, '폴짝'); return; }
     person.act = { name: act, t: 0 };
     popWord(person, ACT_WORD[act]);
     sfx('act', act, hear(person));
     if (act === 'flip') spawnBits(PLACES[person.place], person.x, person.y + 1.1, person.z, { count: 5, spread: 0.9, up: 1.2, life: 1.2, paper: true });
   };
   const act = (name) => { if (!me) return; wake(); play(me, name); post(root.dataset.act, { act: name }).catch(() => {}); };
+  const jump = () => {
+    if (!me) return;
+    wake();
+    if (me.seat) { stand(); return; }
+    if (me.air > 0 || me.hop) return;
+    act('jump');
+  };
+  let runToggle = false;
+  const paintRun = () => root.querySelector('[data-do="run"]')?.setAttribute('aria-pressed', String(runToggle));
 
   // ───────── 말풍선: 가까운 사람 말은 크게, 먼 사람 말은 작게(WorkAdventure식 거리감) ─────────
   const bubble = (person, text) => {
@@ -1989,13 +2009,14 @@ function start() {
     else if (what === 'in') cam.distT = clamp(cam.distT * 0.8, 6, 26);
     else if (what === 'out') cam.distT = clamp(cam.distT * 1.25, 6, 26);
   });
-  const KEYMAP = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right', ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down' };
+  const KEYMAP = { Shift: 'run', ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right', ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down' };
   const typing = (event) => event.target.closest('input, textarea, select');
   document.addEventListener('keydown', (event) => {
     if (!me || typing(event) || event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.key === 'Escape' && !card.hidden) { closeCard(); return; }
     const dir = KEYMAP[event.key];
-    if (dir) { keys.add(dir); wake(); event.preventDefault(); return; }
+    if (dir) { keys.add(dir); if (dir !== 'run') wake(); if (dir !== 'run') event.preventDefault(); return; }
+    if (event.key === ' ') { event.preventDefault(); jump(); return; }
     const k = event.key.toLowerCase();
     if (k === 'z') { wake(); if (me.seat) stand(); else { const s = nearestSeat(false); if (s) goSit(s); else nope('가까운 빈자리가 없어요'); } }
     else if (k === 'n') nap();
@@ -2014,6 +2035,8 @@ function start() {
     const what = button.dataset.do;
     if (what === 'sit') { wake(); if (me.seat) stand(); else { const s = nearestSeat(false); if (s) goSit(s); else nope('가까운 빈자리가 없어요. 의자나 방석을 눌러 보세요'); } }
     else if (what === 'nap') nap();
+    else if (what === 'jump') jump();
+    else if (what === 'run') { runToggle = !runToggle; paintRun(); }
     else if (what === 'music') { setMusic(!music); keep('music', music); }
     else if (what === 'sfx') { setSfx(!(sound && sound.on)); keep('sfx', Boolean(sound && sound.on)); sfx('pop', {}); }
     else if (what === 'gait') toggleGait();
@@ -2115,7 +2138,7 @@ function start() {
     const g = gaitOn() ? (GAIT[person.critter] || GAIT.wood) : BASIC;
     let bob = 0; let tilt = 0; let sx = 1; let sy = 1;
     if (person.walking && !lying) {
-      person.phase += dt * g.f * Math.PI;
+      person.phase += dt * g.f * Math.PI * (person.running ? 1.7 : 1);
       const w = Math.sin(person.phase);
       bob = g.hop ? Math.abs(w) ** 0.6 * g.bob : Math.abs(w) * g.bob;
       tilt = w * g.tilt;
@@ -2142,13 +2165,14 @@ function start() {
     if (d.model) { d.body.scale.set(sx, sy, sx); d.update(person, dt, t, person.walking && !lying, person.phase); }
     else d.body.scale.set(sx * (Math.abs(person.flip) < 0.05 ? 0.05 * Math.sign(person.flip || 1) : person.flip), sy, 1);
     d.body.rotation.z = lying ? 0 : tilt;
-    d.body.rotation.x = lerp(bow + person.nod, -Math.PI / 2 + (s && s.lie ? 0.2 : 0.08), person.lie);
+    const lean = d.model && person.walking && person.running ? 0.22 : 0;
+    d.body.rotation.x = lerp(bow + person.nod + lean, -Math.PI / 2 + (s && s.lie ? 0.2 : 0.08), person.lie);
     d.body.position.y = bob;
     d.hinge.rotation.x = -person.fold * (Math.PI / 2 - 0.12);
     // 자리: 의자는 흔들, 방석·빈백은 꺼졌다 부풀고, 해먹은 늘 살랑
-    d.root.position.set(person.x, person.y + person.lift + (lying ? 0.02 : 0), person.z);
+    d.root.position.set(person.x, person.y + person.lift + person.air + (lying ? 0.02 : 0), person.z);
     d.blob.position.set(person.x, (s ? s.top - (s.lie ? 0 : 0) : heightAt(P, person.layer, person.x, person.z)) + 0.014, person.z);
-    const blobScale = lying ? 1.6 : 1 - Math.min(0.5, person.lift * 0.5);
+    const blobScale = lying ? 1.6 : 1 - Math.min(0.55, (person.lift + person.air) * 0.5);
     d.blob.scale.set(blobScale, 1, lying ? 0.8 : blobScale);
     d.blob.visible = !(s && s.kind === 'hammock');
     // 이름표 위치: 인형 머리 위
@@ -2204,7 +2228,8 @@ function start() {
         let moved = false;
         const ox = me.x; const oz = me.z;
         me.v = dx || dz || (path && path.length) ? Math.min(1, (me.v || 0) + dt * 4) : 0;
-        const speed = SPEED * (0.45 + 0.55 * (1 - (1 - me.v) ** 2)) * (me.layer === 'S' ? 0.75 : 1);
+        me.running = keys.has('run') !== runToggle; // Shift를 누르거나 달리기를 켜 두면 달린다(켜 둔 채 Shift면 걷기)
+        const speed = SPEED * (0.45 + 0.55 * (1 - (1 - me.v) ** 2)) * (me.layer === 'S' ? 0.75 : 1) * (me.running ? 1.85 : 1);
         if ((dx || dz) && me.seat) {
           stand();
         } else if (dx || dz) {
@@ -2269,7 +2294,9 @@ function start() {
       const dist = Math.hypot(ddx, ddz);
       if (dist > 8) { person.x = person.tx; person.z = person.tz; person.walking = false; }
       else if (dist > 0.02) {
-        const step = Math.min(dist, SPEED * 1.15 * dt);
+        const pace = Math.max(SPEED * 1.15, dist * 3.2);
+        person.running = dist > 0.9;
+        const step = Math.min(dist, pace * dt);
         const mx = (ddx / dist) * step; const mz = (ddz / dist) * step;
         person.x += mx; person.z += mz;
         const [rx, rz] = camRight();
@@ -2282,6 +2309,16 @@ function start() {
       } else person.walking = false;
       const s = seatOf(person);
       person.y = s ? seatPose(s, person).y : heightAt(P, person.tlevel, person.x, person.z);
+    });
+    // 점프 중인 사람은 중력으로 내려온다
+    people.forEach((person) => {
+      if (!(person.jumpV || person.air > 0)) return;
+      person.air += person.jumpV * dt;
+      person.jumpV -= 15 * dt;
+      if (person.air <= 0) {
+        person.air = 0; person.jumpV = 0; person.squash = 1;
+        if (person.place === current.id) { spawnBits(PLACES[person.place], person.x, person.y + 0.08, person.z, { count: 5, color: 0xe2c8a0, spread: 0.7, up: 0.3, size: 0.2, life: 0.6 }); sfx('land', hear(person)); }
+      }
     });
     // 카메라
     const k = reduceMotion ? 1 : 1 - Math.pow(0.002, dt);

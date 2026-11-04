@@ -46,7 +46,7 @@
 
   <!-- 아래: 한마디와 몸짓 -->
   <div class="lib-bottom">
-    <p class="lib-hint"><span class="lib-hint-2d">바닥을 누르거나 <kbd>WASD</kbd>로 걸어요 · 의자·방석을 누르면 앉아요</span><span class="lib-hint-3d">바닥을 눌러 걷고, 끌어서 둘러봐요 · 왼쪽 계단으로 다락에 올라가면 낮잠 이불이 있어요</span></p>
+    <p class="lib-hint"><span class="lib-hint-2d">바닥을 누르거나 <kbd>WASD</kbd>로 걸어요 · 의자·방석을 누르면 앉아요</span><span class="lib-hint-3d">바닥을 눌러 걷고, 끌어서 둘러봐요 · <kbd>Shift</kbd> 달리기 · <kbd>Space</kbd> 점프 · 왼쪽 계단으로 다락에 가면 낮잠 이불이 있어요</span></p>
     <form class="lib-say" autocomplete="off">
       <input type="text" name="body" th:attr="maxlength=${bodyMax}" placeholder="한마디 띄우기 · Enter" aria-label="한마디">
       <button type="submit">띄우기</button>
@@ -62,6 +62,8 @@
       </label>
       <button type="button" data-do="sit"><span>앉기</span><kbd>Z</kbd></button>
       <button type="button" data-do="nap" class="lib-3d-only"><span>낮잠</span><kbd>N</kbd></button>
+      <button type="button" data-do="jump" class="lib-3d-only"><span>점프</span><kbd>Space</kbd></button>
+      <button type="button" data-do="run" class="lib-3d-only" aria-pressed="false"><span>달리기</span><kbd>Shift</kbd></button>
       <button type="button" data-do="bow"><span>인사</span><kbd>E</kbd></button>
       <button type="button" data-do="stretch"><span>기지개</span><kbd>Q</kbd></button>
       <button type="button" data-do="flip"><span>사락사락</span><kbd>R</kbd></button>

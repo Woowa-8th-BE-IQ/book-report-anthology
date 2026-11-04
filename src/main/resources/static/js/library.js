@@ -747,11 +747,11 @@
   card.querySelector('.lib-card-close').addEventListener('click', closeCard);
 
   // ───────── 몸짓 ─────────
-  const ACT_LABEL = { bow: '꾸벅', stretch: '으쌰', flip: '사락' };
+  const ACT_LABEL = { bow: '꾸벅', stretch: '으쌰', flip: '사락', jump: '폴짝' };
   const play = (person, act) => {
     if (!person) return;
     const el = person.el;
-    el.classList.remove('act-bow', 'act-stretch', 'act-flip');
+    el.classList.remove('act-bow', 'act-stretch', 'act-flip', 'act-jump');
     void el.offsetWidth;
     el.classList.add(`act-${act}`);
     sfx('act', act, hear(person));

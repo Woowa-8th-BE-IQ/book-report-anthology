@@ -168,6 +168,8 @@
 .lib .member.act-bow .avatar { animation: lib-bow .9s ease-in-out; transform-origin: 50% 95%; }
 .lib .member.act-stretch .avatar { animation: lib-stretch 1s ease-in-out; transform-origin: 50% 100%; }
 .lib .member.act-flip .avatar { animation: lib-hopflip .6s ease-out; }
+.lib .member.act-jump .avatar { animation: lib-jump .7s ease-out; }
+@keyframes lib-jump { 0%, 100% { transform: none; } 15% { transform: scale(1.12, .86); } 45% { transform: translateY(-44px) scale(.94, 1.08); } 85% { transform: scale(1.1, .9); } }
 @keyframes lib-bow { 0%, 100% { transform: none; } 35%, 60% { transform: rotate(calc(var(--dir, 1) * 16deg)) translateY(6px); } }
 @keyframes lib-stretch { 0%, 100% { transform: none; } 40%, 60% { transform: scale(.93, 1.16); } 80% { transform: scale(1.06, .94); } }
 @keyframes lib-hopflip { 0%, 100% { transform: none; } 40% { transform: translateY(-14px); } }

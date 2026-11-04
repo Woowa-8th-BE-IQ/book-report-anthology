@@ -226,6 +226,9 @@
         burst(d, t + 0.1, { type: 'lowpass', freq: 900, to: 300, level: 0.08, attack: 0.2, decay: 0.7 });
       });
     },
+    /** 폴짝: 뛰어오를 때 뿅, 내려앉을 때 통 */
+    jump(sp) { play(sp, 1, (d, t) => { tone(d, t, { freq: 320, to: 760, glide: 0.12, level: 0.09, attack: 0.004, decay: 0.14 }); burst(d, t, { freq: 900, to: 2400, q: 0.8, level: 0.06, attack: 0.02, decay: 0.1 }); }); },
+    land(sp) { play(sp, 1, (d, t) => { thud(d, t, 0.26); burst(d, t, { type: 'lowpass', freq: 900, to: 200, level: 0.12, attack: 0.008, decay: 0.12 }); }); },
     /** 깜짝 깨기 */
     wake(sp) { play(sp, 1, (d, t) => { tone(d, t, { freq: 600, to: 1300, glide: 0.08, level: 0.08, attack: 0.003, decay: 0.1 }); }); },
     /** 입구 종: 딸랑 */
