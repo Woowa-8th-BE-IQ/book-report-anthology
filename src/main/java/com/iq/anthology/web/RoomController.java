@@ -96,9 +96,10 @@ public class RoomController {
                                                     @RequestParam(required = false) String place,
                                                     @RequestParam(defaultValue = "0") int level,
                                                     @RequestParam(required = false) String pose,
+                                                    @RequestParam(required = false) String hold,
                                                     HttpServletRequest request) {
         try {
-            RoomHub.Spot spot = new RoomHub.Spot(new RoomHub.Position(x, y), seat, status, place, level, pose);
+            RoomHub.Spot spot = new RoomHub.Spot(new RoomHub.Position(x, y), seat, status, place, level, pose, hold);
             if (roomService.moveInLibrary(code, cookies.read(request, code), spot)) {
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
             }

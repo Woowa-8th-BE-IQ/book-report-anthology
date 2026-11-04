@@ -317,3 +317,17 @@
   .lib3-label .lib-bubble { max-width: 170px; }
 }
 @media (prefers-reduced-motion: reduce) { .lib3-z i { animation: none; opacity: .8; } }
+
+/* 책 엘리베이터 층 단추, 사락 카운터 메뉴 */
+.lib-lift, .lib-menu { display: grid; gap: 6px; margin-top: 10px; }
+.lib-lift button, .lib-menu button { display: flex; align-items: baseline; gap: 10px; width: 100%; padding: 10px 12px; border: 1px solid #D8C9B4; border-radius: 6px; background: #FFF6E6; color: #2E241C; font: inherit; text-align: left; cursor: pointer; transition: background .15s, translate .15s; }
+.lib-lift button:hover:not(:disabled), .lib-menu button:hover { background: #F2E3C6; translate: 2px 0; }
+.lib-lift button b { min-width: 36px; font-size: 13px; color: #B8571A; }
+.lib-lift button span { font-weight: 700; font-size: 15px; }
+.lib-lift button small { margin-left: auto; font-size: 12px; color: #8A7660; }
+.lib-lift button.here { background: #EFE3CF; cursor: default; opacity: .8; }
+.lib-menu button { flex-direction: column; gap: 2px; }
+.lib-menu button b { font-size: 15px; }
+.lib-menu button small { font-size: 12px; color: #8A7660; }
+.lib-menu button.on { border-color: #6E8B74; box-shadow: inset 3px 0 0 #6E8B74; }
+.lib-menu-none { margin-top: 8px; border: 0; background: none; color: #8A7660; font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }

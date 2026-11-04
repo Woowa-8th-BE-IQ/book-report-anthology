@@ -238,6 +238,7 @@ function start() {
 
   // 큰 서고: 24m×16m. 바닥 좌표는 2D 서고(2400×1450 그림의 바닥 540~1262)와 같은 자리로 바뀐다.
   const hall = newPlace('hall', '큰 서고', {
+    label: '1층 큰 서고', short: '1층',
     toRatio: (x, z) => [(x + 12) / 24, (540 + ((z + 8) / 16) * 722) / 1450],
     fromRatio: (rx, ry) => [rx * 24 - 12, ((ry * 1450 - 540) / 722) * 16 - 8],
     bounds: [-12, -8, 12, 8],
@@ -264,6 +265,7 @@ function start() {
   });
   // 옥상 정원: 16m×10m
   const roof = newPlace('roof', '옥상 정원', {
+    label: '옥상 정원', short: '옥상',
     toRatio: (x, z) => [(x + 8) / 16, (z + 5) / 10],
     fromRatio: (rx, ry) => [rx * 16 - 8, ry * 10 - 5],
     bounds: [-8, -5, 8, 5],
@@ -278,6 +280,33 @@ function start() {
           { r: [-3.4, 3.15, -0.6, 3.7] }, // 벤치
           { c: [6.05, 3.25, 0.35] }, { r: [7.0, -2.0, 7.9, 2.6] }, { c: [-7.1, 4.1, 0.4] }, // 망원경, 화단, 화분
           { c: [-1.0, 1.0, 0.45] }, // 작은 탁자
+          { r: [-3.95, -5.2, -2.45, -4.0] }, // 책 엘리베이터
+        ],
+      },
+    },
+  });
+  // 2층 북카페 사락: 16m×10m. 왼쪽 벽에 엘리베이터와 계단 문, 뒤 창가 바, 오른쪽 카운터, 가운데 둥근 탁자, 앞 왼쪽 소파 자리
+  const CAFE_TABLES = [[-3.4, -0.6], [-0.2, 1.2], [2.8, -0.4]];
+  const STOOLS = [-5.0, -3.6, -2.2, -0.8, 0.6, 2.0];
+  const cafe = newPlace('cafe', '북카페 사락', {
+    label: '2층 북카페 사락', short: '2층',
+    toRatio: (x, z) => [(x + 8) / 16, (z + 5) / 10],
+    fromRatio: (rx, ry) => [rx * 16 - 8, ry * 10 - 5],
+    bounds: [-8, -5, 8, 5],
+    spawn: () => [-6.9, -3.2],
+    stairs: null,
+    indoor: true,
+    alwaysLit: true,
+    layers: {
+      0: {
+        rect: [-7.75, -4.75, 7.75, 4.75],
+        blocks: [
+          { r: [-6.1, -5.2, 3.7, -4.35] }, // 창가 바
+          ...STOOLS.map((x) => ({ c: [x, -3.95, 0.2] })),
+          { r: [4.9, -2.6, 8, 2.2] }, // 카운터
+          ...CAFE_TABLES.flatMap(([x, z]) => [{ c: [x, z, 0.5] }, { c: [x - 0.85, z, 0.27] }, { c: [x + 0.85, z, 0.27] }]),
+          { r: [-7.9, 2.1, -6.9, 4.1] }, { c: [-5.6, 3.1, 0.35] }, { c: [-4.4, 3.1, 0.42] }, { c: [-7.4, 4.55, 0.2] }, // 소파·낮은 탁자·안락의자·스탠드
+          { r: [7.4, 2.8, 8.2, 4.9] }, { c: [5.6, 4.4, 0.35] }, { c: [3.6, 4.4, 0.35] }, // 낮은 책장, 화분
         ],
       },
     },
@@ -299,15 +328,43 @@ function start() {
   seat(roof, { id: 'roof-ham-2', kind: 'hammock', x: 5.4, z: -3.4, top: 0.62, yaw: Math.PI / 2, from: [5.4, -2.4] });
   seat(roof, { id: 'roof-bench-1', kind: 'bench', x: -2.6, z: 3.42, top: 0.47, yaw: 0, from: [-2.6, 2.6] });
   seat(roof, { id: 'roof-bench-2', kind: 'bench', x: -1.4, z: 3.42, top: 0.47, yaw: 0, from: [-1.4, 2.6] });
+  STOOLS.forEach((x, i) => seat(cafe, { id: `bar-${i + 1}`, kind: 'stool', x, z: -3.95, top: 0.76, yaw: Math.PI, from: [x, -3.2] }));
+  CAFE_TABLES.forEach(([x, z], i) => {
+    seat(cafe, { id: `ct${i + 1}-l`, kind: 'chair', x: x - 0.85, z, top: 0.47, yaw: Math.PI / 2, from: [x - 0.85, z + 0.78], lamp: `C-${i + 1}` });
+    seat(cafe, { id: `ct${i + 1}-r`, kind: 'chair', x: x + 0.85, z, top: 0.47, yaw: -Math.PI / 2, from: [x + 0.85, z + 0.78], lamp: `C-${i + 1}` });
+  });
+  seat(cafe, { id: 'sofa-1', kind: 'sofa', x: -7.3, z: 2.6, top: 0.46, yaw: Math.PI / 2, from: [-6.35, 2.4] });
+  seat(cafe, { id: 'sofa-2', kind: 'sofa', x: -7.3, z: 3.6, top: 0.46, yaw: Math.PI / 2, from: [-6.35, 3.85] });
+  seat(cafe, { id: 'arm-1', kind: 'sofa', x: -4.4, z: 3.1, top: 0.46, yaw: -Math.PI / 2, from: [-4.4, 2.2] });
   hall.hots = { book: { at: [0, -2.3], level: 0, card: 'book', tip: '펼친 책' }, board: { at: [-9.2, -0.9], level: 0, card: 'board', tip: '글감 질문' }, shelf: { at: [7.6, -0.6], level: 0, card: 'shelf', tip: '우리 책장' } };
   roof.hots = { stars: { at: [5.4, 3.0], level: 0, card: 'stars', tip: '별 보는 망원경' } };
+  cafe.hots = { counter: { at: [4.3, -0.2], level: 0, card: 'cafe', tip: '사락 카운터' }, shelf: { at: [6.8, 3.8], level: 0, card: 'shelf', tip: '카페 책장' } };
   hall.portals = [
-    { id: 'roof', to: 'roof', level: 1, zone: (x, z) => x < -11.62 && z > -7.4 && z < -6.4, at: [-11.4, -6.9], tip: '옥상 정원으로', arrive: { x: -6.2, z: -2.3, layer: 0 } },
+    { id: 'up', dir: 'up', level: 1, zone: (x, z) => x < -11.62 && z > -7.4 && z < -6.4, at: [-11.4, -6.9] },
     { id: 'room', href: true, level: 0, zone: (x, z) => x > 10.6 && z > 2.85 && z < 4.15, at: [10.5, 3.5], tip: '모임방으로' },
+    { id: 'lift', lift: true, level: 0, zone: (x, z) => x < -11.62 && z > 1.3 && z < 2.2, at: [-11.5, 1.75], tip: '책 엘리베이터' },
   ];
   roof.portals = [
-    { id: 'hall', to: 'hall', level: 0, zone: (x, z) => x > -6.75 && x < -5.65 && z < -2.88, at: [-6.2, -2.75], tip: '큰 서고로', arrive: { x: -11.0, z: -6.9, layer: 1 } },
+    { id: 'down', dir: 'down', level: 0, zone: (x, z) => x > -6.75 && x < -5.65 && z < -2.88, at: [-6.2, -2.75] },
+    { id: 'lift', lift: true, level: 0, zone: (x, z) => x > -3.6 && x < -2.8 && z < -3.55, at: [-3.2, -3.5], tip: '책 엘리베이터' },
   ];
+  cafe.portals = [
+    { id: 'lift', lift: true, level: 0, zone: (x, z) => x < -7.5 && z > -3.7 && z < -2.7, at: [-7.45, -3.2], tip: '책 엘리베이터' },
+    { id: 'up', dir: 'up', level: 0, zone: (x, z) => x < -7.5 && z > -1.7 && z < -0.7, at: [-7.45, -1.2] },
+    { id: 'down', dir: 'down', level: 0, zone: (x, z) => x < -7.5 && z > 0.3 && z < 1.3, at: [-7.45, 0.8] },
+  ];
+  // 층 잇기: 아래에서 위로 놓인 순서. 계단 문은 바로 위·아래 층으로, 엘리베이터는 어느 층으로든
+  hall.arriveFromAbove = { x: -11.0, z: -6.9, layer: 1 }; hall.liftArrive = { x: -10.95, z: 1.75, layer: 0 };
+  roof.arriveFromBelow = { x: -6.2, z: -2.3, layer: 0 }; roof.liftArrive = { x: -3.2, z: -2.85, layer: 0 };
+  cafe.arriveFromBelow = { x: -6.85, z: 0.8, layer: 0 }; cafe.arriveFromAbove = { x: -6.85, z: -1.2, layer: 0 }; cafe.liftArrive = { x: -6.85, z: -3.2, layer: 0 };
+  const FLOORS = ['cave', 'hall', 'cafe', 'forum', 'scribe', 'roof'].filter((id) => PLACES[id]);
+  FLOORS.forEach((id, i) => PLACES[id].portals.forEach((q) => {
+    if (!q.dir) return;
+    const next = PLACES[FLOORS[q.dir === 'up' ? i + 1 : i - 1]];
+    if (!next) { q.off = true; return; }
+    q.to = next.id; q.arrive = q.dir === 'up' ? next.arriveFromBelow : next.arriveFromAbove;
+    q.tip = `${q.dir === 'up' ? '↑' : '↓'} ${next.label}`;
+  }));
 
   // ───────── 길 찾기: 층마다 20cm 격자. 계단은 따로 한 층(S)으로 두고 앞·뒤 끝에서만 이어진다 ─────────
   const CELL = 0.2;
@@ -576,10 +633,10 @@ function start() {
     const roofDoor = new THREE.Group();
     box(roofDoor, 0.12, 2.2, 1.1, 0x6E8B74, 0, 0, 0, { line: 0.03 });
     const knob = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), toon(0xE3A857)); knob.position.set(0.09, 1.05, 0.38); roofDoor.add(knob);
-    const roofSign = plane(roofDoor, 1.0, 0.3, toon(0xffffff, { map: signTex('옥상 정원', { bg: '#FFF6E6', fg: '#2E241C' }) }), 0.07, 2.45, 0, { ry: Math.PI / 2 });
+    const roofSign = plane(roofDoor, 1.0, 0.3, toon(0xffffff, { map: signTex('↑ 위층', { bg: '#FFF6E6', fg: '#2E241C' }) }), 0.07, 2.45, 0, { ry: Math.PI / 2 });
     roofSign.castShadow = false;
     roofDoor.position.set(-11.95, LOFT_Y, -6.9);
-    mark(P, roofDoor, { portal: 'roof' });
+    mark(P, roofDoor, { portal: 'up' });
     // 왼쪽 벽: 계단 앞쪽 벽에 책장
     const left = new THREE.Group();
     box(left, 0.3, 7.2, 16.6, 0xE9DCC6, -12.15, 0, 0, { line: 0.04, cast: false });
@@ -819,8 +876,8 @@ function start() {
     box(hut, 3.0, 2.6, 2.0, 0xEFE3CF, -6.2, 0, -4.15, { line: 0.04 });
     box(hut, 3.3, 0.18, 2.3, 0x6B4430, -6.2, 2.6, -4.15, { line: 0.03 });
     box(hut, 1.0, 2.05, 0.1, 0x6E8B74, -6.2, 0, -3.13, { line: 0.025 });
-    plane(hut, 1.0, 0.3, toon(0xffffff, { map: signTex('큰 서고', { bg: '#FFF6E6', fg: '#2E241C' }) }), -6.2, 2.32, -3.07);
-    mark(P, hut.children[hut.children.length - 2], { portal: 'hall' });
+    plane(hut, 1.0, 0.3, toon(0xffffff, { map: signTex('↓ 아래층', { bg: '#FFF6E6', fg: '#2E241C' }) }), -6.2, 2.32, -3.07);
+    mark(P, hut.children[hut.children.length - 2], { portal: 'down' });
     block(P, hut);
     S.add(hut);
     // 해먹 둘: 기둥 사이에 늘어진 천
@@ -928,8 +985,249 @@ function start() {
     S.add(P.rain, P.snow);
   };
 
+
+  // ───────── 층 사이: 책 엘리베이터와 계단 문 ─────────
+  // 엘리베이터 문: 놋쇠 틀, 미닫이 두 짝(가까이 가면 열린다), 위에 층 바늘, 옆에 부름 단추
+  const liftDoor = (P, parent, x, z, ry) => {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry;
+    box(g, 1.75, 2.8, 0.14, 0xC9A15E, 0, 0, 0, { line: 0.03 });
+    box(g, 1.22, 2.3, 0.02, 0x2B1C12, 0, 0.05, 0.075, { line: 0, cast: false });
+    const leaf = (k) => {
+      const d = new THREE.Group(); d.position.set(k * 0.3, 0.05, 0.1); g.add(d);
+      box(d, 0.6, 2.3, 0.05, 0x7E9C93, 0, 0, 0, { line: 0.02 });
+      [0.55, 1.15, 1.75].forEach((y) => box(d, 0.44, 0.03, 0.012, 0xC9A15E, 0, y, 0.03, { line: 0, cast: false }));
+      return d;
+    };
+    const L = leaf(-1); const R = leaf(1);
+    const dial = new THREE.Mesh(new THREE.CircleGeometry(0.3, 24, 0, Math.PI), toon(0xFFF6E6)); dial.position.set(0, 2.42, 0.08); g.add(dial);
+    const needle = new THREE.Group(); needle.position.set(0, 2.44, 0.09); g.add(needle);
+    box(needle, 0.025, 0.25, 0.01, 0x2E241C, 0, 0, 0, { line: 0, cast: false });
+    const btn = cyl(g, 0.06, 0.06, 0.03, 0xF2D16B, 0.72, 1.08, 0.08, { line: 0.01, seg: 14 }); btn.rotation.x = Math.PI / 2;
+    const sign = plane(g, 1.4, 0.32, toon(0xffffff, { map: signTex('책 엘리베이터', { bg: '#3B2618', fg: '#F2D16B', size: 80 }) }), 0, 3.0, 0.08);
+    sign.castShadow = false;
+    mark(P, g, { portal: 'lift' });
+    parent.add(g);
+    P.liftDoors = { L, R, needle, open: 0 };
+    return g;
+  };
+  // 계단 문: 나무 문에 위·아래 화살표 팻말
+  const stairDoor = (P, parent, x, z, ry, dir) => {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry;
+    box(g, 1.25, 2.4, 0.1, 0x5E3B27, 0, 0, 0, { line: 0.03 });
+    box(g, 1.05, 2.25, 0.08, dir === 'up' ? 0xB98A5E : 0x9C7350, 0, 0, 0.05, { line: 0.025 });
+    [0.5, 1.4].forEach((y) => box(g, 0.8, 0.6, 0.02, dir === 'up' ? 0xA97C50 : 0x8C6544, 0, y, 0.1, { line: 0.012 }));
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), toon(0xE3A857)); knob.position.set(0.38, 1.05, 0.14); g.add(knob);
+    const sign = plane(g, 1.0, 0.3, toon(0xffffff, { map: signTex(dir === 'up' ? '↑ 위층' : '↓ 아래층', { bg: '#FFF6E6', fg: '#2E241C' }) }), 0, 2.6, 0.06);
+    sign.castShadow = false;
+    mark(P, g, { portal: dir });
+    parent.add(g);
+    return g;
+  };
+  // 매단 등: 줄 끝에 갓, 앉으면 더 밝아진다
+  const pendant = (P, parent, id, x, z, color = 0xE3A857, drop = 2.0) => {
+    const g = new THREE.Group(); g.position.set(x, 4.6, z);
+    const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, drop, 4), new THREE.MeshBasicMaterial({ color: 0x2E241C })); cord.position.y = -drop / 2; g.add(cord);
+    const shade = solid(new THREE.ConeGeometry(0.3, 0.28, 18, 1, true), color, { line: 0.02, mat: toon(color, { side: THREE.DoubleSide }) });
+    shade.position.y = -drop - 0.1; g.add(shade);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), new THREE.MeshBasicMaterial({ color: 0x6b5a3a })); bulb.position.y = -drop - 0.22; g.add(bulb);
+    const halo = glow(g, 0xffd98a, 1.4, 0, -drop - 0.25, 0); halo.material.opacity = 0;
+    const light = new THREE.PointLight(0xffc77a, 0, 5, 1.4); light.position.y = -drop - 0.3; g.add(light);
+    parent.add(g);
+    P.lamps[id] = { bulb, halo, light, on: false };
+    return g;
+  };
+  // 실내 층의 공통 뼈대: 바닥판, 뒷벽 창 셋(하늘), 왼쪽 벽(엘리베이터·계단 문), 오른쪽 벽, 빛
+  const buildRoom = (P, { floorTex, wall = 0xEFE3CF, side = 0xE9DCC6, sign, windowsAt = [-4, 0, 4] }) => {
+    const S = P.scene;
+    box(S, 16.6, 0.59, 10.6, 0x6B4430, 0, -0.6, 0, { line: 0.05, cast: false });
+    const floor = plane(S, 16, 10, toon(0xffffff, { map: floorTex }), 0, 0, 0, { rx: -Math.PI / 2 });
+    mark(P, floor, { floor: 0 });
+    const back = new THREE.Group();
+    const shape = new THREE.Shape(); shape.moveTo(-8.3, 0); shape.lineTo(8.3, 0); shape.lineTo(8.3, 4.8); shape.lineTo(-8.3, 4.8); shape.lineTo(-8.3, 0);
+    windowsAt.forEach((cx) => { const h = new THREE.Path(); h.moveTo(cx - 1.25, 1.1); h.lineTo(cx + 1.25, 1.1); h.lineTo(cx + 1.25, 2.7); h.absarc(cx, 2.7, 1.25, 0, Math.PI, false); h.lineTo(cx - 1.25, 1.1); shape.holes.push(h); });
+    const wallMesh = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.3, bevelEnabled: false }), toon(wall));
+    wallMesh.position.z = -5.3; wallMesh.receiveShadow = true; back.add(wallMesh);
+    windowsAt.forEach((cx) => {
+      const ring = new THREE.Shape(); ring.absarc(cx, 2.7, 1.42, 0, Math.PI, false); ring.lineTo(cx - 1.42, 0.98); ring.lineTo(cx + 1.42, 0.98); ring.lineTo(cx + 1.42, 2.7);
+      const rh = new THREE.Path(); rh.absarc(cx, 2.7, 1.25, 0, Math.PI, false); rh.lineTo(cx - 1.25, 1.1); rh.lineTo(cx + 1.25, 1.1); rh.lineTo(cx + 1.25, 2.7); ring.holes.push(rh);
+      const fr = new THREE.Mesh(new THREE.ExtrudeGeometry(ring, { depth: 0.38, bevelEnabled: false }), toon(0x5E3B27)); fr.position.z = -5.34; fr.castShadow = true; back.add(fr);
+      box(back, 0.08, 2.85, 0.1, 0x5E3B27, cx, 1.1, -5.0, { line: 0.015 });
+      box(back, 2.5, 0.08, 0.1, 0x5E3B27, cx, 2.3, -5.0, { line: 0.015 });
+    });
+    P.sky = canvasTex(1024, 512, skyDraw('day', true));
+    plane(back, 17, 7, new THREE.MeshBasicMaterial({ map: P.sky }), 0, 2.8, -6.2, { receive: false });
+    P.rainGlass = plane(back, 16, 4, new THREE.MeshBasicMaterial({ map: canvasTex(256, 256, (g) => { g.strokeStyle = 'rgba(220,235,255,.55)'; g.lineWidth = 2; const rand = seeded(5); for (let i = 0; i < 60; i++) { const x = rand() * 256; const y = rand() * 256; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 3, y + 14 + rand() * 10); g.stroke(); } }, { repeat: [6, 2] }), transparent: true, depthWrite: false }), 0, 2.5, -5.05, { receive: false });
+    P.rainGlass.visible = false;
+    if (sign) { const plate = plane(back, 3.0, 0.6, toon(0xffffff, { map: signTex(sign) }), 0, 4.35, -4.98); plate.castShadow = false; }
+    box(back, 16.6, 0.25, 0.45, 0x3B2618, 0, 4.8, -5.15, { line: 0.03, cast: false });
+    block(P, back); S.add(back);
+    P.walls.push({ group: back, nx: 0, nz: 1 });
+    const left = new THREE.Group();
+    box(left, 0.3, 4.8, 10.6, side, -8.15, 0, 0, { line: 0.04, cast: false });
+    liftDoor(P, left, -7.95, -3.2, Math.PI / 2);
+    stairDoor(P, left, -7.97, -1.2, Math.PI / 2, 'up');
+    stairDoor(P, left, -7.97, 0.8, Math.PI / 2, 'down');
+    block(P, left); S.add(left);
+    P.walls.push({ group: left, nx: 1, nz: 0 });
+    const right = new THREE.Group();
+    box(right, 0.3, 4.8, 10.6, side, 8.15, 0, 0, { line: 0.04, cast: false });
+    block(P, right); S.add(right);
+    P.walls.push({ group: right, nx: -1, nz: 0 });
+    P.hemi = new THREE.HemisphereLight(0xfff4e0, 0x8a6a4a, 1.6); S.add(P.hemi);
+    P.sun = new THREE.DirectionalLight(0xfff1d0, 2.0);
+    P.sun.position.set(3, 11, -14); P.sun.target.position.set(0, 0, 1);
+    P.sun.castShadow = true; P.sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(P.sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 2, far: 40 });
+    P.sun.shadow.bias = -0.0006; P.sun.shadow.normalBias = 0.03;
+    S.add(P.sun, P.sun.target);
+    S.background = new THREE.Color(0x2B1C12);
+    return { back, left, right };
+  };
+
+  // ───────── 2층 북카페 사락 짓기 ─────────
+  const buildCafe = (P) => {
+    const S = P.scene;
+    const tiles = canvasTex(1024, 640, (g, w, h) => {
+      const n = 32; const cw = w / n; const rows = 20; const ch = h / rows; const rand = seeded(83);
+      for (let r = 0; r < rows; r++) for (let c = 0; c < n; c++) {
+        const k = (r + c) % 2; const v = (rand() - 0.5) * 10;
+        g.fillStyle = k ? `rgb(${236 + v},${222 + v},${198 + v})` : `rgb(${206 + v},${146 + v},${112 + v})`;
+        g.fillRect(c * cw, r * ch, cw, ch);
+      }
+      g.strokeStyle = 'rgba(90,60,40,.35)'; g.lineWidth = 1.5;
+      for (let c = 0; c <= n; c++) { g.beginPath(); g.moveTo(c * cw, 0); g.lineTo(c * cw, h); g.stroke(); }
+      for (let r = 0; r <= rows; r++) { g.beginPath(); g.moveTo(0, r * ch); g.lineTo(w, r * ch); g.stroke(); }
+    });
+    const { back, right } = buildRoom(P, { floorTex: tiles, wall: 0xF3E6D2, side: 0xE8D5BC, sign: '북카페 사락' });
+    // 창가 바와 높은 의자
+    box(back, 9.8, 0.08, 0.6, 0xB07A4E, -1.2, 1.0, -4.65, { line: 0.02 });
+    box(back, 9.6, 0.95, 0.12, 0x8C5A3B, -1.2, 0.05, -4.42, { line: 0.02 });
+    P.seats.filter((x) => x.kind === 'stool').forEach((st, i) => {
+      const g = new THREE.Group();
+      cyl(g, 0.2, 0.2, 0.07, [0xE3A857, 0x6E8B74, 0xC9604A][i % 3], 0, 0.68, 0, { line: 0.015 });
+      cyl(g, 0.035, 0.035, 0.68, 0x3B2618, 0, 0, 0, { line: 0.01, seg: 8 });
+      cyl(g, 0.17, 0.17, 0.03, 0x3B2618, 0, 0, 0, { line: 0.01 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.012, 4, 16), toon(0x3B2618)); ring.rotation.x = Math.PI / 2; ring.position.y = 0.28; g.add(ring);
+      g.position.set(st.x, 0, st.z); mark(P, g, { seat: st.id }); S.add(g); st.mesh = g;
+    });
+    // 창가 바 위 작은 것들: 화분, 책, 찻잔
+    [-4.3, -0.1, 3.0].forEach((x, i) => { cyl(back, 0.1, 0.08, 0.14, 0xC9604A, x, 1.08, -4.7, { line: 0.01, seg: 10 }); const b = solid(new THREE.IcosahedronGeometry(0.14, 0), i % 2 ? 0x7A9E7E : 0x6E8B74, { line: 0.012 }); b.position.set(x, 1.32, -4.7); back.add(b); });
+    box(back, 0.3, 0.06, 0.22, 0x4F6D8A, -2.9, 1.08, -4.6, { line: 0.01, ry: 0.3 }); box(back, 0.28, 0.05, 0.2, 0xF2D16B, -2.9, 1.14, -4.6, { line: 0.01, ry: 0.1 });
+    // 카운터: 나무 판 앞면, 크림색 상판, 커피 머신·그라인더·케이크 진열장·종
+    const counter = new THREE.Group();
+    box(counter, 0.8, 1.02, 4.8, 0x8C5A3B, 5.3, 0, -0.2, { line: 0.03 });
+    for (let z = -2.4; z <= 2.0; z += 0.4) box(counter, 0.02, 0.85, 0.32, 0x9C6B48, 4.89, 0.08, z + 0.2, { line: 0.008, cast: false });
+    box(counter, 0.95, 0.07, 4.95, 0xF4EBDD, 5.3, 1.02, -0.2, { line: 0.02 });
+    plane(counter, 1.8, 0.4, toon(0xffffff, { map: signTex('주문하는 곳', { bg: '#6E8B74', size: 84 }) }), 4.87, 0.6, -0.2, { ry: -Math.PI / 2 });
+    const machine = new THREE.Group();
+    box(machine, 0.62, 0.55, 0.5, 0xC9604A, 0, 0, 0, { line: 0.02 });
+    box(machine, 0.66, 0.08, 0.54, 0xA9B2BA, 0, 0.55, 0, { line: 0.012 });
+    [-0.14, 0.14].forEach((z) => { cyl(machine, 0.045, 0.035, 0.12, 0xA9B2BA, -0.28, 0.2, z, { line: 0.008, seg: 10 }); cyl(machine, 0.05, 0.04, 0.07, 0xFFFDF8, -0.3, 0.03, z, { line: 0.008, seg: 12 }); });
+    const gauge = new THREE.Mesh(new THREE.CircleGeometry(0.07, 16), toon(0xFFF6E6)); gauge.position.set(-0.315, 0.42, 0); gauge.rotation.y = -Math.PI / 2; machine.add(gauge);
+    machine.position.set(5.45, 1.09, -1.6); counter.add(machine);
+    const grinder = new THREE.Group(); box(grinder, 0.22, 0.3, 0.22, 0x3B2618, 0, 0, 0, { line: 0.012 }); const hop = solid(new THREE.ConeGeometry(0.12, 0.22, 10), 0x8C5A3B, { line: 0.01 }); hop.rotation.x = Math.PI; hop.position.y = 0.4; grinder.add(hop); grinder.position.set(5.5, 1.09, -0.9); counter.add(grinder);
+    // 케이크 진열장(유리)
+    const caseG = new THREE.Group();
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.45, 1.0), new THREE.MeshLambertMaterial({ color: 0xDDF0F7, transparent: true, opacity: 0.28, depthWrite: false }));
+    glass.position.y = 0.225; caseG.add(glass);
+    const glassInk = new THREE.LineSegments(new THREE.EdgesGeometry(glass.geometry), new THREE.LineBasicMaterial({ color: INK })); glassInk.position.y = 0.225; caseG.add(glassInk);
+    [[-0.3, 0xF4D6DC], [0, 0xF2D16B], [0.3, 0x8C5A3B]].forEach(([z, c]) => { const cake = cyl(caseG, 0.13, 0.13, 0.12, c, 0, 0.02, z, { line: 0.01, seg: 14 }); cake.scale.z = 0.8; const top = cyl(caseG, 0.13, 0.13, 0.025, 0xFFFDF8, 0, 0.14, z, { line: 0.008, seg: 14 }); top.scale.z = 0.8; const berry = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), toon(0xE4572E)); berry.position.set(0, 0.19, z); caseG.add(berry); });
+    caseG.position.set(5.3, 1.09, 0.6); counter.add(caseG);
+    const bellG = new THREE.Group(); cyl(bellG, 0.06, 0.08, 0.04, 0x3B2618, 0, 0, 0, { line: 0.008, seg: 12 }); const dome = solid(new THREE.SphereGeometry(0.07, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0xE3A857, { line: 0.008 }); dome.position.y = 0.04; bellG.add(dome); bellG.position.set(5.0, 1.09, 1.6); counter.add(bellG);
+    for (let i = 0; i < 4; i++) cyl(counter, 0.06, 0.05, 0.1, 0xFFFDF8, 5.55 - (i % 2) * 0.12, 1.09 + Math.floor(i / 2) * 0.1, 1.2 + (i % 2) * 0.05, { line: 0.008, seg: 12 });
+    mark(P, counter, { hot: 'counter' }); block(P, counter); S.add(counter);
+    // 카운터 뒤 벽: 메뉴 칠판과 컵·병 선반
+    const menu = canvasTex(768, 512, (g, w, h) => {
+      g.fillStyle = '#2F3B33'; g.fillRect(0, 0, w, h); g.strokeStyle = '#8C5A3B'; g.lineWidth = 26; g.strokeRect(0, 0, w, h);
+      g.fillStyle = '#FFF3DC'; g.textAlign = 'center'; g.font = '700 64px "Gaegu", "Nanum Pen Script", sans-serif'; g.fillText('오늘의 메뉴', w / 2, 92);
+      g.font = '46px "Gaegu", "Nanum Pen Script", sans-serif'; g.textAlign = 'left';
+      [['아메리카노', '밤샘용'], ['카페라테', '한 장 더'], ['핫초코', '달달한 결말'], ['말차 라테', '초록 책갈피']].forEach(([a, b], i) => { g.fillStyle = '#FFF3DC'; g.fillText(a, 70, 180 + i * 78); g.fillStyle = '#F2D16B'; g.textAlign = 'right'; g.fillText(b, w - 70, 180 + i * 78); g.textAlign = 'left'; });
+    });
+    plane(right, 2.6, 1.7, toon(0xffffff, { map: menu }), 7.98, 2.9, -0.6, { ry: -Math.PI / 2 });
+    [1.4, 1.9].forEach((y) => {
+      box(right, 0.35, 0.05, 2.0, 0x8C5A3B, 7.8, y, 1.4, { line: 0.012 });
+      for (let i = 0; i < 6; i++) { const c = [0xFFFDF8, 0xE3A857, 0x9BB7D4, 0xC9604A][i % 4]; if (y > 1.5) { const jar = cyl(right, 0.08, 0.08, 0.2, 0xDDF0F7, 7.8, y + 0.05, 0.6 + i * 0.32, { line: 0.008, seg: 10 }); jar.material = new THREE.MeshLambertMaterial({ color: 0xE8D5BC }); cyl(right, 0.05, 0.05, 0.12, [0x5E3B27, 0x8C5A3B, 0x6E8B74][i % 3], 7.8, y + 0.07, 0.6 + i * 0.32, { line: 0, seg: 10 }); } else cyl(right, 0.06, 0.05, 0.1, c, 7.8, y + 0.05, 0.6 + i * 0.32, { line: 0.008, seg: 12 }); }
+    });
+    // 둥근 탁자와 의자(둘씩 마주 본다), 위에 매단 등
+    CAFE_TABLES.forEach(([x, z], i) => {
+      const t = new THREE.Group();
+      cyl(t, 0.5, 0.5, 0.05, 0xF4EBDD, 0, 0.72, 0, { line: 0.02, seg: 28 });
+      cyl(t, 0.52, 0.52, 0.02, 0x8C5A3B, 0, 0.7, 0, { line: 0.012, seg: 28 });
+      cyl(t, 0.05, 0.05, 0.7, 0x3B2618, 0, 0, 0, { line: 0.01, seg: 8 });
+      cyl(t, 0.28, 0.3, 0.04, 0x3B2618, 0, 0, 0, { line: 0.01, seg: 16 });
+      cyl(t, 0.06, 0.05, 0.09, 0xFFFDF8, -0.15, 0.77, 0.1, { line: 0.008, seg: 12 });
+      box(t, 0.32, 0.05, 0.24, new THREE.Color(BOOK_COLORS[(i * 5) % BOOK_COLORS.length]).getHex(), 0.15, 0.77, -0.05, { line: 0.01, ry: 0.4 });
+      t.position.set(x, 0, z); block(P, t); S.add(t);
+      pendant(P, S, `C-${i + 1}`, x, z, [0xE3A857, 0x6E8B74, 0xC9604A][i]);
+    });
+    P.seats.filter((x) => x.kind === 'chair').forEach((st) => {
+      const ch = new THREE.Group();
+      cyl(ch, 0.24, 0.24, 0.06, 0x8C5A3B, 0, 0.42, 0, { line: 0.015, seg: 18 });
+      [[-0.15, -0.15], [0.15, -0.15], [-0.15, 0.15], [0.15, 0.15]].forEach(([a, b]) => { const leg = box(ch, 0.04, 0.42, 0.04, 0x3B2618, a, 0, b, { line: 0.008 }); leg.rotation.set(b * 0.3, 0, -a * 0.3); });
+      const backRest = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.025, 6, 18, Math.PI), toon(0x3B2618)); backRest.position.set(0, 0.78, -0.2); ch.add(backRest);
+      [-0.2, 0.2].forEach((a) => box(ch, 0.04, 0.36, 0.04, 0x3B2618, a, 0.45, -0.2, { line: 0.008 }));
+      ch.position.set(st.x, 0, st.z); ch.rotation.y = st.yaw;
+      mark(P, ch, { seat: st.id }); S.add(ch); st.mesh = ch;
+    });
+    // 소파 자리: 벽 쪽 2인 소파, 낮은 탁자, 안락의자, 둥근 러그, 스탠드
+    const rugTex = canvasTex(512, 512, (g) => { g.fillStyle = '#6E8B74'; g.beginPath(); g.arc(256, 256, 252, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#F4EBDD'; g.lineWidth = 14; g.setLineDash([30, 18]); g.beginPath(); g.arc(256, 256, 215, 0, Math.PI * 2); g.stroke(); });
+    const rug = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshToonMaterial({ map: rugTex, gradientMap: gradient, transparent: true, alphaTest: 0.1 }));
+    rug.rotation.x = -Math.PI / 2; rug.scale.set(2.0, 1.6, 1); rug.position.set(-5.8, 0.012, 3.1); rug.receiveShadow = true; S.add(rug); mark(P, rug, { floor: 0 });
+    const sofa = new THREE.Group();
+    box(sofa, 0.95, 0.38, 2.0, 0xC9604A, 0, 0, 0, { line: 0.03 });
+    box(sofa, 0.25, 0.75, 2.0, 0xB5563F, -0.38, 0.38, 0, { line: 0.025 });
+    [-1, 1].forEach((k) => box(sofa, 0.95, 0.55, 0.18, 0xB5563F, 0, 0.1, k * 1.0, { line: 0.02 }));
+    [-0.5, 0.5].forEach((zz) => box(sofa, 0.62, 0.1, 0.92, 0xE08A6E, 0.1, 0.38, zz, { line: 0.015 }));
+    box(sofa, 0.16, 0.34, 0.34, 0xF2D16B, -0.15, 0.48, -0.55, { line: 0.012, ry: 0.2 });
+    sofa.position.set(-7.4, 0, 3.1); S.add(sofa);
+    ['sofa-1', 'sofa-2'].forEach((id) => { P.seatById(id).mesh = sofa; mark(P, sofa, { seat: id }); });
+    // 소파는 한 덩어리라 두 자리 중 가까운 쪽을 고르도록 쿠션에 따로 표시
+    sofa.children.filter((m) => m.isMesh && m.position.x > 0.05).forEach((m) => { m.userData.seat = m.position.z < 0 ? 'sofa-1' : 'sofa-2'; });
+    const low = new THREE.Group(); cyl(low, 0.38, 0.38, 0.05, 0xB07A4E, 0, 0.38, 0, { line: 0.015, seg: 20 }); cyl(low, 0.05, 0.05, 0.38, 0x3B2618, 0, 0, 0, { line: 0.008, seg: 8 });
+    box(low, 0.3, 0.06, 0.22, 0x9BB7D4, 0.05, 0.43, 0, { line: 0.01, ry: 0.5 }); box(low, 0.28, 0.06, 0.2, 0xFFFDF8, 0.05, 0.49, 0, { line: 0.01, ry: 0.2 });
+    cyl(low, 0.06, 0.05, 0.09, 0xFFFDF8, -0.2, 0.43, 0.12, { line: 0.008, seg: 12 });
+    low.position.set(-5.6, 0, 3.1); block(P, low); S.add(low);
+    const arm = new THREE.Group();
+    box(arm, 0.85, 0.38, 0.85, 0xE3A857, 0, 0, 0, { line: 0.025 });
+    box(arm, 0.85, 0.7, 0.2, 0xD39A4A, 0, 0.38, 0.33, { line: 0.02 });
+    [-1, 1].forEach((k) => box(arm, 0.16, 0.5, 0.85, 0xD39A4A, k * 0.42, 0.1, 0, { line: 0.015 }));
+    arm.position.set(-4.4, 0, 3.1); arm.rotation.y = -Math.PI / 2; S.add(arm);
+    mark(P, arm, { seat: 'arm-1' }); P.seatById('arm-1').mesh = arm;
+    const floorLamp = new THREE.Group(); cyl(floorLamp, 0.16, 0.18, 0.04, 0x3B2618, 0, 0, 0, { line: 0.01 }); cyl(floorLamp, 0.025, 0.025, 1.55, 0x3B2618, 0, 0.04, 0, { line: 0.008, seg: 8 });
+    const fshade = solid(new THREE.CylinderGeometry(0.16, 0.3, 0.32, 20, 1, true), 0xF4EBDD, { line: 0.02, mat: toon(0xF4EBDD, { side: THREE.DoubleSide }) }); fshade.position.y = 1.62; floorLamp.add(fshade);
+    glow(floorLamp, 0xffd98a, 1.8, 0, 1.5, 0); const fl = new THREE.PointLight(0xffc77a, 2.5, 5, 1.4); fl.position.y = 1.45; floorLamp.add(fl);
+    floorLamp.position.set(-7.4, 0, 4.55); S.add(floorLamp);
+    // 오른쪽 앞 낮은 책장(카페 책장), 화분
+    const shelf = new THREE.Group();
+    box(shelf, 0.6, 1.3, 2.0, 0x55361F, 0, 0, 0, { line: 0.03 });
+    shelfFace(P, shelf, 1.9, 1.2, 2, 89, -0.305, 0.05, 0, -Math.PI / 2);
+    shelf.position.set(7.75, 0, 3.85); mark(P, shelf, { hot: 'shelf' }); block(P, shelf); S.add(shelf);
+    const pot = (x, z) => { const g = new THREE.Group(); cyl(g, 0.32, 0.25, 0.45, 0xC9604A, 0, 0, 0, { line: 0.02 }); for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; const leaf = solid(new THREE.SphereGeometry(0.2, 10, 8), i % 2 ? 0x6E8B74 : 0x7A9E7E, { line: 0.02 }); leaf.scale.set(0.5, 2.2 + (i % 3) * 0.4, 0.5); leaf.position.set(Math.cos(a) * 0.14, 0.85 + (i % 3) * 0.1, Math.sin(a) * 0.14); leaf.rotation.set(Math.sin(a) * 0.45, 0, -Math.cos(a) * 0.45); g.add(leaf); } g.position.set(x, 0, z); S.add(g); };
+    pot(5.6, 4.4); pot(3.6, 4.4);
+    // 창가에 매단 화분 셋
+    [-2, 2, 6].forEach((x) => { const g = new THREE.Group(); const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1.0, 4), new THREE.MeshBasicMaterial({ color: 0x8C5A3B })); cord.position.y = -0.5; g.add(cord); cyl(g, 0.16, 0.12, 0.2, 0xF4EBDD, 0, -1.2, 0, { line: 0.01, seg: 12 }); for (let i = 0; i < 6; i++) { const v = solid(new THREE.SphereGeometry(0.06, 6, 5), 0x6E8B74, { line: 0.006 }); v.scale.set(1, 3, 1); v.position.set(Math.cos(i) * 0.12, -1.35 - (i % 3) * 0.12, Math.sin(i) * 0.12); g.add(v); } g.position.set(x, 4.6, -4.4); S.add(g); });
+    // 김: 커피 머신과 찻잔 위로 모락모락
+    P.steam = [];
+    [[5.15, 1.75, -1.6], [5.15, 1.75, -1.6], [-3.55, 0.9, -0.5], [-0.35, 0.9, 1.3], [-5.8, 0.6, 3.2]].forEach(([x, y, z], i) => { const sp = glow(S, 0xffffff, 0.25, x, y, z); sp.material.opacity = 0.0; sp.userData = { x, y, z, phase: i * 0.37 }; P.steam.push(sp); });
+    P.anim = (dt, t) => {
+      P.steam.forEach((sp) => { const k = (t * 0.35 + sp.userData.phase) % 1; sp.position.set(sp.userData.x + Math.sin(k * 6) * 0.04, sp.userData.y + k * 0.6, sp.userData.z); sp.scale.setScalar(0.15 + k * 0.35); sp.material.opacity = Math.sin(k * Math.PI) * 0.35; });
+    };
+  };
+  // 큰 서고·옥상에도 엘리베이터를 단다
+  const addLifts = () => {
+    const hallLeft = hall.walls.find((w) => w.nx === 1).group;
+    liftDoor(hall, hallLeft, -11.93, 1.75, Math.PI / 2);
+    const booth = new THREE.Group();
+    box(booth, 1.6, 2.95, 1.1, 0xEFE3CF, -3.2, 0, -4.55, { line: 0.04 });
+    box(booth, 1.8, 0.16, 1.3, 0x6B4430, -3.2, 2.95, -4.55, { line: 0.03 });
+    liftDoor(roof, booth, -3.2, -3.98, 0);
+    block(roof, booth); roof.scene.add(booth);
+  };
+
   buildHall(hall);
   buildRoof(roof);
+  buildCafe(cafe);
+  addLifts();
 
   // ───────── 시간대·날씨 ─────────
   const today = new Date();
@@ -969,6 +1267,7 @@ function start() {
     hall.sky.userData.draw(skyDraw(tod, true));
     hall.beam.material.opacity = T.beam * (weather === 'clear' ? 1 : 0.4);
     hall.rainGlass.visible = weather === 'rain';
+    Object.values(PLACES).filter((P) => P.indoor).forEach((P) => { P.sky.userData.draw(skyDraw(tod, true)); P.rainGlass.visible = weather === 'rain'; P.scene.background = new THREE.Color(T.bg); });
     paintSkyDome(roof);
     roof.nightStars.visible = tod === 'night' && weather === 'clear';
     roof.constellation.material.opacity = tod === 'night' ? 1 : tod === 'dusk' ? 0.7 : 0.35;
@@ -1562,9 +1861,13 @@ function start() {
     PLACES[placeId].scene.add(person.doll.blob);
   };
   const seatOf = (person) => (person.seated ? PLACES[person.place].seatById(person.seated) : null);
+  const whereOf = (person) => {
+    if (person.place === 'hall') return levelOf(hall, person.layer, person.x, person.z) === 1 ? '다락 · ' : '';
+    return `${PLACES[person.place].label} · `;
+  };
   const label = (person) => {
     const sleeping = person.pose !== 'up';
-    const where = person.place === 'roof' ? '옥상 · ' : levelOf(PLACES[person.place], person.layer, person.x, person.z) === 1 ? '다락 · ' : '';
+    const where = whereOf(person);
     person.label.querySelector('.lib-tag small').textContent = person.pose === 'sleep' ? '자는 중' : person.pose === 'doze' ? '꾸벅꾸벅' : STATUS[person.status] || STATUS.read;
     person.label.classList.toggle('sleepy', sleeping);
     person.label.classList.toggle('deep', person.pose === 'sleep');
@@ -1648,15 +1951,16 @@ function start() {
   function updateLamps(by) {
     const night = TOD[tod].lamps;
     const want = new Set();
-    people.forEach((p) => { const s = seatOf(p); if (s && s.lamp && p.place === 'hall') want.add(s.lamp); });
-    Object.entries(hall.lamps).forEach(([id, L]) => {
-      const on = night || want.has(id);
-      if (on !== L.on && by && !night) sfx('lamp', hear(by));
-      L.on = on;
-      L.light.intensity = on ? (want.has(id) ? 7 : 4) : 0;
-      L.halo.material.opacity = on ? 0.9 : 0;
+    people.forEach((p) => { const s = seatOf(p); if (s && s.lamp) want.add(`${p.place}:${s.lamp}`); });
+    Object.values(PLACES).forEach((P) => Object.entries(P.lamps).forEach(([id, L]) => {
+      const sat = want.has(`${P.id}:${id}`);
+      const on = night || sat || Boolean(P.alwaysLit);
+      if ((on !== L.on || (P.alwaysLit && sat !== L.sat)) && by && by.place === P.id && !night) sfx('lamp', hear(by));
+      L.on = on; L.sat = sat;
+      L.light.intensity = on ? (sat ? 7 : P.alwaysLit && !night ? 2.2 : 4) : 0;
+      L.halo.material.opacity = on ? (sat || night ? 0.9 : 0.5) : 0;
       L.bulb.material.color.setHex(on ? 0xfff1b5 : 0x6b5a3a);
-    });
+    }));
     lit.clear();
     want.forEach((id) => lit.add(id));
     // 다락에서 누가 자면 스탠드를 낮추고 이불을 펼친다
@@ -1667,8 +1971,8 @@ function start() {
   }
 
   // ───────── 앉기·눕기(깡충 → 털썩/폭신) ─────────
-  const HOP = { chair: 0.55, bench: 0.45, beanbag: 0.5, cushion: 0.4, futon: 0.5, hammock: 0.6 };
-  const WORD = { chair: '털썩', bench: '털썩', beanbag: '폭신', cushion: '폭신', futon: '폭신', hammock: '흔들' };
+  const HOP = { chair: 0.55, bench: 0.45, beanbag: 0.5, cushion: 0.4, futon: 0.5, hammock: 0.6, stool: 0.75, sofa: 0.45 };
+  const WORD = { chair: '털썩', bench: '털썩', beanbag: '폭신', cushion: '폭신', futon: '폭신', hammock: '흔들', stool: '쏙', sofa: '푹신' };
   // 앉은(누운) 자리의 인형 발끝 좌표와 높이
   const seatPose = (s, person) => {
     const d = person ? person.doll : { len: DOLL, hingeY: DOLL * HINGE };
@@ -1735,6 +2039,7 @@ function start() {
     const [rx, ry] = P.toRatio(x, z);
     const data = { x: clamp(rx, 0, 1).toFixed(4), y: clamp(ry, 0, 1).toFixed(4), status: me.status, place: me.place, level: s ? s.level : levelOf(P, me.layer, me.x, me.z), pose: me.pose };
     if (me.seat) data.seat = me.seat;
+    if (me.hold) data.hold = me.hold;
     return post(root.dataset.spot, data).catch(() => null);
   };
   const seatTaken = (P, sid) => [...people.values()].some((p) => p !== me && p.place === P.id && p.seat === sid);
@@ -1818,9 +2123,11 @@ function start() {
   const goPlace = (portal) => {
     if (travelling) return;
     if (portal.href) { openCard('leave'); return; }
+    if (portal.lift) { openLift(); return; }
+    if (portal.off) return;
     travelling = true;
     path = null; pending = null; keys.clear();
-    sfx('door', {});
+    sfx(portal.viaLift ? 'ding' : 'door', {});
     fade.classList.add('on');
     setTimeout(() => {
       const to = PLACES[portal.to];
@@ -1830,17 +2137,18 @@ function start() {
       current = to;
       cam.target.set(me.x, me.y + 1, me.z);
       people.forEach((p) => { p.label.hidden = p.place !== current.id; });
-      root.querySelector('.lib-place').textContent = to.name;
+      root.querySelector('.lib-place').textContent = to.label;
       label(me); renderPeople(); sendSpot(true);
       setMusic(music);
       setTimeout(() => { fade.classList.remove('on'); travelling = false; }, 120);
     }, 420);
   };
-  const portalAt = (P, layer, x, z) => P.portals.find((p) => (p.level === levelOf(P, layer, x, z)) && p.zone(x, z));
+  const portalAt = (P, layer, x, z) => P.portals.find((p) => !p.off && (p.level === levelOf(P, layer, x, z)) && p.zone(x, z));
 
   // ───────── 쪽지(가구를 눌렀을 때) ─────────
   const card = root.querySelector('.lib-card');
   const openCard = (name) => {
+    if (name === 'cafe') { openCafe(); return; }
     const template = root.querySelector(`template[data-card="${name}"]`);
     if (!template) return;
     card.querySelector('.lib-card-body').replaceChildren(template.content.cloneNode(true));
@@ -1848,7 +2156,72 @@ function start() {
     sfx('paper', true);
     card.querySelector('.lib-card-close').focus({ preventScroll: true });
   };
-  const closeCard = () => { if (!card.hidden) sfx('paper', false); card.hidden = true; stage.focus({ preventScroll: true }); };
+  const closeCard = () => { if (!card.hidden) sfx('paper', false); card.hidden = true; liftOpen = false; stage.focus({ preventScroll: true }); };
+  const showCard = (nodes) => {
+    card.querySelector('.lib-card-body').replaceChildren(...nodes);
+    card.hidden = false;
+    sfx('paper', true);
+    card.querySelector('.lib-card-close').focus({ preventScroll: true });
+  };
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
+  // 책 엘리베이터: 층 단추를 누르면 띵 하고 그 층 엘리베이터 앞에서 내린다
+  let liftOpen = false;
+  function openLift() {
+    liftOpen = true;
+    const list = el('div', 'lib-lift');
+    [...FLOORS].reverse().forEach((id) => {
+      const P = PLACES[id];
+      const b = el('button', id === current.id ? 'here' : '');
+      b.type = 'button';
+      b.append(el('b', '', P.short), el('span', '', P.name));
+      if (id === current.id) { b.disabled = true; b.append(el('small', '', '지금 여기')); }
+      b.addEventListener('click', () => { closeCard(); sfx('ding', {}); setTimeout(() => goPlace({ to: id, arrive: P.liftArrive, viaLift: true }), 380); });
+      list.append(b);
+    });
+    showCard([el('p', 'lib-card-kicker', '책 엘리베이터'), el('h2', '', '몇 층으로 갈까요?'), list]);
+  }
+  // 사락 카운터: 음료를 고르면 내 인형이 컵을 들고 다닌다(다른 층에도 들고 간다)
+  const MENU = [
+    { id: 'americano', name: '아메리카노', note: '쌉싸름하게, 밤샘 독서용', top: 0x3B2618 },
+    { id: 'latte', name: '카페라테', note: '부드럽게, 한 장만 더', top: 0xD9B48A },
+    { id: 'cocoa', name: '핫초코', note: '달달한 결말처럼', top: 0x6B3F2A },
+    { id: 'matcha', name: '말차 라테', note: '초록 책갈피 맛', top: 0x9CC27A },
+  ];
+  function openCafe() {
+    const list = el('div', 'lib-menu');
+    MENU.forEach((m) => {
+      const b = el('button', me && me.hold === m.id ? 'on' : '');
+      b.type = 'button';
+      b.append(el('b', '', m.name), el('small', '', m.note));
+      b.addEventListener('click', () => { closeCard(); order(m.id); });
+      list.append(b);
+    });
+    const nodes = [el('p', 'lib-card-kicker', '사락 카운터'), el('h2', '', '무엇을 마실까요?'), list];
+    if (me && me.hold) { const none = el('button', 'lib-menu-none', '빈손으로 다니기'); none.type = 'button'; none.addEventListener('click', () => { closeCard(); order(null); }); nodes.push(none); }
+    showCard(nodes);
+  }
+  function order(id) {
+    if (!me) return;
+    me.hold = id;
+    setHold(me);
+    if (id) { sfx('pour', {}); popWord(me, '호로록'); say(`${MENU.find((m) => m.id === id).name} 한 잔 들었어요`); } else popWord(me, '꿀꺽');
+    sendSpot(true);
+  }
+  function setHold(person) {
+    const d = person.doll;
+    if (d.cup) { d.yaw.remove(d.cup); d.cup = null; }
+    const m = MENU.find((x) => x.id === person.hold);
+    if (!m) return;
+    const cup = new THREE.Group();
+    const bodyCup = solid(new THREE.CylinderGeometry(0.075, 0.06, 0.15, 14), 0xFFFDF8, { line: 0.01 }); bodyCup.position.y = 0.075; cup.add(bodyCup);
+    const sleeve = solid(new THREE.CylinderGeometry(0.073, 0.066, 0.06, 14, 1, true), 0xC99B6B, { line: 0.008, mat: toon(0xC99B6B, { side: THREE.DoubleSide }) }); sleeve.position.y = 0.07; cup.add(sleeve);
+    const top = new THREE.Mesh(new THREE.CircleGeometry(0.068, 14), toon(m.top)); top.rotation.x = -Math.PI / 2; top.position.y = 0.145; cup.add(top);
+    if (m.id === 'latte') { const heart = new THREE.Mesh(new THREE.CircleGeometry(0.025, 10), toon(0xFFF6E6)); heart.rotation.x = -Math.PI / 2; heart.position.y = 0.147; cup.add(heart); }
+    const steam = glow(cup, 0xffffff, 0.18, 0, 0.26, 0); steam.material.opacity = 0.4;
+    cup.position.set(0.36, (d.len || 1) * 0.36, 0.2);
+    d.yaw.add(cup);
+    d.cup = cup;
+  }
   card.querySelector('.lib-card-close').addEventListener('click', closeCard);
 
   // ───────── 몸짓 ─────────
@@ -1900,7 +2273,7 @@ function start() {
       const name = document.createElement('b');
       name.textContent = person.name;
       const what = document.createElement('small');
-      what.textContent = (person === me ? '나 · ' : '') + (person.place === 'roof' ? '옥상 · ' : levelOf(PLACES[person.place], person.layer, person.x, person.z) === 1 ? '다락 · ' : '')
+      what.textContent = (person === me ? '나 · ' : '') + whereOf(person)
         + (person.pose === 'sleep' ? '자는 중' : person.pose === 'doze' ? '꾸벅꾸벅' : STATUS[person.status] || STATUS.read);
       li.append(name, what);
       return li;
@@ -1932,6 +2305,8 @@ function start() {
     person.status = data.status || 'read';
     const posed = person.pose;
     person.pose = ['doze', 'sleep'].includes(data.pose) ? data.pose : 'up';
+    const held = data.hold || null;
+    if (held !== (person.hold || null)) { person.hold = held; setHold(person); }
     const s = person.seat ? P.seatById(person.seat) : null;
     const to = s ? seatPose(s, person) : { x, z, y: heightAt(P, person.tlevel, x, z) };
     person.tx = to.x; person.tz = to.z;
@@ -2175,6 +2550,7 @@ function start() {
   // ───────── 소리·걸음 효과 ─────────
   const MIX = {
     hall: { dawn: { grass: 0.28, piano: 0.4, writing: 0.15 }, day: { piano: 0.42, writing: 0.24, grass: 0.16, noise: 0.08 }, dusk: { piano: 0.4, city: 0.18, writing: 0.2 }, night: { rain: 0.3, piano: 0.34, writing: 0.14 } },
+    cafe: { dawn: { piano: 0.38, noise: 0.1, writing: 0.12 }, day: { piano: 0.4, noise: 0.18, city: 0.1, writing: 0.14 }, dusk: { piano: 0.4, noise: 0.15, city: 0.16 }, night: { piano: 0.36, noise: 0.12, rain: 0.18 } },
     roof: { dawn: { grass: 0.45, piano: 0.25 }, day: { grass: 0.5, city: 0.2, piano: 0.22 }, dusk: { city: 0.3, grass: 0.3, piano: 0.25 }, night: { crickets: 0.45, city: 0.18, piano: 0.2 } },
   };
   const wants = (what) => { try { return localStorage.getItem(`lib-${what}`) !== 'off'; } catch (e) { return true; } };
@@ -2380,7 +2756,7 @@ function start() {
           stride(me, mx, mz, dt);
           sendSpot(false);
           const portal = portalAt(P, me.layer, me.x, me.z);
-          if (portal && !travelling) { if (portal.href) { if (!me.atDoor) { me.atDoor = true; openCard('leave'); } } else goPlace(portal); }
+          if (portal && !travelling) { if (portal.href || portal.lift) { if (!me.atDoor) { me.atDoor = true; if (portal.lift) openLift(); else openCard('leave'); } } else goPlace(portal); }
           else me.atDoor = false;
         }
         if (!moved && me.walking) sendSpot(true);
@@ -2487,6 +2863,14 @@ function start() {
       pos.needsUpdate = true;
       hall.birds.forEach((b, i) => { const a = t * 0.35 + b.userData.phase; b.position.set(Math.cos(a) * 4.5, 5.6 + Math.sin(a * 2) * 0.4, -4.5 + Math.sin(a) * 2.2); b.rotation.y = -a; b.children[0].scale.y = 1 + Math.sin(t * 9 + i) * 0.6; });
     }
+    if (current.anim && !reduceMotion) current.anim(dt, t);
+    if (current.liftDoors) {
+      const D = current.liftDoors; const A = current.liftArrive;
+      const want = (me && me.place === current.id && Math.hypot(me.x - A.x, me.z - A.z) < 1.7) || liftOpen ? 1 : 0;
+      D.open += (want - D.open) * Math.min(1, dt * 4);
+      D.L.position.x = -0.3 - D.open * 0.52; D.R.position.x = 0.3 + D.open * 0.52;
+      D.needle.rotation.z = (1 - FLOORS.indexOf(current.id) / Math.max(1, FLOORS.length - 1)) * Math.PI - Math.PI / 2;
+    }
     if (current === roof && weather === 'rain' && !reduceMotion) {
       const pos = roof.rain.geometry.attributes.position;
       for (let i = 0; i < pos.count; i += 2) { let y = pos.getY(i) - dt * 12; if (y < 0) y += 16; pos.setY(i, y); pos.setY(i + 1, y - 0.4); }
@@ -2504,7 +2888,7 @@ function start() {
   // ───────── 시간·들어가기 ─────────
   applyTod();
   setInterval(() => { if (applyTod() && music) setMusic(true); }, 5 * 60 * 1000);
-  root.querySelector('.lib-place').textContent = current.name;
+  root.querySelector('.lib-place').textContent = current.label;
   const gate = root.querySelector('.lib-gate');
   const gateSound = root.querySelector('[data-lib="sound"]');
   if (gateSound) gateSound.checked = wants('music') || wants('sfx');
@@ -2531,6 +2915,6 @@ function start() {
     stage.focus({ preventScroll: true });
     setTimeout(() => root.querySelector('.lib-hint').classList.add('fade'), 12000);
   });
-  window.__lib3 = { people, PLACES, cam, me: () => me, goTo, goSit, nap, goPlace, current: () => current, findPath, free, stepTo };
+  window.__lib3 = { people, PLACES, cam, me: () => me, goTo, goSit, nap, goPlace, current: () => current, findPath, free, stepTo, openCard, order };
   requestAnimationFrame(tick);
 }

@@ -238,12 +238,14 @@ public class RoomHub {
      * status는 읽는 중(read)·쓰는 중(write)·쉬는 중(rest).
      * place는 서고 안의 장소(hall 큰 서고, roof 옥상 정원…), level은 층(0 바닥, 1 다락),
      * pose는 깨어 있음(up)·꾸벅꾸벅 조는 중(doze)·자는 중(sleep).
+     * hold는 손에 든 것(북카페에서 산 음료 등, 없으면 null).
      */
-    public record Spot(Position at, String seat, String status, String place, int level, String pose) {
+    public record Spot(Position at, String seat, String status, String place, int level, String pose, String hold) {
 
         static final Set<String> STATUSES = Set.of("read", "write", "rest");
         static final Set<String> POSES = Set.of("up", "doze", "sleep");
         static final Set<String> ACTS = Set.of("bow", "stretch", "flip", "jump");
+        static final Set<String> HOLDS = Set.of("americano", "latte", "cocoa", "matcha");
         private static final java.util.regex.Pattern SEAT = java.util.regex.Pattern.compile("[a-z0-9-]{1,24}");
         private static final java.util.regex.Pattern PLACE = java.util.regex.Pattern.compile("[a-z]{1,12}");
 
@@ -262,11 +264,19 @@ public class RoomHub {
             if (pose == null || !POSES.contains(pose)) {
                 pose = "up";
             }
+            if (hold != null && !HOLDS.contains(hold)) {
+                hold = null;
+            }
+        }
+
+        /** 손에 든 것 없이. */
+        public Spot(Position at, String seat, String status, String place, int level, String pose) {
+            this(at, seat, status, place, level, pose, null);
         }
 
         /** 큰 서고 바닥에서 깨어 있는 사람(예전 화면이 보내는 모양). */
         public Spot(Position at, String seat, String status) {
-            this(at, seat, status, "hall", 0, "up");
+            this(at, seat, status, "hall", 0, "up", null);
         }
 
         Map<String, Object> event(Long contributorId) {
@@ -280,6 +290,9 @@ public class RoomHub {
             event.put("pose", pose);
             if (seat != null) {
                 event.put("seat", seat);
+            }
+            if (hold != null) {
+                event.put("hold", hold);
             }
             return event;
         }

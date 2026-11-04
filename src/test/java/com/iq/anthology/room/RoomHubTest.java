@@ -92,6 +92,17 @@ class RoomHubTest {
     }
 
     @Test
+    void 서고에서_손에_드는_것은_카페_메뉴만_받는다() {
+        RoomHub.Spot latte = new RoomHub.Spot(new Position(0.1, 0.1), null, "read", "cafe", 0, "up", "latte");
+        RoomHub.Spot odd = new RoomHub.Spot(new Position(0.1, 0.1), null, "read", "cafe", 0, "up", "<script>");
+
+        assertThat(latte.hold()).isEqualTo("latte");
+        assertThat(latte.event(1L)).containsEntry("hold", "latte");
+        assertThat(odd.hold()).isNull();
+        assertThat(odd.event(1L)).doesNotContainKey("hold");
+    }
+
+    @Test
     void 서고에서_나가면_서고_자리도_지워진다() {
         hub.join(1L, 10L, true);
         hub.join(1L, 11L, true);

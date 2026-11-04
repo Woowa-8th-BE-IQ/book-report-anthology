@@ -231,6 +231,15 @@
     land(sp) { play(sp, 1, (d, t) => { thud(d, t, 0.26); burst(d, t, { type: 'lowpass', freq: 900, to: 200, level: 0.12, attack: 0.008, decay: 0.12 }); }); },
     /** 깜짝 깨기 */
     wake(sp) { play(sp, 1, (d, t) => { tone(d, t, { freq: 600, to: 1300, glide: 0.08, level: 0.08, attack: 0.003, decay: 0.1 }); }); },
+    /** 책 엘리베이터: 띵— */
+    ding(sp) { play(sp, 1, (d, t) => { bellHit(d, t, 1568, 0.1); bellHit(d, t + 0.02, 2349, 0.04); }); },
+    /** 음료 따르기: 쪼르륵 올라가는 물소리 */
+    pour(sp) {
+      play(sp, 1, (d, t) => {
+        for (let i = 0; i < 9; i++) tone(d, t + i * 0.055, { freq: 520 + i * 70 + Math.random() * 40, to: 900 + i * 60, glide: 0.04, level: 0.045, attack: 0.004, decay: 0.05 });
+        burst(d, t, { type: 'bandpass', freq: 1800, q: 0.7, level: 0.06, attack: 0.05, decay: 0.45 });
+      });
+    },
     /** 입구 종: 딸랑 */
     bell(sp) { play(sp, 1, (d, t) => { bellHit(d, t, 1320, 0.11); bellHit(d, t + 0.13, 1480, 0.08); bellHit(d, t + 0.27, 1320, 0.05); }); },
     pop(sp) { play(sp, 1, (d, t) => tone(d, t, { freq: 420, to: 980, glide: 0.05, level: 0.11, attack: 0.003, decay: 0.07 })); },
