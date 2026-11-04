@@ -258,6 +258,7 @@ function start() {
           { c: [-10.4, 6.9, 0.45] }, { c: [10.4, 6.9, 0.45] }, { c: [10.3, -6.4, 0.45] }, // 화분
           ...[-7.7, -6.3, -4.9, -3.5, 3.5, 4.9, 6.3, 7.7].map((x) => ({ c: [x, 1.086, 0.3] })), // 의자
           { c: [-8.7, -4.68, 0.75] }, { c: [8.7, -4.68, 0.75] }, { c: [-1.9, -1.57, 0.42] }, { c: [1.9, -1.57, 0.42] }, // 빈백, 러그 방석
+          { r: [-10.75, 3.7, -10.55, 5.05], tight: true }, { r: [-9.25, 3.7, -9.05, 5.05], tight: true }, { r: [-10.75, 3.6, -9.05, 3.8], tight: true }, // 지하로 내려가는 구멍 난간
         ],
       },
       1: { rect: [-11.85, -7.42, -4.75, -5.62], blocks: [{ r: [-10.35, -7.42, -8.05, -6.2] }, { c: [-5.1, -7.2, 0.28] }, { c: [-6.9, -6.7, 0.38] }, { c: [-5.7, -6.7, 0.38] }] }, // 다락: 이불, 스탠드, 방석
@@ -281,6 +282,29 @@ function start() {
           { c: [6.05, 3.25, 0.35] }, { r: [7.0, -2.0, 7.9, 2.6] }, { c: [-7.1, 4.1, 0.4] }, // 망원경, 화단, 화분
           { c: [-1.0, 1.0, 0.45] }, // 작은 탁자
           { r: [-3.95, -5.2, -2.45, -4.0] }, // 책 엘리베이터
+        ],
+      },
+    },
+  });
+  // 지하 서고 굴: 16m×10m. 두더지 굴 같은 아카이브. 흙벽 책 굴, 가운데 이 문집이 놓인 받침, 둥근 굴방, 책 실은 광차, 빛나는 버섯
+  const STUMPS = [[0, -2.3, 0], [1.9, -0.5, -Math.PI / 2], [0, 1.3, Math.PI], [-1.9, -0.5, Math.PI / 2]];
+  const cave = newPlace('cave', '지하 서고 굴', {
+    label: '지하 서고 굴', short: '지하', tag: '지하 굴',
+    toRatio: (x, z) => [(x + 8) / 16, (z + 5) / 10],
+    fromRatio: (rx, ry) => [rx * 16 - 8, ry * 10 - 5],
+    bounds: [-8, -5, 8, 5],
+    spawn: () => [-6.9, -3.2],
+    stairs: null,
+    fixedLight: true,
+    layers: {
+      0: {
+        rect: [-7.75, -4.75, 7.75, 4.75],
+        blocks: [
+          { r: [-6.4, -5, 6.4, -4.3] }, // 뒤 책 굴
+          { c: [0, -0.5, 0.75] }, ...STUMPS.map(([x, z]) => ({ c: [x, z, 0.24] })), // 받침과 그루터기
+          { r: [6.1, -4.8, 7.9, 4.8] }, // 광차 길
+          { c: [-5.4, 3.7, 0.95] }, { c: [-2.9, 3.7, 0.95] }, // 굴방 둘(앞이 트였지만 둘레는 막힌다)
+          { c: [3.4, 3.5, 0.55] }, { c: [4.6, 2.8, 0.35] }, { c: [-7.2, -4.3, 0.3] }, // 버섯 무리, 물웅덩이 옆 바위
         ],
       },
     },
@@ -391,6 +415,8 @@ function start() {
   });
   seat(cafe, { id: 'sofa-1', kind: 'sofa', x: -7.3, z: 2.6, top: 0.46, yaw: Math.PI / 2, from: [-6.35, 2.4] });
   seat(cafe, { id: 'sofa-2', kind: 'sofa', x: -7.3, z: 3.6, top: 0.46, yaw: Math.PI / 2, from: [-6.35, 3.85] });
+  STUMPS.forEach(([x, z, yaw], i) => seat(cave, { id: `stump-${i + 1}`, kind: 'stool', x, z, top: 0.45, yaw, from: [x + Math.sin(yaw + Math.PI / 2) * 0.7, z + Math.cos(yaw + Math.PI / 2) * 0.7] }));
+  [-5.4, -2.9].forEach((x, i) => seat(cave, { id: `burrow-${i + 1}`, kind: 'cushion', x, z: 3.75, top: 0.17, yaw: 0, from: [x, 2.45] }));
   DESK_ROWS.forEach((z, r) => DESKS.forEach((x, i) => seat(scribe, { id: `desk-${r * 4 + i + 1}`, kind: 'chair', desk: true, x, z: z + 0.8, top: 0.47, yaw: Math.PI, from: [x + 0.65, z + 1.15], lamp: `S-${r * 4 + i + 1}` })));
   [4.7, 6.1].forEach((x, i) => seat(scribe, { id: `window-${i + 1}`, kind: 'bench', x, z: -4.5, top: 0.45, yaw: 0, from: [x, -3.7] }));
   [[3.6, 0.35], [5.4, -0.35]].forEach(([x, yaw], i) => seat(scribe, { id: `nook-${i + 1}`, kind: 'sofa', x, z: 3.4, top: 0.46, yaw: Math.PI + yaw, from: [x, 2.5] }));
@@ -401,6 +427,7 @@ function start() {
   seat(cafe, { id: 'arm-1', kind: 'sofa', x: -4.4, z: 3.1, top: 0.46, yaw: -Math.PI / 2, from: [-4.4, 2.2] });
   hall.hots = { book: { at: [0, -2.3], level: 0, card: 'book', tip: '펼친 책' }, board: { at: [-9.2, -0.9], level: 0, card: 'board', tip: '글감 질문' }, shelf: { at: [7.6, -0.6], level: 0, card: 'shelf', tip: '우리 책장' } };
   roof.hots = { stars: { at: [5.4, 3.0], level: 0, card: 'stars', tip: '별 보는 망원경' } };
+  cave.hots = { archive: { at: [0, 0.75], level: 0, card: 'book', tip: '이 문집' }, cart: { at: [5.6, 0], level: 0, card: 'shelf', tip: '책 광차' } };
   scribe.hots = { wall: { at: [6.9, -0.9], level: 0, card: 'wall', tip: '필사 벽' }, shelf: { at: [-3.5, 3.7], level: 0, card: 'shelf', tip: '필사실 책장' } };
   forum.hots = { topic: { at: [0, -2.9], level: 0, card: 'topic', tip: '발제 칠판' }, shelf: { at: [6.8, -3.3], level: 0, card: 'shelf', tip: '토론 책장' } };
   cafe.hots = { counter: { at: [4.3, -0.2], level: 0, card: 'cafe', tip: '사락 카운터' }, shelf: { at: [6.8, 3.8], level: 0, card: 'shelf', tip: '카페 책장' } };
@@ -408,6 +435,7 @@ function start() {
     { id: 'up', dir: 'up', level: 1, zone: (x, z) => x < -11.62 && z > -7.4 && z < -6.4, at: [-11.4, -6.9] },
     { id: 'room', href: true, level: 0, zone: (x, z) => x > 10.6 && z > 2.85 && z < 4.15, at: [10.5, 3.5], tip: '모임방으로' },
     { id: 'lift', lift: true, level: 0, zone: (x, z) => x < -11.62 && z > 1.3 && z < 2.2, at: [-11.5, 1.75], tip: '책 엘리베이터' },
+    { id: 'down', dir: 'down', level: 0, zone: (x, z) => x > -10.45 && x < -9.35 && z > 3.95 && z < 4.75, at: [-9.9, 4.4] },
   ];
   roof.portals = [
     { id: 'down', dir: 'down', level: 0, zone: (x, z) => x > -6.75 && x < -5.65 && z < -2.88, at: [-6.2, -2.75] },
@@ -418,6 +446,11 @@ function start() {
     { id: 'up', dir: 'up', level: 0, zone: (x, z) => x < -7.5 && z > -1.7 && z < -0.7, at: [-7.45, -1.2] },
     { id: 'down', dir: 'down', level: 0, zone: (x, z) => x < -7.5 && z > 0.3 && z < 1.3, at: [-7.45, 0.8] },
   ];
+  cave.portals = [
+    { id: 'lift', lift: true, level: 0, zone: (x, z) => x < -7.5 && z > -3.7 && z < -2.7, at: [-7.45, -3.2], tip: '책 엘리베이터' },
+    { id: 'up', dir: 'up', level: 0, zone: (x, z) => x < -7.5 && z > -1.7 && z < -0.7, at: [-7.45, -1.2] },
+  ];
+  cave.arriveFromAbove = { x: -6.85, z: -1.2, layer: 0 }; cave.liftArrive = { x: -6.85, z: -3.2, layer: 0 };
   scribe.portals = [
     { id: 'lift', lift: true, level: 0, zone: (x, z) => x < -7.5 && z > -3.7 && z < -2.7, at: [-7.45, -3.2], tip: '책 엘리베이터' },
     { id: 'up', dir: 'up', level: 0, zone: (x, z) => x < -7.5 && z > -1.7 && z < -0.7, at: [-7.45, -1.2] },
@@ -431,7 +464,7 @@ function start() {
   ];
   forum.arriveFromBelow = { x: -6.85, z: 0.8, layer: 0 }; forum.arriveFromAbove = { x: -6.85, z: -1.2, layer: 0 }; forum.liftArrive = { x: -6.85, z: -3.2, layer: 0 };
   // 층 잇기: 아래에서 위로 놓인 순서. 계단 문은 바로 위·아래 층으로, 엘리베이터는 어느 층으로든
-  hall.arriveFromAbove = { x: -11.0, z: -6.9, layer: 1 }; hall.liftArrive = { x: -10.95, z: 1.75, layer: 0 };
+  hall.arriveFromAbove = { x: -11.0, z: -6.9, layer: 1 }; hall.arriveFromBelow = { x: -9.9, z: 5.7, layer: 0 }; hall.liftArrive = { x: -10.95, z: 1.75, layer: 0 };
   roof.arriveFromBelow = { x: -6.2, z: -2.3, layer: 0 }; roof.liftArrive = { x: -3.2, z: -2.85, layer: 0 };
   cafe.arriveFromBelow = { x: -6.85, z: 0.8, layer: 0 }; cafe.arriveFromAbove = { x: -6.85, z: -1.2, layer: 0 }; cafe.liftArrive = { x: -6.85, z: -3.2, layer: 0 };
   const FLOORS = ['cave', 'hall', 'cafe', 'forum', 'scribe', 'roof'].filter((id) => PLACES[id]);
@@ -1293,6 +1326,131 @@ function start() {
   };
 
 
+
+  // ───────── 지하 서고 굴 짓기 ─────────
+  const buildCave = (P) => {
+    const S = P.scene;
+    box(S, 16.6, 0.59, 10.6, 0x3B2A1E, 0, -0.6, 0, { line: 0.05, cast: false });
+    const dirt = canvasTex(1024, 640, (g, w, h) => {
+      const rand = seeded(131); g.fillStyle = '#7A5A40'; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 2600; i++) { const v = rand(); g.fillStyle = v < 0.5 ? 'rgba(60,40,26,.25)' : 'rgba(160,120,84,.22)'; g.fillRect(rand() * w, rand() * h, 3 + rand() * 6, 2 + rand() * 4); }
+      for (let i = 0; i < 90; i++) { g.fillStyle = ['#A08670', '#8C7460', '#B59C80'][i % 3]; g.beginPath(); g.ellipse(rand() * w, rand() * h, 5 + rand() * 9, 4 + rand() * 6, rand() * 3, 0, Math.PI * 2); g.fill(); g.strokeStyle = 'rgba(46,36,28,.5)'; g.lineWidth = 1.5; g.stroke(); }
+    });
+    const floor = plane(S, 16, 10, toon(0xffffff, { map: dirt }), 0, 0, 0, { rx: -Math.PI / 2 }); mark(P, floor, { floor: 0 });
+    const strata = canvasTex(1024, 320, (g, w, h) => {
+      const bands = ['#6B4E3A', '#7E5E45', '#5E4332', '#8A6A4E', '#6B4E3A', '#5A402F'];
+      bands.forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.moveTo(0, (i / bands.length) * h); for (let x = 0; x <= w; x += 32) g.lineTo(x, (i / bands.length) * h + Math.sin(x * 0.02 + i) * 8); g.lineTo(w, h); g.lineTo(0, h); g.fill(); });
+      const rand = seeded(137); for (let i = 0; i < 70; i++) { g.fillStyle = 'rgba(180,150,110,.5)'; g.beginPath(); g.arc(rand() * w, rand() * h, 3 + rand() * 6, 0, Math.PI * 2); g.fill(); }
+    }, { repeat: [3, 1] });
+    const wallMat = toon(0xffffff, { map: strata });
+    // 뒤 흙벽: 책을 꽂은 굴 일곱(아치 구멍 안이 책장)
+    const back = new THREE.Group();
+    const bw = new THREE.Mesh(new THREE.BoxGeometry(16.6, 4.8, 0.6), wallMat); bw.position.set(0, 2.4, -5.3); bw.receiveShadow = true; back.add(bw);
+    for (let i = 0; i < 7; i++) {
+      const x = -5.4 + i * 1.8;
+      box(back, 1.5, 2.6, 0.7, 0x4A3526, x, 0.3, -4.65, { line: 0.03, cast: false });
+      shelfFace(P, back, 1.3, 2.4, 4, 141 + i, x, 0.4, -4.295);
+      const arch = solid(new THREE.TorusGeometry(0.75, 0.12, 6, 14, Math.PI), 0x5E4332, { line: 0.02 }); arch.position.set(x, 2.9, -4.35); back.add(arch);
+      [-0.75, 0.75].forEach((dx) => box(back, 0.24, 2.6, 0.3, 0x5E4332, x + dx, 0.3, -4.35, { line: 0.015 }));
+    }
+    // 벽 위에서 늘어진 뿌리
+    const rand = seeded(149);
+    for (let i = 0; i < 26; i++) { const len = 0.6 + rand() * 1.6; const root = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.035, len, 4), toon(0x8C6A4A)); root.position.set(-7.6 + rand() * 15.2, 4.8 - len / 2, -4.95 + rand() * 0.2); root.rotation.z = (rand() - 0.5) * 0.4; back.add(root); }
+    const plate = plane(back, 3.0, 0.6, toon(0xffffff, { map: signTex('지하 서고 굴', { bg: '#3B2618', fg: '#F2D16B' }) }), 0, 4.05, -4.98); plate.castShadow = false;
+    block(P, back); S.add(back); P.walls.push({ group: back, nx: 0, nz: 1 });
+    const left = new THREE.Group();
+    const lw = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4.8, 10.6), wallMat); lw.position.set(-8.3, 2.4, 0); lw.receiveShadow = true; left.add(lw);
+    box(left, 2.2, 3.2, 0.12, 0x5E4332, -7.97, 0, -3.2, { line: 0.02, ry: Math.PI / 2 });
+    liftDoor(P, left, -7.95, -3.2, Math.PI / 2);
+    stairDoor(P, left, -7.97, -1.2, Math.PI / 2, 'up');
+    block(P, left); S.add(left); P.walls.push({ group: left, nx: 1, nz: 0 });
+    const right = new THREE.Group();
+    const rw = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4.8, 10.6), wallMat); rw.position.set(8.3, 2.4, 0); rw.receiveShadow = true; right.add(rw);
+    block(P, right); S.add(right); P.walls.push({ group: right, nx: -1, nz: 0 });
+    // 가운데 받침: 이 문집이 펼쳐져 떠 있고, 둘레에 그루터기 넷
+    const rune = canvasTex(512, 512, (g) => { g.strokeStyle = '#F2D16B'; g.globalAlpha = 0.55; g.lineWidth = 6; g.beginPath(); g.arc(256, 256, 240, 0, Math.PI * 2); g.stroke(); g.setLineDash([18, 14]); g.beginPath(); g.arc(256, 256, 200, 0, Math.PI * 2); g.stroke(); });
+    const ring = new THREE.Mesh(new THREE.CircleGeometry(2.4, 40), new THREE.MeshBasicMaterial({ map: rune, transparent: true, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.set(0, 0.015, -0.5); S.add(ring); mark(P, ring, { floor: 0 });
+    const ped = new THREE.Group();
+    cyl(ped, 0.7, 0.85, 0.5, 0x8C7460, 0, 0, 0, { line: 0.03, seg: 10 });
+    cyl(ped, 0.55, 0.6, 0.35, 0x9C846E, 0, 0.5, 0, { line: 0.02, seg: 10 });
+    const bookG = new THREE.Group(); bookG.position.y = 1.25; ped.add(bookG);
+    [-1, 1].forEach((k) => { const c = box(bookG, 0.5, 0.04, 0.7, 0xE4572E, k * 0.25, 0, 0, { line: 0.012 }); c.rotation.z = -k * 0.18; const pg = box(bookG, 0.46, 0.05, 0.64, 0xFFFDF8, k * 0.23, 0.04, 0, { line: 0.01 }); pg.rotation.z = -k * 0.18; });
+    P.bookGlow = glow(bookG, 0xFFE9A8, 1.8, 0, 0.1, 0);
+    const bookLight = new THREE.PointLight(0xffd98a, 5, 7, 1.4); bookLight.position.y = 0.3; bookG.add(bookLight);
+    P.bookG = bookG;
+    ped.position.set(0, 0, -0.5); mark(P, ped, { hot: 'archive' }); block(P, ped); S.add(ped);
+    P.seats.filter((st) => st.id.startsWith('stump')).forEach((st) => { const g = new THREE.Group(); const t = cyl(g, 0.22, 0.26, 0.45, 0x8C6A4A, 0, 0, 0, { line: 0.02, seg: 9 }); const top = new THREE.Mesh(new THREE.CircleGeometry(0.22, 9), toon(0xD9B98C)); top.rotation.x = -Math.PI / 2; top.position.y = 0.452; g.add(top); g.position.set(st.x, 0, st.z); mark(P, g, { seat: st.id }); S.add(g); st.mesh = g; });
+    // 굴방 둘: 앞이 트인 흙 반구 안에 방석과 작은 등
+    P.seats.filter((st) => st.id.startsWith('burrow')).forEach((st, i) => {
+      const g = new THREE.Group();
+      const dome = solid(new THREE.SphereGeometry(1.0, 18, 10, Math.PI * 0.75, Math.PI * 1.5, 0, Math.PI / 2), 0x7E5E45, { line: 0.03, mat: toon(0x7E5E45, { side: THREE.DoubleSide }) });
+      dome.scale.set(1, 1.25, 1); g.add(dome);
+      const c = cyl(g, 0.42, 0.46, 0.16, i ? 0x9BB7D4 : 0xE3A857, 0, 0.012, 0, { line: 0.02 });
+      const lan = glow(g, 0xffd27a, 0.9, 0.45, 0.95, -0.45); const ll = new THREE.PointLight(0xffc77a, 1.6, 3, 1.5); ll.position.set(0.4, 0.9, -0.4); g.add(ll);
+      g.position.set(st.x, 0, st.z); mark(P, c, { seat: st.id }); S.add(g); st.mesh = c;
+    });
+    // 광차 길과 책 실은 광차(천천히 오간다)
+    [6.35, 7.05].forEach((x) => box(S, 0.06, 0.06, 9.6, 0x6E7A84, x, 0, 0, { line: 0.01 }));
+    for (let z = -4.6; z <= 4.6; z += 0.5) box(S, 1.0, 0.05, 0.14, 0x5E4332, 6.7, 0, z, { line: 0.008 });
+    const cart = new THREE.Group();
+    box(cart, 0.95, 0.55, 1.3, 0x6E7A84, 0, 0.15, 0, { line: 0.025 });
+    box(cart, 1.0, 0.06, 1.35, 0x4A545C, 0, 0.7, 0, { line: 0.012 });
+    for (let i = 0; i < 8; i++) box(cart, 0.12, 0.3 + (i % 3) * 0.05, 0.4, new THREE.Color(BOOK_COLORS[(i * 3) % BOOK_COLORS.length]).getHex(), -0.4 + (i % 4) * 0.25, 0.7, i < 4 ? -0.25 : 0.25, { line: 0.008 });
+    [-0.4, 0.4].forEach((z) => [-0.35, 0.35].forEach((x) => { const w = cyl(cart, 0.13, 0.13, 0.06, 0x2B1C12, x, 0.02, z, { line: 0.008, seg: 12 }); w.rotation.z = Math.PI / 2; w.position.y = 0.13; }));
+    cart.position.set(6.7, 0, 0); mark(P, cart, { hot: 'cart' }); S.add(cart); P.cart = cart;
+    // 빛나는 버섯 무리, 물웅덩이, 등불 기둥
+    P.shrooms = [];
+    [[3.4, 3.5, 7], [4.6, 2.8, 4], [-7.3, 2.0, 3], [5.6, -4.3, 4]].forEach(([cx, cz, n], k) => {
+      for (let i = 0; i < n; i++) {
+        const g = new THREE.Group(); const a = (i / n) * Math.PI * 2 + k; const r = i ? 0.15 + (i % 3) * 0.13 : 0;
+        const h = 0.18 + ((i * 7) % 5) * 0.08; cyl(g, 0.03, 0.04, h, 0xF4EBDD, 0, 0, 0, { line: 0.006, seg: 6 });
+        const cap = solid(new THREE.SphereGeometry(0.1 + (i % 3) * 0.04, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), [0x7FE0D0, 0xB6A0F0, 0x9FE07A][(i + k) % 3], { line: 0.008, mat: new THREE.MeshToonMaterial({ color: [0x7FE0D0, 0xB6A0F0, 0x9FE07A][(i + k) % 3], emissive: [0x2A8C80, 0x5A40A0, 0x3C8A28][(i + k) % 3], emissiveIntensity: 0.9, gradientMap: gradient }) });
+        cap.position.y = h; g.add(cap); g.position.set(cx + Math.cos(a) * r, 0, cz + Math.sin(a) * r); S.add(g); P.shrooms.push(cap);
+      }
+      const gl = glow(S, [0x7FE0D0, 0xB6A0F0, 0x9FE07A, 0x7FE0D0][k], 1.6, cx, 0.4, cz); gl.material.opacity = 0.6;
+    });
+    const puddle = new THREE.Mesh(new THREE.CircleGeometry(0.7, 24), new THREE.MeshBasicMaterial({ color: 0x4F6D8A, transparent: true, opacity: 0.6 })); puddle.rotation.x = -Math.PI / 2; puddle.scale.set(1.3, 1, 1); puddle.position.set(-6.3, 0.014, -3.6); S.add(puddle);
+    P.ripples = [0, 1].map((i) => { const r = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 24), new THREE.MeshBasicMaterial({ color: 0xDDF0F7, transparent: true, opacity: 0.5, depthWrite: false })); r.rotation.x = -Math.PI / 2; r.position.set(-6.3, 0.02, -3.6); r.userData.phase = i * 0.5; S.add(r); return r; });
+    const rock = solid(new THREE.DodecahedronGeometry(0.35, 0), 0x8C7460, { line: 0.02 }); rock.position.set(-7.2, 0.2, -4.3); S.add(rock);
+    [[-3.5, -2.6], [3.5, -2.6], [-1.2, 2.6], [4.6, 0.6]].forEach(([x, z]) => {
+      const g = new THREE.Group(); cyl(g, 0.05, 0.06, 2.0, 0x5E4332, 0, 0, 0, { line: 0.01, seg: 6 });
+      box(g, 0.3, 0.05, 0.05, 0x5E4332, 0.12, 1.95, 0, { line: 0.006 });
+      const lan = new THREE.Group(); lan.position.set(0.25, 1.75, 0); g.add(lan);
+      box(lan, 0.18, 0.24, 0.18, 0x3B2618, 0, 0, 0, { line: 0.008 }); glow(lan, 0xffd27a, 1.2, 0, 0.12, 0);
+      const l = new THREE.PointLight(0xffb86a, 2.4, 6, 1.5); l.position.set(0, 0.1, 0); lan.add(l);
+      g.position.set(x, 0, z); S.add(g);
+    });
+    // 반딧불(종이 반딧불이 떠다닌다)
+    const flyGeo = new THREE.BufferGeometry(); const fly = []; for (let i = 0; i < 40; i++) fly.push(-7 + rand() * 13, 0.5 + rand() * 3, -4.5 + rand() * 9);
+    flyGeo.setAttribute('position', new THREE.Float32BufferAttribute(fly, 3));
+    P.flies = new THREE.Points(flyGeo, new THREE.PointsMaterial({ size: 0.12, map: glowTex, color: 0xF2E39A, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); S.add(P.flies);
+    P.hemi = new THREE.HemisphereLight(0xa89888, 0x4a3a2e, 1.2); S.add(P.hemi);
+    P.sun = new THREE.DirectionalLight(0xffd9a8, 0.6); P.sun.position.set(-4, 10, 6); P.sun.castShadow = true; P.sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(P.sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 2, far: 40 }); P.sun.shadow.bias = -0.0006; P.sun.shadow.normalBias = 0.03;
+    S.add(P.sun, P.sun.target);
+    S.background = new THREE.Color(0x1A120C);
+    P.anim = (dt, t) => {
+      P.bookG.position.y = 1.25 + Math.sin(t * 1.4) * 0.06; P.bookG.rotation.y = t * 0.3;
+      P.bookGlow.material.opacity = 0.75 + Math.sin(t * 2) * 0.2;
+      P.cart.position.z = Math.sin(t * 0.12) * 3.6;
+      P.cart.children.filter((m) => m.geometry && m.geometry.type === 'CylinderGeometry').forEach((w) => { w.rotation.x = P.cart.position.z * 6; });
+      P.ripples.forEach((r) => { const k = (t * 0.5 + r.userData.phase) % 1; r.scale.setScalar(0.1 + k * 0.6); r.material.opacity = 0.5 * (1 - k); });
+      const pos = P.flies.geometry.attributes.position; for (let i = 0; i < pos.count; i++) { pos.setY(i, pos.getY(i) + Math.sin(t * 1.3 + i) * dt * 0.15); pos.setX(i, pos.getX(i) + Math.cos(t * 0.7 + i * 2) * dt * 0.12); } pos.needsUpdate = true;
+      P.flies.material.opacity = 0.6 + Math.sin(t * 3) * 0.3;
+    };
+  };
+  // 큰 서고 바닥의 지하 계단 구멍: 어두운 구멍에 내려가는 계단 그림, 세 면 난간, 팻말
+  const addHatch = () => {
+    const S = hall.scene;
+    const hole = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#1A120C'; g.fillRect(0, 0, w, h); for (let i = 0; i < 6; i++) { const y = 20 + i * 38; g.fillStyle = `rgba(185,138,94,${0.85 - i * 0.14})`; g.fillRect(14, y, w - 28, 22); g.fillStyle = 'rgba(46,36,28,.6)'; g.fillRect(14, y + 22, w - 28, 4); } g.strokeStyle = '#5E3B27'; g.lineWidth = 14; g.strokeRect(0, 0, w, h); });
+    const p = plane(S, 1.5, 1.3, toon(0xffffff, { map: hole }), -9.9, 0.016, 4.4, { rx: -Math.PI / 2 }); p.rotation.z = Math.PI;
+    mark(hall, p, { portal: 'down' });
+    const rail = new THREE.Group();
+    [[-10.65, 3.7], [-10.65, 4.4], [-10.65, 5.05], [-9.15, 3.7], [-9.15, 4.4], [-9.15, 5.05], [-9.9, 3.7]].forEach(([x, z]) => cyl(rail, 0.035, 0.035, 0.9, 0xB98A5E, x, 0, z, { line: 0.01, seg: 8 }));
+    box(rail, 0.08, 0.07, 1.4, 0x8C5A3B, -10.65, 0.9, 4.38, { line: 0.012 }); box(rail, 0.08, 0.07, 1.4, 0x8C5A3B, -9.15, 0.9, 4.38, { line: 0.012 }); box(rail, 1.55, 0.07, 0.08, 0x8C5A3B, -9.9, 0.9, 3.7, { line: 0.012 });
+    const sign = plane(rail, 0.9, 0.28, toon(0xffffff, { map: signTex('↓ 지하 굴', { bg: '#3B2618', fg: '#F2D16B' }) }), -9.9, 1.2, 3.72); sign.castShadow = false;
+    S.add(rail);
+  };
   // ───────── 4층 필사실 꾹꾹 짓기 ─────────
   // 종이학 하나: 몸통 마름모, 두 날개, 목·꼬리
   const craneGeo = (() => {
@@ -1533,6 +1691,8 @@ function start() {
   buildCafe(cafe);
   buildForum(forum);
   buildScribe(scribe);
+  buildCave(cave);
+  addHatch();
   addLifts();
 
   // ───────── 시간대·날씨 ─────────
@@ -1565,7 +1725,7 @@ function start() {
     const changed = next !== tod;
     tod = next;
     const T = TOD[tod];
-    Object.values(PLACES).forEach((P) => {
+    Object.values(PLACES).filter((P) => !P.fixedLight).forEach((P) => {
       P.hemi.color.setHex(T.hemi[0]); P.hemi.groundColor.setHex(T.hemi[1]); P.hemi.intensity = T.hemi[2] * (weather === 'clear' || P.id === 'hall' ? 1 : 0.8);
       P.sun.color.setHex(T.sun[0]); P.sun.intensity = T.sun[1] * (weather === 'clear' ? 1 : 0.55);
     });
@@ -2951,6 +3111,7 @@ function start() {
   // ───────── 소리·걸음 효과 ─────────
   const MIX = {
     hall: { dawn: { grass: 0.28, piano: 0.4, writing: 0.15 }, day: { piano: 0.42, writing: 0.24, grass: 0.16, noise: 0.08 }, dusk: { piano: 0.4, city: 0.18, writing: 0.2 }, night: { rain: 0.3, piano: 0.34, writing: 0.14 } },
+    cave: { dawn: { cave: 0.5, piano: 0.2 }, day: { cave: 0.5, piano: 0.22, writing: 0.08 }, dusk: { cave: 0.5, piano: 0.22 }, night: { cave: 0.55, piano: 0.18, crickets: 0.1 } },
     scribe: { dawn: { writing: 0.3, piano: 0.22, grass: 0.12 }, day: { writing: 0.32, piano: 0.24, keyboard: 0.1 }, dusk: { writing: 0.3, piano: 0.24, city: 0.08 }, night: { writing: 0.28, rain: 0.2, piano: 0.2 } },
     forum: { dawn: { piano: 0.34, noise: 0.14 }, day: { piano: 0.36, noise: 0.16, writing: 0.18 }, dusk: { piano: 0.36, noise: 0.18, city: 0.1 }, night: { piano: 0.32, noise: 0.2, crickets: 0.12 } },
     cafe: { dawn: { piano: 0.38, noise: 0.1, writing: 0.12 }, day: { piano: 0.4, noise: 0.18, city: 0.1, writing: 0.14 }, dusk: { piano: 0.4, noise: 0.15, city: 0.16 }, night: { piano: 0.36, noise: 0.12, rain: 0.18 } },
