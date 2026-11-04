@@ -1332,12 +1332,12 @@ function start() {
     frog(d, svgText) {
       const GREEN = 0xBFE5A6;
       const B = d.body; const H = d.hinge;
-      fold(B, lathe([[0, 0.12], [0.42, 0.16], [0.52, 0.32], [0.48, 0.5], [0.34, 0.64], [0, 0.69]], 8, 6), GREEN, { sz: 0.92, ry: Math.PI / 8 });
+      fold(B, lathe([[0, 0.12], [0.42, 0.16], [0.5, 0.26], [0.52, 0.36], [0.47, 0.5], [0.36, 0.62], [0.18, 0.68], [0, 0.69]], 16, 6), GREEN, { sz: 0.92, crease: 45 });
       const eyes3d = [];
       [-1, 1].forEach((k) => {
-        fold(B, ico(0.15, 1, 7 + k), GREEN, { x: k * 0.22, y: 0.7, z: 0.12 });
-        fold(B, ico(0.1, 1, 9 + k), 0xFFFFFF, { x: k * 0.23, y: 0.74, z: 0.22, sz: 0.7 });
-        eyes3d.push(eyeBall(B, k * 0.25, 0.77, 0.3, 0.045));
+        fold(B, ico(0.15, 2, 7 + k, 0), GREEN, { x: k * 0.22, y: 0.7, z: 0.12, crease: 45 });
+        fold(B, ico(0.1, 2, 9 + k, 0), 0xFFFFFF, { x: k * 0.23, y: 0.74, z: 0.22, sz: 0.7, crease: 45 });
+        eyes3d.push(eyeBall(B, k * 0.235, 0.75, 0.29, 0.062));
       });
       const face = sticker(B, svgText, { keep: '.face > path, ellipse[fill="#F49A93"]', box: [18, 38.5, 46, 43.5], w: 0.78, y: 0.47, z: 0.46, bend: 0.6 });
       const pad = new THREE.Group(); pad.position.set(0, -0.08, 0.05); H.add(pad);
@@ -1359,13 +1359,6 @@ function start() {
       for (let i = 0; i < 6; i++) { const p = new THREE.Group(); p.rotation.y = (i / 6) * Math.PI * 2; lotus.add(p); fold(p, new THREE.ConeGeometry(0.035, 0.11, 4), i % 2 ? 0xF7B6C2 : 0xF49AAE, { z: 0.03, y: 0.05, rx: 0.55 }); }
       for (let i = 0; i < 3; i++) { const p = new THREE.Group(); p.rotation.y = (i / 3) * Math.PI * 2 + 0.5; lotus.add(p); fold(p, new THREE.ConeGeometry(0.03, 0.1, 4), 0xFBD0D8, { z: 0.012, y: 0.06, rx: 0.2 }); }
       fold(lotus, ico(0.025, 0, 90), 0xF5C531, { y: 0.075 });
-      // 등: 진초록 점무늬 종이를 군데군데 덧댔다
-      const rAt = (y) => { const P = [[0, 0.12], [0.42, 0.16], [0.52, 0.32], [0.48, 0.5], [0.34, 0.64], [0, 0.69]]; for (let i = 1; i < P.length; i++) if (y <= P[i][1]) { const k = (y - P[i - 1][1]) / (P[i][1] - P[i - 1][1]); return P[i - 1][0] + (P[i][0] - P[i - 1][0]) * k; } return 0; };
-      [[0.2, 0.44, 0.075], [-0.22, 0.34, 0.09], [0.02, 0.56, 0.065], [-0.06, 0.25, 0.06], [0.36, 0.28, 0.055], [-0.36, 0.48, 0.05]].forEach(([x, y, s], i) => {
-        const z = -Math.sqrt(Math.max(0, rAt(y) ** 2 - x * x)) * 0.92;
-        const sp = fold(B, ico(1, 0, 95 + i, 0.15), 0x8CC46F, { x: x * 1.02, y, z: z * 1.02, sx: s, sy: s * 0.85, sz: 0.02, crease: 40 });
-        sp.rotation.y = Math.atan2(x, z);
-      });
       d.hinge.position.y = 0.12; d.hingeY = 0.12; d.len = 1.0; d.head = 1.0;
       motion(d, { feet, face, eyes3d, extra: (person, dt, t, walking) => { tongue.rotation.z = Math.sin(t * (walking ? 7 : 1.8)) * 0.08; tongue.rotation.y = Math.sin(t * 1.3) * 0.12; mark.rotation.z = 0.25 + Math.sin(t * 2.4) * 0.15; } });
     },
@@ -1391,10 +1384,24 @@ function start() {
       const bubMat = new THREE.MeshLambertMaterial({ color: 0xCFEAF7, transparent: true, opacity: 0.55, emissive: 0x9FD3EE, emissiveIntensity: 0.25, depthWrite: false });
       const bub = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 2), bubMat); bubble.add(bub);
       const shine = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 0), new THREE.MeshBasicMaterial({ color: 0xffffff })); shine.position.set(-0.4, 0.45, 0.6); bub.add(shine);
+      // 포인트: 이마에 올려 쓴 하늘색 수면 안대(감은 눈 수놓음). 졸면 스르륵 내려와 눈을 덮는다
+      const mask = new THREE.Group(); head.add(mask);
+      const strap = new THREE.Mesh(new THREE.TorusGeometry(1, 0.022, 5, 24), new THREE.MeshToonMaterial({ color: 0x5E6F9E, gradientMap: gradient })); strap.scale.set(0.385, 0.365, 1); strap.rotation.x = Math.PI / 2; strap.position.y = 0.13; mask.add(strap);
+      const lobe = new THREE.Shape(); lobe.moveTo(0, 0.045); lobe.quadraticCurveTo(0.03, 0.09, 0.11, 0.085); lobe.quadraticCurveTo(0.2, 0.075, 0.2, 0); lobe.quadraticCurveTo(0.2, -0.075, 0.11, -0.08); lobe.quadraticCurveTo(0.03, -0.085, 0, -0.035); lobe.lineTo(0, 0.045);
+      const lobeGeo = new THREE.ExtrudeGeometry(lobe, { depth: 0.035, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 1 });
+      const stitch = new THREE.MeshBasicMaterial({ color: 0x2E241C });
+      [-1, 1].forEach((k) => {
+        const side = new THREE.Group(); side.position.set(0, 0.15, 0.355); side.rotation.y = k * 0.42; side.scale.set(k * 1.2, 1.25, 1); mask.add(side);
+        fold(side, lobeGeo, 0x9DB4E0, { x: 0.005, side: THREE.DoubleSide, crease: 50 });
+        const lid = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.008, 4, 10, Math.PI), stitch); lid.rotation.z = Math.PI; lid.position.set(0.105, 0.012, 0.05); side.add(lid);
+      });
+      let maskT = 0;
       let bubT = Math.random() * 4;
       motion(d, { feet, face, extra: (person, dt, t, walking, w) => {
         tail.rotation.z = Math.sin(t * (walking ? 6 : 1.4)) * 0.18; head.rotation.z = walking ? w * 0.05 : Math.sin(t * 0.8) * 0.02;
-        if (walking || person.pose === 'up' || !person.pose) { bubT = 0; bubble.visible = false; return; }
+        const drowsy = !walking && (person.pose === 'doze' || person.pose === 'sleep');
+        maskT += ((drowsy ? 1 : 0) - maskT) * Math.min(1, dt * 3); mask.rotation.x = maskT * 0.27;
+        if (!drowsy) { bubT = 0; bubble.visible = false; return; }
         bubT += dt; const cyc = bubT % 5.2; // 4.6초 숨 쉬며 커지다 0.6초 쉬고 다시
         bubble.visible = cyc < 4.6;
         const grow = Math.min(1, cyc / 4.6); const s2 = 0.03 + grow * 0.09 + Math.sin(cyc * 2.6) * 0.008 * grow;
