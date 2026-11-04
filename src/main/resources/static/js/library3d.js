@@ -1332,6 +1332,21 @@ function start() {
       const ribbon = new THREE.Shape(); ribbon.moveTo(-0.07, 0.2); ribbon.lineTo(0.07, 0.2); ribbon.lineTo(0.07, -0.06); ribbon.lineTo(0, 0); ribbon.lineTo(-0.07, -0.06); ribbon.lineTo(-0.07, 0.2);
       fold(mark, new THREE.ExtrudeGeometry(ribbon, { depth: 0.015, bevelEnabled: false }), 0xEE7A52);
       fold(mark, new THREE.BoxGeometry(0.07, 0.012, 0.02), 0xFFD9C2, { y: 0.14, z: 0.008 });
+      // 포인트: 두 눈 사이에 비스듬히 얹은 연잎 모자(갈라진 홈)와 분홍 연꽃 한 송이
+      const lily = new THREE.Group(); lily.position.set(0, 0.79, -0.05); lily.rotation.set(-0.16, 0.5, 0.14); lily.scale.setScalar(1.3); B.add(lily);
+      fold(lily, new THREE.CylinderGeometry(0.2, 0.2, 0.025, 12, 1, false, 0.35, Math.PI * 2 - 0.7), 0x7FBF62, { crease: 30 });
+      [0.6, 1.6, 2.6, 3.6, 4.6].forEach((a) => fold(lily, new THREE.BoxGeometry(0.15, 0.004, 0.006), 0x5E9E48, { x: Math.sin(a) * 0.09, y: 0.015, z: Math.cos(a) * 0.09, ry: a + Math.PI / 2 }));
+      const lotus = new THREE.Group(); lotus.position.set(-0.05, 0.02, 0.05); lotus.scale.setScalar(1.35); lily.add(lotus);
+      for (let i = 0; i < 6; i++) { const p = new THREE.Group(); p.rotation.y = (i / 6) * Math.PI * 2; lotus.add(p); fold(p, new THREE.ConeGeometry(0.035, 0.11, 4), i % 2 ? 0xF7B6C2 : 0xF49AAE, { z: 0.03, y: 0.05, rx: 0.55 }); }
+      for (let i = 0; i < 3; i++) { const p = new THREE.Group(); p.rotation.y = (i / 3) * Math.PI * 2 + 0.5; lotus.add(p); fold(p, new THREE.ConeGeometry(0.03, 0.1, 4), 0xFBD0D8, { z: 0.012, y: 0.06, rx: 0.2 }); }
+      fold(lotus, ico(0.025, 0, 90), 0xF5C531, { y: 0.075 });
+      // 등: 진초록 점무늬 종이를 군데군데 덧댔다
+      const rAt = (y) => { const P = [[0, 0.12], [0.42, 0.16], [0.52, 0.32], [0.48, 0.5], [0.34, 0.64], [0, 0.69]]; for (let i = 1; i < P.length; i++) if (y <= P[i][1]) { const k = (y - P[i - 1][1]) / (P[i][1] - P[i - 1][1]); return P[i - 1][0] + (P[i][0] - P[i - 1][0]) * k; } return 0; };
+      [[0.2, 0.44, 0.075], [-0.22, 0.34, 0.09], [0.02, 0.56, 0.065], [-0.06, 0.25, 0.06], [0.36, 0.28, 0.055], [-0.36, 0.48, 0.05]].forEach(([x, y, s], i) => {
+        const z = -Math.sqrt(Math.max(0, rAt(y) ** 2 - x * x)) * 0.92;
+        const sp = fold(B, ico(1, 0, 95 + i, 0.15), 0x8CC46F, { x: x * 1.02, y, z: z * 1.02, sx: s, sy: s * 0.85, sz: 0.02, crease: 40 });
+        sp.rotation.y = Math.atan2(x, z);
+      });
       d.hinge.position.y = 0.12; d.hingeY = 0.12; d.len = 1.0; d.head = 1.0;
       motion(d, { feet, face, eyes3d, extra: (person, dt, t, walking) => { tongue.rotation.z = Math.sin(t * (walking ? 7 : 1.8)) * 0.08; tongue.rotation.y = Math.sin(t * 1.3) * 0.12; mark.rotation.z = 0.25 + Math.sin(t * 2.4) * 0.15; } });
     },
@@ -1396,19 +1411,20 @@ function start() {
       const CREAM = 0xF6E6CF; const SPIKE = 0xC9A783;
       const B = d.body; const H = d.hinge;
       fold(B, lathe([[0, 0.1], [0.34, 0.14], [0.45, 0.34], [0.43, 0.56], [0.33, 0.74], [0.16, 0.84], [0, 0.87]], 8, 16), CREAM, { sz: 0.92, ry: Math.PI / 8 });
-      // 털: 꾸긴 종이 솜뭉치가 등·정수리·옆을 몽글몽글 덮는다(얼굴 둘레는 비우고, 이마에는 앞머리 세 뭉치)
-      // 작고 촘촘한 솜뭉치를 밝은 두 톤으로(먹선은 굵은 접힘만 남겨 칙칙하지 않게)
-      const TUFT = [0xE6CDA6, 0xD8B98E, 0xEDD8B6, 0xDDC09A];
-      const tuftGeos = [0, 1, 2].map((k) => ico(1, 1, 30 + k, 0.1));
-      const N = 150;
+      // 털: 꾸긴 종이 솜뭉치가 등·정수리·옆을 몽글몽글 덮는다(얼굴 둘레는 비운다)
+      // 큼지막한 솜뭉치 스무 개 남짓(구름처럼 겹치게). 잔 동그라미가 모여 보이지 않도록 크기를 키우고 먹선은 굵은 접힘만
+      const TUFT = [0xE6CDA6, 0xDCC096, 0xEBD6B4];
+      const tuftGeos = [0, 1, 2].map((k) => ico(1, 1, 30 + k, 0.08));
+      const N = 40;
       for (let i = 0; i < N; i++) {
         const yy = 1 - ((i + 0.5) / N) * 2; const r = Math.sqrt(1 - yy * yy); const th = i * 2.39996;
         const dir = new THREE.Vector3(Math.cos(th) * r, yy, Math.sin(th) * r);
-        if (dir.y < -0.4 || (dir.z > 0.05 && dir.y < 0.62)) continue;
-        const size = 0.095 + ((i * 37) % 5) * 0.006;
-        fold(B, tuftGeos[i % 3], TUFT[i % 4], { x: dir.x * 0.42, y: 0.5 + dir.y * 0.37, z: dir.z * 0.39, sx: size, sy: size * 0.9, sz: size, crease: 50 });
+        if (dir.y < -0.35 || (dir.z > 0.1 && dir.y < 0.6)) continue;
+        const size = 0.19 + ((i * 37) % 3) * 0.02;
+        fold(B, tuftGeos[i % 3], TUFT[i % 3], { x: dir.x * 0.36, y: 0.5 + dir.y * 0.32, z: dir.z * 0.33, sx: size, sy: size * 0.88, sz: size, crease: 60 });
       }
-      [-0.13, 0, 0.13].forEach((x, i) => fold(B, tuftGeos[i], TUFT[(i + 2) % 4], { x, y: 0.83 - Math.abs(x) * 0.4, z: 0.29 - Math.abs(x) * 0.3, sx: 0.1, sy: 0.085, sz: 0.085, crease: 50 }));
+      // 앞머리: 이마에 큰 뭉치 둘
+      [-0.09, 0.1].forEach((x, i) => fold(B, tuftGeos[i], TUFT[(i + 1) % 3], { x, y: 0.8, z: 0.2, sx: 0.15, sy: 0.12, sz: 0.12, crease: 60 }));
       const face = sticker(B, svgText, { keep: '.face, ellipse[fill="#F49A93"]', box: [21, 39, 43, 50.5], eyes: [[27.4, 42.8, 2.2], [36.6, 42.8, 2.2]], w: 0.64, y: 0.54, z: 0.42, bend: 0.8 });
       openBook(B, { y: 0.3, z: 0.42, w: 0.46, h: 0.28, tilt: -0.6 });
       [-1, 1].forEach((k) => fold(B, ico(0.06), CREAM, { x: k * 0.25, y: 0.3, z: 0.42 }));
