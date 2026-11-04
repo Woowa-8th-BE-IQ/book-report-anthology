@@ -1307,7 +1307,26 @@ function start() {
       [-1, 1].forEach((k) => fold(B, ico(0.06), PINK, { x: k * 0.27, y: 0.42, z: 0.43, sz: 0.8 }));
       const feet = paperFeet(H, PINK, { x: 0.17, r: 0.1 });
       d.hinge.position.y = 0.1; d.hingeY = 0.1; d.len = 1.3; d.head = 1.36;
-      motion(d, { feet, face, extra: (person, dt, t) => { lampGlow.material.opacity = 0.7 + Math.sin(t * 3) * 0.2; } });
+      // 헤드램프 불빛: 앞쪽 아래로 퍼지는 빛 고깔(밤일수록 진하게)
+      const beamPivot = new THREE.Group(); beamPivot.position.set(0.12, 0.3, 0.36); beamPivot.rotation.x = -1.2; hat.add(beamPivot);
+      const beamMat = new THREE.MeshBasicMaterial({ color: 0xFFF2B3, transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+      const beam = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.95, 16, 1, true), beamMat); beam.position.y = -0.475; beamPivot.add(beam);
+      // 등: 책 파는 삽을 비스듬히 멨다(나무 자루, T 손잡이, 은빛 삽날)
+      const shovel = new THREE.Group(); shovel.position.set(0.02, 0.5, -0.43); shovel.rotation.set(0.12, 0, 0.55); B.add(shovel);
+      fold(shovel, new THREE.CylinderGeometry(0.024, 0.024, 0.66, 6), 0xC08A55);
+      fold(shovel, new THREE.BoxGeometry(0.16, 0.035, 0.035), 0xC08A55, { y: 0.34 });
+      const blade = new THREE.Shape(); blade.moveTo(-0.1, 0); blade.lineTo(0.1, 0); blade.lineTo(0.1, -0.15); blade.quadraticCurveTo(0.05, -0.24, 0, -0.27); blade.quadraticCurveTo(-0.05, -0.24, -0.1, -0.15); blade.lineTo(-0.1, 0);
+      fold(shovel, new THREE.ExtrudeGeometry(blade, { depth: 0.02, bevelEnabled: false }), 0xA9B2BA, { y: -0.31, z: -0.01 });
+      fold(shovel, new THREE.CylinderGeometry(0.034, 0.03, 0.06, 6), 0x8E969E, { y: -0.31 });
+      // 코: 분홍 종이 코를 도톰하게
+      fold(B, ico(0.06, 0, 77), 0xF08F96, { y: 0.645, z: 0.445, sx: 1.2, sz: 0.75 });
+      motion(d, { feet, face, extra: (person, dt, t, walking) => {
+        lampGlow.material.opacity = 0.7 + Math.sin(t * 3) * 0.2;
+        const h = new Date().getHours(); const night = h >= 18 || h < 6;
+        beamMat.opacity = (night ? 0.2 : 0.09) + Math.sin(t * 3) * 0.02;
+        beamPivot.rotation.x = -1.2 + (walking ? Math.sin(t * 9) * 0.05 : Math.sin(t * 0.7) * 0.15);
+        shovel.rotation.z = 0.55 + (walking ? Math.sin(t * 9) * 0.05 : 0);
+      } });
     },
     // 개굴(개구리): 납작한 초록 종이 몸, 머리 위 툭 튀어나온 두 눈, 펼친 책을 깔고 앉는다
     frog(d, svgText) {
@@ -1367,7 +1386,24 @@ function start() {
       [-1, 1].forEach((k) => fold(B, ico(0.065), GRAY, { x: k * 0.25, y: 0.36, z: 0.38 }));
       const feet = paperFeet(H, GRAY, { x: 0.15, r: 0.09 });
       d.hinge.position.y = 0.1; d.hingeY = 0.1; d.len = 1.4; d.head = 1.55;
-      motion(d, { feet, face, extra: (person, dt, t, walking, w) => { tail.rotation.z = Math.sin(t * (walking ? 6 : 1.4)) * 0.18; head.rotation.z = walking ? w * 0.05 : Math.sin(t * 0.8) * 0.02; } });
+      // 포인트: 그림 속 콧방울. 가만히 있으면 코에서 부풀었다 줄었다, 다 부풀면 톡 터진다(걸으면 사라진다)
+      const bubble = new THREE.Group(); bubble.position.set(0.12, -0.12, 0.41); head.add(bubble);
+      const bubMat = new THREE.MeshLambertMaterial({ color: 0xCFEAF7, transparent: true, opacity: 0.55, emissive: 0x9FD3EE, emissiveIntensity: 0.25, depthWrite: false });
+      const bub = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 2), bubMat); bubble.add(bub);
+      const shine = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 0), new THREE.MeshBasicMaterial({ color: 0xffffff })); shine.position.set(-0.4, 0.45, 0.6); bub.add(shine);
+      // 옆구리: 어디서든 졸려고 끼고 다니는 하늘색 줄무늬 종이 베개
+      const pillow = new THREE.Group(); pillow.position.set(-0.43, 0.36, -0.02); pillow.rotation.z = 0.22; B.add(pillow);
+      fold(pillow, ico(1, 1, 71, 0.06), 0xA9CBE6, { sx: 0.085, sy: 0.15, sz: 0.27, crease: 40 });
+      [-0.13, 0, 0.13].forEach((z) => fold(pillow, new THREE.BoxGeometry(0.15, 0.22, 0.035), 0xF7F2EA, { z }));
+      let bubT = Math.random() * 4;
+      motion(d, { feet, face, extra: (person, dt, t, walking, w) => {
+        tail.rotation.z = Math.sin(t * (walking ? 6 : 1.4)) * 0.18; head.rotation.z = walking ? w * 0.05 : Math.sin(t * 0.8) * 0.02;
+        if (walking) { bubT = 0; bubble.visible = false; return; }
+        bubT += dt; const cyc = bubT % 5.2; // 4.6초 숨 쉬며 커지다 0.6초 쉬고 다시
+        bubble.visible = cyc < 4.6;
+        const grow = Math.min(1, cyc / 4.6); const s2 = 0.03 + grow * 0.09 + Math.sin(cyc * 2.6) * 0.008 * grow;
+        bub.scale.setScalar(s2); bubMat.opacity = 0.5 - (cyc > 4.45 ? (cyc - 4.45) * 3 : 0);
+      } });
     },
     // 꼼지(책벌레): 눕혀 둔 두꺼운 빨간 책을 갉아 구멍을 내고, 마디마디 초록 몸을 S자로 내민다. 앞으로 빨간 책갈피 끈
     bookworm(d, svgText) {
