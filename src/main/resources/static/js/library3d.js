@@ -1237,6 +1237,12 @@ function start() {
       const wings = [-1, 1].map((k) => { const w = new THREE.Group(); w.position.set(k * 0.37, 0.78, 0.02); w.scale.x = k; B.add(w); fold(w, wingGeo, NAVY, { side: THREE.DoubleSide, crease: 1 }); return w; });
       // 꼬리: 등 아래 작은 세모
       fold(B, tri([[-0.12, 0], [0.12, 0], [0, -0.16]]), NAVY, { y: 0.2, z: -0.36, rx: -0.6, side: THREE.DoubleSide });
+      // 등: 배달할 편지 봉투를 멨다(덮개 세모, 빨간 봉랍, 어깨끈)
+      const env = new THREE.Group(); env.position.set(0, 0.6, -0.395); env.rotation.x = 0.06; B.add(env);
+      fold(env, new THREE.BoxGeometry(0.36, 0.25, 0.05), 0xFFF6E6);
+      fold(env, tri([[-0.18, 0], [0.18, 0], [0, -0.14]]), 0xF2E6CF, { y: 0.125, z: -0.027, ry: Math.PI, side: THREE.DoubleSide });
+      fold(env, new THREE.CylinderGeometry(0.04, 0.04, 0.02, 8), 0xE4572E, { y: -0.01, z: -0.034, rx: Math.PI / 2 });
+      [-1, 1].forEach((k) => fold(env, new THREE.BoxGeometry(0.04, 0.26, 0.02), 0xEE7A52, { x: k * 0.13, y: 0.2, z: 0.03, rx: -0.45, rz: k * 0.08 }));
       // 부리는 스티커에 그려져 있고, 옆에서 보이게 작은 종이 세모를 하나 더 붙인다
       fold(B, new THREE.ConeGeometry(0.05, 0.11, 4), ORANGE, { y: 0.885, z: 0.37, rx: Math.PI / 2, sz: 0.7 });
       // 책: 빨간 종이 표지를 반으로 접고 속지를 끼웠다
@@ -1269,17 +1275,22 @@ function start() {
       const B = d.body; const H = d.hinge;
       fold(B, lathe([[0, 0.1], [0.34, 0.14], [0.47, 0.36], [0.46, 0.62], [0.37, 0.86], [0.2, 1.0], [0, 1.04]], 8, 2), YEL, { sz: 0.92, ry: Math.PI / 8 });
       const face = sticker(B, svgText, { keep: '.face, ellipse[fill="#F49A93"]', box: [20.5, 34.5, 43.5, 46.5], eyes: [[28.6, 37.4, 1.3], [38, 37.4, 1.3]], w: 0.66, y: 0.7, z: 0.425, bend: 0.75 });
-      const roof = new THREE.Group(); roof.position.y = 1.0; B.add(roof);
+      // 지붕: 펼친 책을 엎어 머리에 얹었다(책등이 정수리에 닿고, 표지 아래로 책장이 비친다)
+      const roof = new THREE.Group(); roof.position.set(0, 1.15, 0.02); B.add(roof);
+      fold(roof, new THREE.CylinderGeometry(0.035, 0.035, 0.6, 6), 0xEE7A52, { rx: Math.PI / 2 });
       [-1, 1].forEach((k) => {
-        const slab = new THREE.Group(); slab.position.set(k * 0.27, 0.16, 0); slab.rotation.z = -k * 0.55; roof.add(slab);
-        fold(slab, new THREE.BoxGeometry(0.64, 0.025, 0.72), 0xEE7A52);
-        fold(slab, new THREE.BoxGeometry(0.6, 0.012, 0.68), 0xFFF6E6, { y: -0.02 });
+        const half = new THREE.Group(); half.rotation.z = -k * 0.62; roof.add(half);
+        fold(half, new THREE.BoxGeometry(0.5, 0.026, 0.6), 0xEE7A52, { x: k * 0.26, y: 0.012 });
+        fold(half, new THREE.BoxGeometry(0.46, 0.045, 0.55), PAGE, { x: k * 0.24, y: -0.024 });
+        [-0.1, 0, 0.1].forEach((zz) => fold(half, new THREE.BoxGeometry(0.3, 0.004, 0.012), 0xD8C9B4, { x: k * 0.25, y: -0.048, z: zz }));
       });
-      const wings = flaps(B, YEL, { x: 0.43, y: 0.62, len: 0.3, wid: 0.22 });
+      const wings = flaps(B, YEL, { x: 0.47, y: 0.62, len: 0.32, wid: 0.24 });
+      // 꽁지: 뒤로 살짝 들린 노란 세모
+      const tail = fold(B, new THREE.ConeGeometry(0.12, 0.22, 4), YEL, { y: 0.32, z: -0.42, rx: -1.15 });
       const feet = paperFeet(H, ORANGE, { x: 0.16, r: 0.11 });
-      const drops = [-1, 1].map((k) => { const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.035, 0), new THREE.MeshToonMaterial({ color: 0x9FD3EE, gradientMap: gradient, transparent: true, flatShading: true })); m.scale.y = 1.5; m.position.set(k * 0.52, 0.98, 0.2); B.add(m); return m; });
+      const drops = [-1, 1].map((k) => { const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.035, 0), new THREE.MeshToonMaterial({ color: 0x9FD3EE, gradientMap: gradient, transparent: true, flatShading: true })); m.scale.y = 1.5; m.position.set(k * 0.46, 0.84, 0.2); B.add(m); return m; });
       d.hinge.position.y = 0.1; d.hingeY = 0.1; d.len = 1.3; d.head = 1.42;
-      motion(d, { wings, feet, face, extra: (person, dt, t, walking) => { drops.forEach((m, i) => { const k = walking ? (t * 1.4 + i * 0.5) % 1.2 : 9; m.visible = k < 0.6; m.position.y = 0.98 - k * 0.5; m.material.opacity = 1 - k / 0.6; }); roof.rotation.z = walking ? Math.sin(t * 9) * 0.04 : 0; } });
+      motion(d, { wings, feet, face, extra: (person, dt, t, walking, w) => { drops.forEach((m, i) => { const k = walking ? (t * 1.4 + i * 0.5) % 1.2 : 9; m.visible = k < 0.6; m.position.y = 0.84 - k * 0.5; m.material.opacity = 1 - k / 0.6; }); roof.rotation.z = walking ? Math.sin(t * 9) * 0.04 : 0; tail.rotation.z = walking ? w * 0.4 : Math.sin(t * 1.6) * 0.1; } });
     },
     // 꼼지(두더지): 갈색 종이 몸, 노란 안전모와 이마 등불, 분홍 앞발로 펼친 책을 든다
     mole(d, svgText) {
@@ -1343,23 +1354,42 @@ function start() {
       d.hinge.position.y = 0.1; d.hingeY = 0.1; d.len = 1.4; d.head = 1.55;
       motion(d, { feet, face, extra: (person, dt, t, walking, w) => { tail.rotation.z = Math.sin(t * (walking ? 6 : 1.4)) * 0.18; head.rotation.z = walking ? w * 0.05 : Math.sin(t * 0.8) * 0.02; } });
     },
-    // 책벌레: 세워 둔 빨간 종이책 위로 초록 애벌레가 고개를 내민다. 아래로 빨간 책갈피 끈
+    // 꼼지(책벌레): 눕혀 둔 두꺼운 빨간 책을 갉아 구멍을 내고, 마디마디 초록 몸을 S자로 내민다. 앞으로 빨간 책갈피 끈
     bookworm(d, svgText) {
-      const GREEN = 0xD6EDB8;
+      const GREEN = 0xD6EDB8; const LEAF = 0xB9D99A; const RED = 0xEE7A52;
       const B = d.body;
-      fold(B, new THREE.BoxGeometry(0.82, 0.9, 0.3), 0xEE7A52, { y: 0.47 });
-      fold(B, new THREE.BoxGeometry(0.74, 0.82, 0.02), PAGE, { y: 0.47, z: 0.16 });
-      [0.62, 0.52, 0.42, 0.32].forEach((yy, i) => fold(B, new THREE.BoxGeometry(i === 3 ? 0.36 : 0.56, 0.015, 0.005), 0xE2D3BB, { y: yy, z: 0.172, x: i === 3 ? -0.1 : 0 }));
-      fold(B, new THREE.BoxGeometry(0.76, 0.06, 0.26), 0xF2E6CF, { y: 0.93 });
-      const worm = new THREE.Group(); worm.position.set(0, 0.92, 0.02); B.add(worm);
-      fold(worm, new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(0, -0.05, -0.03), new THREE.Vector3(0, 0.15, 0), new THREE.Vector3(0, 0.32, 0.05)]), 6, 0.12, 6), GREEN);
-      const headW = new THREE.Group(); headW.position.y = 0.45; worm.add(headW);
-      fold(headW, ico(0.2, 1, 15), GREEN, { sz: 0.9 });
-      [-1, 1].forEach((k) => { fold(headW, new THREE.CylinderGeometry(0.012, 0.012, 0.22, 4), INKC, { x: k * 0.09, y: 0.25, rz: -k * 0.35 }); eyeBall(headW, k * 0.135, 0.36, 0, 0.04); fold(worm, ico(0.055), GREEN, { x: k * 0.17, y: 0.03, z: 0.12 }); });
-      const face = sticker(headW, svgText, { keep: '.face, ellipse[fill="#F49A93"]', hide: 'circle[cx="31.6"], circle[cx="36.4"]', box: [26.5, 19, 41.5, 26.5], eyes: [[31.6, 21.6, 1.25], [36.4, 21.6, 1.25]], w: 0.4, y: -0.02, z: 0.18, bend: 1.2 });
-      fold(B, new THREE.BoxGeometry(0.08, 0.3, 0.012), 0xE4572E, { x: 0.28, y: -0.08, z: 0.08 });
-      d.hinge.position.y = 0.02; d.hingeY = 0.02; d.len = 1.6; d.head = 1.72;
-      motion(d, { face, extra: (person, dt, t, walking, w) => { worm.rotation.z = walking ? w * 0.18 : Math.sin(t * 1.2) * 0.06; worm.rotation.x = walking ? Math.abs(w) * -0.15 : 0; } });
+      const book = new THREE.Group(); book.position.set(0, 0, -0.08); B.add(book);
+      fold(book, new THREE.BoxGeometry(0.8, 0.035, 0.6), RED, { y: 0.02 });
+      fold(book, new THREE.BoxGeometry(0.76, 0.17, 0.56), PAGE, { x: 0.01, y: 0.12 });
+      fold(book, new THREE.BoxGeometry(0.8, 0.035, 0.6), RED, { y: 0.22 });
+      fold(book, new THREE.BoxGeometry(0.04, 0.24, 0.6), RED, { x: -0.4, y: 0.12 });
+      [0.07, 0.11, 0.15].forEach((yy) => fold(book, new THREE.BoxGeometry(0.7, 0.006, 0.004), 0xE2D3BB, { y: yy, z: 0.282 }));
+      // 갉아 먹은 구멍(삐죽한 테두리)
+      const bite = new THREE.Mesh(new THREE.CircleGeometry(0.17, 9), new THREE.MeshBasicMaterial({ color: 0x6B4A33, polygonOffset: true, polygonOffsetFactor: -2 }));
+      bite.rotation.x = -Math.PI / 2; bite.position.set(0.04, 0.2385, 0.06); book.add(bite);
+      fold(book, new THREE.BoxGeometry(0.06, 0.22, 0.012), 0xE4572E, { x: 0.26, y: 0.08, z: 0.306 });
+      // 몸: 통통한 마디 둘 위에 큰 머리. 목 없이 동글동글, 정독 연구원이라 동그란 안경을 썼다
+      const worm = new THREE.Group(); worm.position.set(0.04, 0.2, -0.02); B.add(worm);
+      const SEG = [[0, 0.03, -0.03, 0.15], [0, 0.17, 0.04, 0.165]];
+      const segs = SEG.map(([x, y, z, r], i) => { const s = fold(worm, ico(r, 1, 40 + i), i % 2 ? GREEN : 0xCDE8AA, { x, y, z, sy: 0.85 }); s.userData.base = [x, y, z]; return s; });
+      [-1, 1].forEach((k) => fold(segs[1], ico(0.045, 0, 51), LEAF, { x: k * 0.14, y: -0.06, z: 0.07 }));
+      const headW = new THREE.Group(); headW.position.set(0, 0.44, 0.1); worm.add(headW);
+      fold(headW, ico(0.27, 1, 15), GREEN, { sz: 0.9 });
+      [-1, 1].forEach((k) => { fold(headW, new THREE.CylinderGeometry(0.012, 0.012, 0.14, 4), INKC, { x: k * 0.1, y: 0.29, rz: -k * 0.35 }); eyeBall(headW, k * 0.127, 0.37, 0, 0.042); });
+      const face = sticker(headW, svgText, { keep: '.face, ellipse[fill="#F49A93"]', hide: 'circle[cx="31.6"], circle[cx="36.4"]', box: [26.5, 19, 41.5, 26.5], eyes: [[31.6, 21.6, 1.25], [36.4, 21.6, 1.25]], w: 0.52, y: -0.02, z: 0.235, bend: 1.0 });
+      const inkM = new THREE.MeshBasicMaterial({ color: INKC });
+      [-1, 1].forEach((k) => { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.066, 0.011, 5, 16), inkM); ring.position.set(k * 0.083, 0.02, 0.262); headW.add(ring); });
+      { const bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.04, 4), inkM); bridge.rotation.z = Math.PI / 2; bridge.position.set(0, 0.03, 0.27); headW.add(bridge); }
+      // 앞발 두 개로 책 가장자리를 붙잡았다
+      [-1, 1].forEach((k) => fold(B, ico(0.055, 0, 60 + k), GREEN, { x: 0.04 + k * 0.15, y: 0.26, z: 0.17 }));
+      d.hinge.position.y = 0.02; d.hingeY = 0.02; d.len = 1.0; d.head = 1.3;
+      motion(d, { face, extra: (person, dt, t, walking, w) => {
+        const amp = walking ? 0.03 : 0.01; const sp = walking ? 9 : 1.6;
+        segs.forEach((s, i) => { const [x, y, z] = s.userData.base; s.position.set(x + Math.sin(t * sp - i * 0.9) * amp, y + (walking ? Math.abs(Math.sin(t * sp - i * 0.9)) * 0.02 : 0), z); });
+        headW.position.x = Math.sin(t * sp - 1.8) * amp;
+        headW.position.y = 0.44 + (walking ? Math.abs(w) * 0.03 : Math.sin(t * 1.6) * 0.008);
+        headW.rotation.z = walking ? w * 0.1 : Math.sin(t * 1.2) * 0.06;
+      } });
     },
     // 따끔(고슴도치): 크림색 종이 몸, 등을 덮은 꾸긴 종이 솜털, 노란 연필과 펼친 책
     hedgehog(d, svgText) {
@@ -1367,16 +1397,18 @@ function start() {
       const B = d.body; const H = d.hinge;
       fold(B, lathe([[0, 0.1], [0.34, 0.14], [0.45, 0.34], [0.43, 0.56], [0.33, 0.74], [0.16, 0.84], [0, 0.87]], 8, 16), CREAM, { sz: 0.92, ry: Math.PI / 8 });
       // 털: 꾸긴 종이 솜뭉치가 등·정수리·옆을 몽글몽글 덮는다(얼굴 둘레는 비우고, 이마에는 앞머리 세 뭉치)
-      const TUFT = [0xC9A783, 0xD6B690, 0xB99670, 0xE0C49E];
-      const tuftGeos = [0, 1, 2].map((k) => ico(1, 1, 30 + k, 0.12));
-      for (let i = 0; i < 70; i++) {
-        const yy = 1 - ((i + 0.5) / 70) * 2; const r = Math.sqrt(1 - yy * yy); const th = i * 2.39996;
+      // 작고 촘촘한 솜뭉치를 밝은 두 톤으로(먹선은 굵은 접힘만 남겨 칙칙하지 않게)
+      const TUFT = [0xE6CDA6, 0xD8B98E, 0xEDD8B6, 0xDDC09A];
+      const tuftGeos = [0, 1, 2].map((k) => ico(1, 1, 30 + k, 0.1));
+      const N = 150;
+      for (let i = 0; i < N; i++) {
+        const yy = 1 - ((i + 0.5) / N) * 2; const r = Math.sqrt(1 - yy * yy); const th = i * 2.39996;
         const dir = new THREE.Vector3(Math.cos(th) * r, yy, Math.sin(th) * r);
-        if (dir.y < -0.35 || (dir.z > 0.05 && dir.y < 0.62)) continue;
-        const size = 0.13 + ((i * 37) % 7) * 0.008;
-        fold(B, tuftGeos[i % 3], TUFT[i % 4], { x: dir.x * 0.4, y: 0.5 + dir.y * 0.36, z: dir.z * 0.37, sx: size, sy: size * 0.9, sz: size });
+        if (dir.y < -0.4 || (dir.z > 0.05 && dir.y < 0.62)) continue;
+        const size = 0.095 + ((i * 37) % 5) * 0.006;
+        fold(B, tuftGeos[i % 3], TUFT[i % 4], { x: dir.x * 0.42, y: 0.5 + dir.y * 0.37, z: dir.z * 0.39, sx: size, sy: size * 0.9, sz: size, crease: 50 });
       }
-      [-0.13, 0, 0.13].forEach((x, i) => fold(B, tuftGeos[i], TUFT[(i + 1) % 4], { x, y: 0.82 - Math.abs(x) * 0.4, z: 0.28 - Math.abs(x) * 0.3, sx: 0.12, sy: 0.1, sz: 0.1 }));
+      [-0.13, 0, 0.13].forEach((x, i) => fold(B, tuftGeos[i], TUFT[(i + 2) % 4], { x, y: 0.83 - Math.abs(x) * 0.4, z: 0.29 - Math.abs(x) * 0.3, sx: 0.1, sy: 0.085, sz: 0.085, crease: 50 }));
       const face = sticker(B, svgText, { keep: '.face, ellipse[fill="#F49A93"]', box: [21, 39, 43, 50.5], eyes: [[27.4, 42.8, 2.2], [36.6, 42.8, 2.2]], w: 0.64, y: 0.54, z: 0.42, bend: 0.8 });
       openBook(B, { y: 0.3, z: 0.42, w: 0.46, h: 0.28, tilt: -0.6 });
       [-1, 1].forEach((k) => fold(B, ico(0.06), CREAM, { x: k * 0.25, y: 0.3, z: 0.42 }));
@@ -1387,23 +1419,55 @@ function start() {
       d.hinge.position.y = 0.1; d.hingeY = 0.1; d.len = 1.2; d.head = 1.15;
       motion(d, { feet, face, extra: (person, dt, t, walking, w) => { pencil.rotation.z = -0.9 + (walking ? w * 0.15 : Math.sin(t * 2) * 0.05); } });
     },
-    // 느릿(달팽이): 길쭉한 크림색 발, 우뚝 선 목과 더듬이 끝 눈, 등에 소용돌이 껍데기
+    // 느릿(달팽이): 길쭉한 크림색 발, 우뚝 선 목과 더듬이 끝 눈, 등에 진 두루마리 집(문·창·굴뚝)
     snail(d, svgText) {
-      const SKIN = 0xF6E3C4; const SHELL = 0xE9C9A0;
+      const SKIN = 0xF3DDB8; const SHELL = 0xEFB585; const SHELL_IN = 0xD38E5B;
       const B = d.body;
       fold(B, crumpleGeo(new THREE.SphereGeometry(0.5, 8, 5), 0.02, 17), SKIN, { y: 0.17, sx: 0.55, sy: 0.32, sz: 1.3 });
       const neck = new THREE.Group(); neck.position.set(0, 0.15, 0.42); B.add(neck);
-      fold(neck, lathe([[0, 0], [0.2, 0.04], [0.22, 0.4], [0.18, 0.66], [0, 0.72]], 6, 18), SKIN);
+      fold(neck, lathe([[0, 0], [0.22, 0.04], [0.24, 0.36], [0.22, 0.6], [0.12, 0.72], [0, 0.75]], 7, 18), SKIN);
       const eyes3d = [];
-      const stalks = [-1, 1].map((k) => { const st = new THREE.Group(); st.position.set(k * 0.08, 0.66, 0); st.rotation.z = -k * 0.3; neck.add(st); fold(st, new THREE.CylinderGeometry(0.018, 0.022, 0.32, 5), INKC, { y: 0.16 }); eyes3d.push(eyeBall(st, 0, 0.34, 0.02, 0.06)); return st; });
-      const face = sticker(neck, svgText, { keep: '.face > path, ellipse[fill="#F49A93"]', box: [12, 35, 25, 42], w: 0.4, y: 0.38, z: 0.2, bend: 1.4 });
-      const shell = new THREE.Group(); shell.position.set(0, 0.62, -0.15); B.add(shell);
-      fold(shell, ico(0.42, 1, 19, 0.025), SHELL, { sx: 0.82 });
-      const swirl = canvasTex(256, 256, (g) => { g.strokeStyle = '#2E241C'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); for (let a = 0; a < Math.PI * 5.2; a += 0.05) { const r = 8 + a * 6.2; const px = 128 + Math.cos(a) * r; const py = 128 + Math.sin(a) * r; if (a) g.lineTo(px, py); else g.moveTo(px, py); } g.stroke(); });
-      const swirlMat = new THREE.MeshBasicMaterial({ map: swirl, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
-      [-1, 1].forEach((k) => { const m = new THREE.Mesh(new THREE.CircleGeometry(0.32, 24), swirlMat); m.position.x = k * 0.35; m.rotation.y = k * Math.PI / 2; shell.add(m); });
+      const stalks = [-1, 1].map((k) => { const st = new THREE.Group(); st.position.set(k * 0.09, 0.68, 0.02); st.rotation.z = -k * 0.3; neck.add(st); fold(st, new THREE.CylinderGeometry(0.018, 0.022, 0.32, 5), INKC, { y: 0.16 }); eyes3d.push(eyeBall(st, 0, 0.34, 0.02, 0.065)); return st; });
+      const face = sticker(neck, svgText, { keep: '.face > path, ellipse[fill="#F49A93"]', box: [12, 35, 25, 42], w: 0.5, y: 0.44, z: 0.215, bend: 1.2 });
+      // 껍데기: 종이 띠를 돌돌 만 두루마리 북. 옆면엔 감긴 결이 소용돌이로, 모서리는 둥글게 눌렀다
+      const shell = new THREE.Group(); shell.position.set(0, 0.6, -0.17); B.add(shell);
+      const R1 = 0.4; const W = 0.5; const TURNS = 2.6; const BEV = 0.035;
+      const spiral = (u) => { const a = u * TURNS * Math.PI * 2; const r = 0.05 + (R1 - 0.05) * Math.pow(u, 0.8); return { y: Math.sin(a) * r, z: -Math.cos(a) * r }; };
+      const outline = new THREE.Shape();
+      for (let i = 0; i <= 60; i++) { const { y, z } = spiral(1 - 1 / TURNS + (i / 60) / TURNS); if (i) outline.lineTo(-z, y); else outline.moveTo(-z, y); }
+      const drum = new THREE.ExtrudeGeometry(outline, { depth: W - BEV * 2, bevelEnabled: true, bevelThickness: BEV, bevelSize: BEV, bevelSegments: 2, curveSegments: 4 });
+      drum.rotateY(Math.PI / 2); drum.translate(-(W - BEV * 2) / 2, 0, 0);
+      fold(shell, drum, SHELL, { crease: 35 });
+      // 감긴 결: 양옆에 먹선 소용돌이
+      const inkMat = new THREE.MeshBasicMaterial({ color: INKC });
+      [-1, 1].forEach((k) => {
+        const pts = []; for (let i = 0; i <= 180; i += 2) { const { y, z } = spiral(i / 180); pts.push(new THREE.Vector3(k * (W / 2 + 0.004), y, z)); }
+        shell.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 160, 0.012, 5), inkMat));
+      });
+      // 집: 껍데기가 곧 느릿의 집. 뒤에 나무 문과 섬돌, 소용돌이 한가운데 불 켜진 동그란 창, 지붕엔 굴뚝과 종이 연기
+      const door = new THREE.Group(); door.position.set(0, -0.15, -0.365); door.rotation.y = Math.PI; shell.add(door);
+      const arch = (w, h) => { const sh = new THREE.Shape(); sh.moveTo(-w, 0); sh.lineTo(w, 0); sh.lineTo(w, h); sh.absarc(0, h, w, 0, Math.PI, false); sh.lineTo(-w, 0); return sh; };
+      fold(door, new THREE.ExtrudeGeometry(arch(0.095, 0.13), { depth: 0.04, bevelEnabled: false }), 0xFFF6E6, { y: -0.01 });
+      fold(door, new THREE.ExtrudeGeometry(arch(0.07, 0.12), { depth: 0.055, bevelEnabled: false }), 0x9A643F);
+      fold(door, new THREE.BoxGeometry(0.006, 0.17, 0.004), 0x6E4529, { y: 0.09, z: 0.057 });
+      fold(door, ico(0.017, 0, 70), 0xF5C531, { x: 0.042, y: 0.09, z: 0.065 });
+      fold(door, new THREE.BoxGeometry(0.22, 0.03, 0.07), 0xD8C9B4, { y: -0.015, z: 0.04 });
+      const winMat = new THREE.MeshBasicMaterial({ color: 0xFFE08A });
+      [-1, 1].forEach((k) => {
+        const win = new THREE.Group(); win.position.x = k * (W / 2 + 0.01); win.rotation.y = k * Math.PI / 2; shell.add(win);
+        win.add(new THREE.Mesh(new THREE.CircleGeometry(0.07, 16), winMat));
+        const fr = new THREE.Mesh(new THREE.TorusGeometry(0.072, 0.014, 5, 16), inkMat); fr.position.z = 0.004; win.add(fr);
+        [0, Math.PI / 2].forEach((rz) => { const bar = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.012, 0.006), inkMat); bar.rotation.z = rz; bar.position.z = 0.006; win.add(bar); });
+      });
+      const chim = new THREE.Group(); chim.position.set(0.07, 0.36, -0.08); chim.rotation.z = -0.12; shell.add(chim);
+      fold(chim, new THREE.CylinderGeometry(0.045, 0.05, 0.2, 6), 0xC8643F, { y: 0.06 });
+      fold(chim, new THREE.CylinderGeometry(0.06, 0.06, 0.035, 6), 0x8E4A30, { y: 0.17 });
+      const puffs = [0, 1, 2].map((i) => { const m = new THREE.Mesh(ico(0.045, 0, 80 + i), new THREE.MeshBasicMaterial({ color: 0xF7F2EA, transparent: true, depthWrite: false })); chim.add(m); return m; });
       d.hinge.position.y = 0.05; d.hingeY = 0.05; d.len = 1.3; d.head = 1.4;
-      motion(d, { face, eyes3d, extra: (person, dt, t, walking, w) => { stalks.forEach((st, i) => { st.rotation.x = Math.sin(t * 2 + i) * 0.12; }); neck.rotation.x = walking ? Math.sin(t * 3) * 0.06 : 0; shell.position.z = -0.15 + (walking ? Math.sin(t * 3 - 0.8) * 0.03 : 0); } });
+      motion(d, { face, eyes3d, extra: (person, dt, t, walking, w) => {
+        stalks.forEach((st, i) => { st.rotation.x = Math.sin(t * 2 + i) * 0.12; }); neck.rotation.x = walking ? Math.sin(t * 3) * 0.06 : 0; shell.position.z = -0.17 + (walking ? Math.sin(t * 3 - 0.8) * 0.03 : 0);
+        puffs.forEach((m, i) => { const k = ((t * (walking ? 0.6 : 0.35)) + i / 3) % 1; m.position.set(Math.sin(k * 5 + i) * 0.04 - k * 0.08, 0.2 + k * 0.42, 0); m.scale.setScalar(0.6 + k * 1.4); m.material.opacity = k < 0.15 ? k / 0.15 : 1 - (k - 0.15) / 0.85; });
+      } });
     },
   };
   const makeModel = (critter, svgText) => {
