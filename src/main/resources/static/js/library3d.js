@@ -1386,19 +1386,15 @@ function start() {
       [-1, 1].forEach((k) => fold(B, ico(0.065), GRAY, { x: k * 0.25, y: 0.36, z: 0.38 }));
       const feet = paperFeet(H, GRAY, { x: 0.15, r: 0.09 });
       d.hinge.position.y = 0.1; d.hingeY = 0.1; d.len = 1.4; d.head = 1.55;
-      // 포인트: 그림 속 콧방울. 가만히 있으면 코에서 부풀었다 줄었다, 다 부풀면 톡 터진다(걸으면 사라진다)
+      // 그림 속 콧방울: 꾸벅꾸벅 졸거나 잠들었을 때만 코에서 부풀었다 톡 터진다
       const bubble = new THREE.Group(); bubble.position.set(0.12, -0.12, 0.41); head.add(bubble);
       const bubMat = new THREE.MeshLambertMaterial({ color: 0xCFEAF7, transparent: true, opacity: 0.55, emissive: 0x9FD3EE, emissiveIntensity: 0.25, depthWrite: false });
       const bub = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 2), bubMat); bubble.add(bub);
       const shine = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 0), new THREE.MeshBasicMaterial({ color: 0xffffff })); shine.position.set(-0.4, 0.45, 0.6); bub.add(shine);
-      // 옆구리: 어디서든 졸려고 끼고 다니는 하늘색 줄무늬 종이 베개
-      const pillow = new THREE.Group(); pillow.position.set(-0.43, 0.36, -0.02); pillow.rotation.z = 0.22; B.add(pillow);
-      fold(pillow, ico(1, 1, 71, 0.06), 0xA9CBE6, { sx: 0.085, sy: 0.15, sz: 0.27, crease: 40 });
-      [-0.13, 0, 0.13].forEach((z) => fold(pillow, new THREE.BoxGeometry(0.15, 0.22, 0.035), 0xF7F2EA, { z }));
       let bubT = Math.random() * 4;
       motion(d, { feet, face, extra: (person, dt, t, walking, w) => {
         tail.rotation.z = Math.sin(t * (walking ? 6 : 1.4)) * 0.18; head.rotation.z = walking ? w * 0.05 : Math.sin(t * 0.8) * 0.02;
-        if (walking) { bubT = 0; bubble.visible = false; return; }
+        if (walking || person.pose === 'up' || !person.pose) { bubT = 0; bubble.visible = false; return; }
         bubT += dt; const cyc = bubT % 5.2; // 4.6초 숨 쉬며 커지다 0.6초 쉬고 다시
         bubble.visible = cyc < 4.6;
         const grow = Math.min(1, cyc / 4.6); const s2 = 0.03 + grow * 0.09 + Math.sin(cyc * 2.6) * 0.008 * grow;
