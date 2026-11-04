@@ -231,6 +231,14 @@
     land(sp) { play(sp, 1, (d, t) => { thud(d, t, 0.26); burst(d, t, { type: 'lowpass', freq: 900, to: 200, level: 0.12, attack: 0.008, decay: 0.12 }); }); },
     /** 깜짝 깨기 */
     wake(sp) { play(sp, 1, (d, t) => { tone(d, t, { freq: 600, to: 1300, glide: 0.08, level: 0.08, attack: 0.003, decay: 0.1 }); }); },
+    /** 타자기: 탁탁탁, 가끔 줄 끝 땡 */
+    type(sp) {
+      play(sp, 0.7, (d, t) => {
+        const n = 3 + Math.floor(Math.random() * 4);
+        for (let i = 0; i < n; i++) burst(d, t + i * (0.07 + Math.random() * 0.06), { type: 'highpass', freq: 2600 + Math.random() * 900, level: 0.12, attack: 0.001, decay: 0.03 });
+        if (Math.random() < 0.15) bellHit(d, t + n * 0.1 + 0.05, 2637, 0.04);
+      });
+    },
     /** 책 엘리베이터: 띵— */
     ding(sp) { play(sp, 1, (d, t) => { bellHit(d, t, 1568, 0.1); bellHit(d, t + 0.02, 2349, 0.04); }); },
     /** 음료 따르기: 쪼르륵 올라가는 물소리 */
