@@ -311,9 +311,12 @@
 .lib-tip[hidden] { display: none; }
 .lib-fade { position: absolute; inset: 0; z-index: 45; background: #1E140D; opacity: 0; pointer-events: none; transition: opacity .4s; }
 .lib-fade.on { opacity: 1; }
-@media (max-width: 720px) {
+/* 아래 단추 줄(약 870px)이 오른쪽 아래 시점 단추에 닿는 너비부터는 시점 단추를 오른쪽 위에 세로로 세운다 */
+@media (max-width: 1240px) {
   .lib-cam { bottom: auto; top: 58px; right: 14px; flex-direction: column; }
   [data-lib="3d"] .lib-people { top: 62px; right: 62px; }
+}
+@media (max-width: 720px) {
   .lib3-label .lib-bubble { max-width: 170px; }
 }
 @media (prefers-reduced-motion: reduce) { .lib3-z i { animation: none; opacity: .8; } }
