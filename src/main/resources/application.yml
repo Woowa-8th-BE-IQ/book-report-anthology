@@ -34,6 +34,10 @@ server:
       # 요청만 UTF-8로 강제한다. 응답까지 강제하면 EPUB 같은 바이너리에도 ;charset=UTF-8이 붙는다.
       # HTML 응답의 문자셋은 Thymeleaf가 붙인다.
       force-request: true
+    # 세션(알림 문구를 한 번 넘기는 flash)은 쿠키로만 잇는다. 기본값이면 첫 이동 주소에 ;jsessionid=… 가 붙어
+    # 주소창을 그대로 복사해 나누면 세션 값까지 함께 나간다.
+    session:
+      tracking-modes: cookie
   error:
     whitelabel:
       enabled: false
