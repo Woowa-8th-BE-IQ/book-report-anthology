@@ -310,28 +310,32 @@ function start() {
       },
     },
   });
-  // 4층 필사실 꾹꾹: 16m×10m. 칸막이 1인 책상 두 줄(앉으면 '쓰는 중', 타자 소리), 오른쪽 필사 벽, 앞쪽 창가 쉼터, 천장에 종이학
+  // 4층 필사실 꾹꾹: 24m×14m 조용한 필사 서재. 칸막이 1인 책상 두 줄(앉으면 '쓰는 중', 타자 소리)과 위에 샹들리에,
+  // 오른쪽 필사 벽, 뒤 창가 긴 의자, 오른쪽 앞 벨벳 의자 쉼터, 왼쪽 앞 책장 벽, 천장에 종이학
+  const SCRIBE = { w: 24, d: 14, h: 6.0 };
   const DESKS = [-4.5, -2.6, -0.7, 1.2];
-  const DESK_ROWS = [-3.9, -1.1];
+  const DESK_ROWS = [-4.4, -1.4];
+  const NOOK = [[6.0, Math.PI / 2], [9.2, -Math.PI / 2]]; // 쉼터 안락의자 x, 바라보는 쪽(z 4.6)
   const scribe = newPlace('scribe', '필사실 꾹꾹', {
     label: '4층 필사실 꾹꾹', short: '4층', tag: '4층 꾹꾹',
-    toRatio: (x, z) => [(x + 8) / 16, (z + 5) / 10],
-    fromRatio: (rx, ry) => [rx * 16 - 8, ry * 10 - 5],
-    bounds: [-8, -5, 8, 5],
-    spawn: () => [-6.9, -3.2],
+    toRatio: (x, z) => [(x + SCRIBE.w / 2) / SCRIBE.w, (z + SCRIBE.d / 2) / SCRIBE.d],
+    fromRatio: (rx, ry) => [rx * SCRIBE.w - SCRIBE.w / 2, ry * SCRIBE.d - SCRIBE.d / 2],
+    bounds: [-SCRIBE.w / 2, -SCRIBE.d / 2, SCRIBE.w / 2, SCRIBE.d / 2],
+    spawn: () => [-10.9, -3.2],
     stairs: null,
     indoor: true,
     quiet: true,
     layers: {
       0: {
-        rect: [-7.75, -4.75, 7.75, 4.75],
+        rect: [-11.75, -6.75, 11.75, 6.75],
         blocks: [
           ...DESK_ROWS.map((z) => ({ r: [-5.35, z - 0.4, 2.05, z + 0.4] })),
           ...DESK_ROWS.flatMap((z) => DESKS.map((x) => ({ c: [x, z + 0.8, 0.26] }))),
-          { r: [7.5, -4.2, 8, 2.4] }, // 필사 벽
-          { r: [4.2, -4.8, 6.6, -4.2] }, // 창가 긴 의자
-          { c: [3.6, 3.4, 0.42] }, { c: [5.4, 3.4, 0.42] }, { c: [4.5, 3.6, 0.35] }, // 안락의자 둘, 작은 탁자
-          { r: [-5.6, 4.3, -1.4, 4.9] }, { c: [7.2, 4.3, 0.35] }, { c: [-7.2, 4.3, 0.35] }, // 앞 낮은 책장, 화분
+          { r: [11.5, -4.2, 12, 2.4] }, // 필사 벽
+          { r: [6.3, -6.8, 8.7, -6.2] }, // 창가 긴 의자
+          ...NOOK.map(([x]) => ({ c: [x, 4.6, 0.5] })), { c: [7.6, 4.6, 0.35] }, { c: [10.6, 6.0, 0.2] }, // 안락의자 둘, 작은 탁자, 스탠드
+          { r: [-5.6, 6.0, -1.4, 6.6] }, { r: [-12, 1.8, -11.38, 6.9] }, // 앞 낮은 책장, 왼쪽 책장 벽
+          { c: [-11.1, -6.2, 0.42] }, { c: [11.0, -6.2, 0.42] }, { c: [11.0, 6.2, 0.42] }, // 야자 화분
         ],
       },
     },
@@ -453,8 +457,8 @@ function start() {
   STUMPS.forEach(([x, z, yaw], i) => seat(cave, { id: `stump-${i + 1}`, kind: 'stool', x, z, top: 0.45, yaw, from: [x + Math.sin(yaw + Math.PI / 2) * 0.7, z + Math.cos(yaw + Math.PI / 2) * 0.7] }));
   [-5.4, -2.9].forEach((x, i) => seat(cave, { id: `burrow-${i + 1}`, kind: 'cushion', x, z: 3.75, top: 0.17, yaw: 0, from: [x, 2.45] }));
   DESK_ROWS.forEach((z, r) => DESKS.forEach((x, i) => seat(scribe, { id: `desk-${r * 4 + i + 1}`, kind: 'chair', desk: true, x, z: z + 0.8, top: 0.47, yaw: Math.PI, from: [x + 0.65, z + 1.15], lamp: `S-${r * 4 + i + 1}` })));
-  [4.7, 6.1].forEach((x, i) => seat(scribe, { id: `window-${i + 1}`, kind: 'bench', x, z: -4.5, top: 0.45, yaw: 0, from: [x, -3.7] }));
-  [[3.6, 0.35], [5.4, -0.35]].forEach(([x, yaw], i) => seat(scribe, { id: `nook-${i + 1}`, kind: 'sofa', x, z: 3.4, top: 0.46, yaw: Math.PI + yaw, from: [x, 2.5] }));
+  [6.8, 8.2].forEach((x, i) => seat(scribe, { id: `window-${i + 1}`, kind: 'bench', x, z: -6.45, top: 0.45, yaw: 0, from: [x, -5.65] }));
+  NOOK.forEach(([x, yaw], i) => seat(scribe, { id: `nook-${i + 1}`, kind: 'sofa', x, z: 4.6, top: 0.5, yaw, from: turnAt(x, 4.6, yaw, 0, 0.95) }));
   FORUM_CHAIRS.forEach(([id, x, z, yaw]) => seat(forum, { id, kind: 'chair', x, z, top: 0.47, yaw, side: id.slice(0, 3), from: [x + (Math.abs(yaw) === Math.PI / 2 ? 0 : 0), z + (yaw === 0 ? -0.75 : yaw === Math.PI ? 0.75 : -0.8)] }));
   seat(forum, { id: 'fire-1', kind: 'sofa', x: FIRE_X, z: -0.75, top: 0.5, yaw: -Math.PI / 2 - 0.35, from: [FIRE_X - 0.95, -0.75] });
   seat(forum, { id: 'fire-2', kind: 'sofa', x: FIRE_X, z: 1.95, top: 0.5, yaw: -Math.PI / 2 + 0.35, from: [FIRE_X - 0.95, 1.95] });
@@ -464,7 +468,7 @@ function start() {
   hall.hots = { book: { at: [0, -2.3], level: 0, card: 'book', tip: '펼친 책' }, board: { at: [-9.2, -0.9], level: 0, card: 'board', tip: '글감 질문' }, shelf: { at: [7.6, -0.6], level: 0, card: 'shelf', tip: '우리 책장' } };
   roof.hots = { stars: { at: [5.4, 3.0], level: 0, card: 'stars', tip: '별 보는 망원경' } };
   cave.hots = { archive: { at: [0, 0.75], level: 0, card: 'book', tip: '이 문집' }, cart: { at: [5.6, 0], level: 0, card: 'shelf', tip: '책 광차' } };
-  scribe.hots = { wall: { at: [6.9, -0.9], level: 0, card: 'wall', tip: '필사 벽' }, shelf: { at: [-3.5, 3.7], level: 0, card: 'shelf', tip: '필사실 책장' } };
+  scribe.hots = { wall: { at: [10.9, -0.9], level: 0, card: 'wall', tip: '필사 벽' }, shelf: { at: [-3.5, 5.4], level: 0, card: 'shelf', tip: '필사실 책장' } };
   forum.hots = { topic: { at: [0, -4.4], level: 0, card: 'topic', tip: '발제 칠판' }, shelf: { at: [10.8, -4.8], level: 0, card: 'shelf', tip: '토론 책장' } };
   cafe.hots = { counter: { at: [8.55, 0], level: 0, card: 'cafe', tip: '사락 카운터' }, shelf: { at: [-10.8, 3.75], level: 0, card: 'shelf', tip: '카페 책장' } };
   hall.portals = [
@@ -488,11 +492,11 @@ function start() {
   ];
   cave.arriveFromAbove = { x: -6.85, z: -1.2, layer: 0 }; cave.liftArrive = { x: -6.85, z: -3.2, layer: 0 };
   scribe.portals = [
-    { id: 'lift', lift: true, level: 0, zone: (x, z) => x < -7.5 && z > -3.7 && z < -2.7, at: [-7.45, -3.2], tip: '책 엘리베이터' },
-    { id: 'up', dir: 'up', level: 0, zone: (x, z) => x < -7.5 && z > -1.7 && z < -0.7, at: [-7.45, -1.2] },
-    { id: 'down', dir: 'down', level: 0, zone: (x, z) => x < -7.5 && z > 0.3 && z < 1.3, at: [-7.45, 0.8] },
+    { id: 'lift', lift: true, level: 0, zone: (x, z) => x < -11.5 && z > -3.7 && z < -2.7, at: [-11.45, -3.2], tip: '책 엘리베이터' },
+    { id: 'up', dir: 'up', level: 0, zone: (x, z) => x < -11.5 && z > -1.7 && z < -0.7, at: [-11.45, -1.2] },
+    { id: 'down', dir: 'down', level: 0, zone: (x, z) => x < -11.5 && z > 0.3 && z < 1.3, at: [-11.45, 0.8] },
   ];
-  scribe.arriveFromBelow = { x: -6.85, z: 0.8, layer: 0 }; scribe.arriveFromAbove = { x: -6.85, z: -1.2, layer: 0 }; scribe.liftArrive = { x: -6.85, z: -3.2, layer: 0 };
+  scribe.arriveFromBelow = { x: -10.85, z: 0.8, layer: 0 }; scribe.arriveFromAbove = { x: -10.85, z: -1.2, layer: 0 }; scribe.liftArrive = { x: -10.85, z: -3.2, layer: 0 };
   forum.portals = [
     { id: 'lift', lift: true, level: 0, zone: (x, z) => x < -11.5 && z > -3.7 && z < -2.7, at: [-11.45, -3.2], tip: '책 엘리베이터' },
     { id: 'up', dir: 'up', level: 0, zone: (x, z) => x < -11.5 && z > -1.7 && z < -0.7, at: [-11.45, -1.2] },
@@ -1996,10 +2000,14 @@ function start() {
       const ph = 20;
       for (let y = 0; y < h; y += ph) { let x = -rand() * 150; while (x < w) { const len = 140 + rand() * 220; const v = (rand() - 0.5) * 18; g.fillStyle = `rgb(${222 + v},${190 + v},${146 + v})`; g.fillRect(x, y, len, ph); g.strokeStyle = 'rgba(140,100,60,.4)'; g.lineWidth = 1.5; g.strokeRect(x, y, len, ph); x += len; } }
     });
-    const { back, right } = buildRoom(P, { floorTex: maple, wall: 0xF4EEE2, side: 0xEAE1D0, sign: '필사실 꾹꾹' });
+    const { w: W, d: D, h: H } = SCRIBE; const hw = W / 2;
+    const win = { r: 1.3, y0: 0.85, y1: 3.6 };
+    const walls = buildRoom(P, { floorTex: maple, wall: 0xF4EEE2, side: 0xEAE1D0, sign: '필사실 꾹꾹', windowsAt: CAFE_WINDOWS, w: W, d: D, h: H, win });
+    const { back, left } = walls;
+    dressRoom(P, walls, { w: W, d: D, h: H, windowsAt: CAFE_WINDOWS, win, pillars: [-10.15, -5, 5, 10.15], drape: 0x6E8B74, sconces: [[1, 3.6], [1, 5.4]] });
     // 원고지 무늬 긴 러그(책상 사이 통로)
     const runner = canvasTex(1024, 128, (g, w, h) => { g.fillStyle = '#F6EFE1'; g.fillRect(0, 0, w, h); g.strokeStyle = '#D9654B'; g.lineWidth = 2; for (let x = 8; x < w; x += 28) g.strokeRect(x, 20, 24, 24); for (let x = 8; x < w; x += 28) g.strokeRect(x, 70, 24, 24); g.strokeStyle = '#B5563F'; g.lineWidth = 6; g.strokeRect(2, 2, w - 4, h - 4); });
-    const rug = plane(S, 8.2, 1.0, toon(0xffffff, { map: runner }), -1.6, 0.012, -2.35, { rx: -Math.PI / 2 }); mark(P, rug, { floor: 0 });
+    const rug = plane(S, 8.2, 1.0, toon(0xffffff, { map: runner }), -1.6, 0.012, -2.7, { rx: -Math.PI / 2 }); mark(P, rug, { floor: 0 });
     // 칸막이 1인 책상 두 줄: 스탠드, 원고지와 만년필 또는 타자기, 칸막이에 꽂힌 메모
     DESK_ROWS.forEach((z, r) => {
       const row = new THREE.Group();
@@ -2039,38 +2047,40 @@ function start() {
     // 오른쪽 필사 벽: 코르크판에 종이를 핀으로
     P.wallTex = canvasTex(1600, 600, () => {});
     const wall = new THREE.Group();
-    box(wall, 0.12, 2.6, 6.6, 0x8C5A3B, 7.92, 0.8, -0.9, { line: 0.025 });
-    plane(wall, 6.4, 2.4, toon(0xffffff, { map: P.wallTex }), 7.85, 2.1, -0.9, { ry: -Math.PI / 2 });
-    plane(wall, 2.0, 0.42, toon(0xffffff, { map: signTex('필사 벽', { bg: '#6E8B74', size: 100 }) }), 7.84, 3.65, -0.9, { ry: -Math.PI / 2 });
-    box(wall, 0.4, 0.9, 6.4, 0xB07A4E, 7.75, 0, -0.9, { line: 0.02 });
-    box(wall, 0.5, 0.06, 6.6, 0x8C5A3B, 7.7, 0.9, -0.9, { line: 0.012 });
-    for (let i = 0; i < 6; i++) { const ink = cyl(wall, 0.06, 0.06, 0.08, [0x2E241C, 0x4F6D8A, 0xB5563F][i % 3], 7.65, 0.96, -3.6 + i * 1.1, { line: 0.006, seg: 10 }); ink.scale.z = 1; }
+    box(wall, 0.12, 2.6, 6.6, 0x8C5A3B, hw - 0.08, 0.8, -0.9, { line: 0.025 });
+    plane(wall, 6.4, 2.4, toon(0xffffff, { map: P.wallTex }), hw - 0.15, 2.1, -0.9, { ry: -Math.PI / 2 });
+    plane(wall, 2.0, 0.42, toon(0xffffff, { map: signTex('필사 벽', { bg: '#6E8B74', size: 100 }) }), hw - 0.16, 3.65, -0.9, { ry: -Math.PI / 2 });
+    box(wall, 0.4, 0.9, 6.4, 0xB07A4E, hw - 0.25, 0, -0.9, { line: 0.02 });
+    box(wall, 0.5, 0.06, 6.6, 0x8C5A3B, hw - 0.3, 0.9, -0.9, { line: 0.012 });
+    for (let i = 0; i < 6; i++) { const ink = cyl(wall, 0.06, 0.06, 0.08, [0x2E241C, 0x4F6D8A, 0xB5563F][i % 3], hw - 0.35, 0.96, -3.6 + i * 1.1, { line: 0.006, seg: 10 }); ink.scale.z = 1; }
     mark(P, wall, { hot: 'wall' }); block(P, wall); S.add(wall);
     // 뒤 창가 긴 의자
-    box(back, 2.4, 0.42, 0.6, 0x8C5A3B, 5.4, 0, -4.5, { line: 0.025 });
+    box(back, 2.4, 0.42, 0.6, 0x5A3825, 7.5, 0, -6.5, { line: 0.025 });
     P.seats.filter((st) => st.id.startsWith('window')).forEach((st, i) => { const c = box(S, 1.1, 0.08, 0.5, i ? 0xF2D16B : 0xB98DB5, st.x, 0.42, st.z, { line: 0.015 }); mark(P, c, { seat: st.id }); st.mesh = c; });
     // 앞쪽 쉼터: 안락의자 둘, 작은 탁자, 둥근 러그, 낮은 책장, 화분
-    const nookRug = new THREE.Mesh(new THREE.CircleGeometry(1, 40), toon(0xB98DB5)); nookRug.rotation.x = -Math.PI / 2; nookRug.scale.set(1.9, 1.3, 1); nookRug.position.set(4.5, 0.011, 3.3); nookRug.receiveShadow = true; S.add(nookRug); mark(P, nookRug, { floor: 0 });
-    P.seats.filter((st) => st.id.startsWith('nook')).forEach((st, i) => {
-      const arm = new THREE.Group();
-      box(arm, 0.85, 0.38, 0.85, i ? 0xE3A857 : 0x9BB7D4, 0, 0, 0, { line: 0.025 });
-      box(arm, 0.85, 0.75, 0.2, i ? 0xD39A4A : 0x7F9CBA, 0, 0.38, -0.33, { line: 0.02 });
-      [-1, 1].forEach((k) => box(arm, 0.16, 0.5, 0.85, i ? 0xD39A4A : 0x7F9CBA, k * 0.42, 0.1, 0, { line: 0.015 }));
-      arm.position.set(st.x, 0, st.z); arm.rotation.y = st.yaw; mark(P, arm, { seat: st.id }); S.add(arm); st.mesh = arm;
-    });
-    const tea = new THREE.Group(); cyl(tea, 0.32, 0.32, 0.05, 0xB07A4E, 0, 0.45, 0, { line: 0.012, seg: 18 }); cyl(tea, 0.04, 0.04, 0.45, 0x3B2618, 0, 0, 0, { line: 0.006, seg: 8 }); cyl(tea, 0.07, 0.06, 0.1, 0xFFFDF8, 0.1, 0.5, 0, { line: 0.008, seg: 12 }); box(tea, 0.26, 0.05, 0.2, 0x6E8B74, -0.08, 0.5, 0.05, { line: 0.008, ry: 0.4 });
-    tea.position.set(4.5, 0, 3.6); block(P, tea); S.add(tea);
-    const shelf = new THREE.Group(); box(shelf, 4.2, 1.1, 0.6, 0x55361F, 0, 0, 0, { line: 0.03 }); shelfFace(P, shelf, 4.1, 1.0, 2, 117, 0, 0.05, -0.305, Math.PI); shelf.position.set(-3.5, 0, 4.6); mark(P, shelf, { hot: 'shelf' }); block(P, shelf); S.add(shelf);
-    for (let i = 0; i < 5; i++) { const b = box(S, 0.08, 0.26, 0.2, new THREE.Color(BOOK_COLORS[(i * 7) % BOOK_COLORS.length]).getHex(), -5.2 + i * 0.1, 1.1, 4.6, { line: 0.006 }); b.rotation.z = i === 4 ? 0.35 : 0; }
-    [[7.2, 4.3], [-7.2, 4.3]].forEach(([x, z]) => { const g = new THREE.Group(); cyl(g, 0.32, 0.25, 0.45, 0xC9604A, 0, 0, 0, { line: 0.02 }); for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; const leaf = solid(new THREE.SphereGeometry(0.2, 10, 8), i % 2 ? 0x6E8B74 : 0x7A9E7E, { line: 0.02 }); leaf.scale.set(0.5, 2.2 + (i % 3) * 0.4, 0.5); leaf.position.set(Math.cos(a) * 0.14, 0.85 + (i % 3) * 0.1, Math.sin(a) * 0.14); leaf.rotation.set(Math.sin(a) * 0.45, 0, -Math.cos(a) * 0.45); g.add(leaf); } g.position.set(x, 0, z); S.add(g); });
+    rugAt(P, '#5E4A6E', '#3F3150', 31, 7.6, 4.6, 5.0, 3.0);
+    P.seats.filter((st) => st.id.startsWith('nook')).forEach((st, i) => velvetArm(P, { id: st.id, x: st.x, z: st.z, yaw: st.yaw, color: i ? 0xD8A24A : 0x8E3E3A, wing: !i }));
+    const tea = new THREE.Group(); cyl(tea, 0.2, 0.22, 0.03, BRASS, 0, 0, 0, { line: 0.006 }); cyl(tea, 0.03, 0.03, 0.45, BRASS, 0, 0.03, 0, { line: 0.005, seg: 8 }); cyl(tea, 0.34, 0.34, 0.05, MARBLE, 0, 0.48, 0, { line: 0.012, seg: 22 }); cyl(tea, 0.07, 0.06, 0.1, 0xFFFDF8, 0.1, 0.53, 0, { line: 0.008, seg: 12 }); box(tea, 0.26, 0.05, 0.2, 0x6E8B74, -0.08, 0.53, 0.05, { line: 0.008, ry: 0.4 });
+    tea.position.set(7.6, 0, 4.6); block(P, tea); S.add(tea);
+    floorLamp(P, 10.6, 6.0);
+    // 왼쪽 앞 책장 벽과 책상 위 샹들리에
+    const tall = new THREE.Group();
+    box(tall, 0.62, 3.5, 5.1, WALNUT, -hw + 0.31, 0, 4.35, { line: 0.03, cast: false });
+    shelfFace(P, tall, 4.8, 3.25, 6, 131, -hw + 0.625, 0.12, 4.35, Math.PI / 2);
+    box(tall, 0.76, 0.14, 5.26, 0x3B2618, -hw + 0.38, 3.5, 4.35, { line: 0.02, cast: false });
+    block(P, tall); left.add(tall);
+    chandelier(P, 'K-1', -1.65, -2.9, H, { big: 0.9, small: 0.5 });
+    const shelf = new THREE.Group(); box(shelf, 4.2, 1.1, 0.6, 0x55361F, 0, 0, 0, { line: 0.03 }); shelfFace(P, shelf, 4.1, 1.0, 2, 117, 0, 0.05, -0.305, Math.PI); shelf.position.set(-3.5, 0, 6.3); mark(P, shelf, { hot: 'shelf' }); block(P, shelf); S.add(shelf);
+    for (let i = 0; i < 5; i++) { const b = box(S, 0.08, 0.26, 0.2, new THREE.Color(BOOK_COLORS[(i * 7) % BOOK_COLORS.length]).getHex(), -5.2 + i * 0.1, 1.1, 6.3, { line: 0.006 }); b.rotation.z = i === 4 ? 0.35 : 0; }
+    palm(P, -11.1, -6.2); palm(P, 11.0, -6.2); palm(P, 11.0, 6.2);
     // 천장에 매단 종이학 무리(쉼터 위와 책상 위)
     const CR = [0xE4572E, 0xF2D16B, 0x9BB7D4, 0xFFFDF8, 0xB98DB5, 0x7A9E7E];
     P.cranes = [];
     const rand = seeded(127);
-    for (let i = 0; i < 14; i++) P.cranes.push(crane(S, CR[i % CR.length], 3.0 + rand() * 3.4, 4.7, 1.8 + rand() * 2.4, 0.8 + rand() * 1.6));
-    for (let i = 0; i < 8; i++) P.cranes.push(crane(S, CR[(i + 2) % CR.length], -5 + rand() * 7, 4.7, -2.6 + rand() * 0.6, 1.2 + rand() * 1.0));
+    for (let i = 0; i < 14; i++) P.cranes.push(crane(S, CR[i % CR.length], 5.6 + rand() * 4.0, H - 0.2, 3.4 + rand() * 2.4, 1.8 + rand() * 1.6));
+    for (let i = 0; i < 8; i++) P.cranes.push(crane(S, CR[(i + 2) % CR.length], -6 + rand() * 9, H - 0.2, -0.3 + rand() * 0.8, 2.2 + rand() * 1.0));
     // 쉿 팻말
-    const hush = plane(S, 1.3, 0.4, toon(0xffffff, { map: signTex('쉿, 꾹꾹 쓰는 중', { bg: '#FFF6E6', fg: '#2E241C', size: 70 }) }), -7.98, 2.95, 2.4, { ry: Math.PI / 2 });
+    const hush = plane(S, 1.3, 0.4, toon(0xffffff, { map: signTex('쉿, 꾹꾹 쓰는 중', { bg: '#FFF6E6', fg: '#2E241C', size: 70 }) }), -hw + 0.02, 2.95, -5.4, { ry: Math.PI / 2 });
     hush.castShadow = false;
     P.anim = (dt, t) => {
       P.cranes.forEach((c) => { c.rotation.y = t * 0.25 + c.userData.phase; c.children[1].rotation.z = Math.sin(t * 1.3 + c.userData.phase) * 0.12; });
