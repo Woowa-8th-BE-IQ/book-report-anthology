@@ -267,6 +267,7 @@ function start() {
   // 옥상 정원: 16m×10m
   const roof = newPlace('roof', '옥상 정원', {
     label: '옥상 정원', short: '옥상', tag: '옥상',
+    maxDist: 70, sink: 13, // 멀리 당기면 건물 아래 길까지 보이게 눈높이를 내린다
     toRatio: (x, z) => [(x + 8) / 16, (z + 5) / 10],
     fromRatio: (rx, ry) => [rx * 16 - 8, ry * 10 - 5],
     bounds: [-8, -5, 8, 5],
@@ -1065,26 +1066,115 @@ function start() {
     [[-7.9, 2.4, 4.9], [7.9, 2.4, 4.9]].forEach((p) => cyl(S, 0.05, 0.05, 2.4, 0x3B2618, p[0], 0, p[2], { line: 0.012, seg: 8 }));
     strand([-7.9, 2.4, 4.9], [-4.7, 2.6, -3.15], 14);
     strand([-7.9, 2.4, 4.9], [7.9, 2.4, 4.9], 22);
-    // 둘레의 건물들과 하늘
+    // 우리 건물 몸통: 옥상 아래로 길까지. 층 높이는 안과 맞춘다(길에서 1층 큰 서고 7.8m, 2층 라운지 7.2m, 3·4층 5.2m씩)
+    const STREET = -26; const BW = 25.2; const BD = 17.2; const TOP = -0.6; const BH = TOP - STREET;
+    const LEVELS = [0, 7.8, 15.0, 20.2, BH];
+    const facade = (wm, side, lit) => canvasTex(Math.round(wm * 40), Math.round(BH * 40), (g, w, h) => {
+      const px = 40; const Y = (m) => h - m * px; const X = (m) => w / 2 + m * px;
+      if (lit) { g.fillStyle = '#000000'; g.fillRect(0, 0, w, h); } else {
+        g.fillStyle = '#B8694A'; g.fillRect(0, 0, w, h);
+        const r = seeded(Math.round(wm * 10) + side.length);
+        for (let i = 0; i < (w * h) / 700; i++) { g.fillStyle = r() < 0.5 ? 'rgba(120,60,40,.18)' : 'rgba(225,150,112,.2)'; g.fillRect(Math.floor((r() * w) / 24) * 24 + (Math.floor((r() * h) / 12) % 2) * 12, Math.floor((r() * h) / 12) * 12, 23, 11); }
+        g.strokeStyle = 'rgba(255,236,214,.3)'; g.lineWidth = 1.5;
+        for (let row = 0, y = h; y > 0; row++, y -= 12) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); for (let x = (row % 2) * 12; x < w; x += 24) { g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - 12); g.stroke(); } }
+        g.fillStyle = '#D9CBB2'; g.fillRect(0, Y(1.0), w, px);
+        g.fillStyle = '#EFE3CF'; LEVELS.slice(1, -1).forEach((m) => g.fillRect(0, Y(m + 0.2), w, 0.4 * px)); g.fillRect(0, 0, w, 0.7 * px);
+        g.strokeStyle = 'rgba(46,36,28,.35)'; g.lineWidth = 2; LEVELS.slice(1, -1).forEach((m) => { g.beginPath(); g.moveTo(0, Y(m - 0.2)); g.lineTo(w, Y(m - 0.2)); g.stroke(); });
+      }
+      const arch = (cx, y0, y1, wd) => { const rr = wd / 2; g.beginPath(); g.moveTo(X(cx - rr), Y(y0)); g.lineTo(X(cx - rr), Y(y1 - rr)); g.arc(X(cx), Y(y1 - rr), rr * px, Math.PI, 0); g.lineTo(X(cx + rr), Y(y0)); g.closePath(); };
+      const rect = (cx, y0, y1, wd) => { g.beginPath(); g.rect(X(cx - wd / 2), Y(y1), wd * px, (y1 - y0) * px); };
+      const win = (shape, cx, y0, y1, wd) => {
+        if (lit) { g.fillStyle = '#FFD9A0'; shape(cx, y0, y1, wd); g.fill(); return; }
+        g.fillStyle = '#F4EBDD'; shape(cx, y0 - 0.18, y1 + 0.18, wd + 0.36); g.fill();
+        g.fillStyle = '#4F6274'; shape(cx, y0, y1, wd); g.fill();
+        g.strokeStyle = '#F4EBDD'; g.lineWidth = 4; g.beginPath(); g.moveTo(X(cx), Y(y0)); g.lineTo(X(cx), Y(y1 - 0.1)); g.moveTo(X(cx - wd / 2), Y(y0 + (y1 - y0) * 0.55)); g.lineTo(X(cx + wd / 2), Y(y0 + (y1 - y0) * 0.55)); g.stroke();
+        g.fillStyle = 'rgba(255,255,255,.16)'; g.beginPath(); g.moveTo(X(cx - wd / 2 + 0.15), Y(y0 + (y1 - y0) * 0.9)); g.lineTo(X(cx - wd / 2 + 0.6), Y(y0 + (y1 - y0) * 0.9)); g.lineTo(X(cx - wd / 2 + 0.15), Y(y0 + (y1 - y0) * 0.6)); g.closePath(); g.fill();
+      };
+      const sides = side === 'side';
+      if (side === 'front') [-9.2, -4.8, 4.8, 9.2].forEach((x) => win(arch, x, 1.4, 6.4, 2.6));
+      else if (side === 'back') { win(arch, 0, 0.9, 6.6, 7.2); [-8.6, 8.6].forEach((x) => win(arch, x, 1.4, 6.0, 2.2)); }
+      else [-5.5, 0, 5.5].forEach((x) => win(arch, x, 1.4, 6.2, 2.4));
+      (sides ? [-5, 0, 5] : CAFE_WINDOWS).forEach((x) => win(arch, x, 8.65, 14.05, sides ? 2.4 : 2.7));
+      (sides ? [-6, -2, 2, 6] : [-10.5, -7.5, -4.5, -1.5, 1.5, 4.5, 7.5, 10.5]).forEach((x) => { win(rect, x, 16.1, 18.6, 1.5); win(rect, x, 21.2, 23.6, 1.4); });
+      if (side === 'front' && !lit) {
+        g.fillStyle = '#EFE3CF'; arch(0, 0, 4.6, 3.6); g.fill();
+        g.fillStyle = '#5E3B27'; arch(0, 0, 4.3, 3.0); g.fill();
+        g.strokeStyle = '#3B2618'; g.lineWidth = 4; g.beginPath(); g.moveTo(X(0), Y(0)); g.lineTo(X(0), Y(4.3)); g.stroke();
+        g.fillStyle = '#E3A857'; [-0.25, 0.25].forEach((x) => { g.beginPath(); g.arc(X(x), Y(1.9), 6, 0, Math.PI * 2); g.fill(); });
+      }
+    });
+    const bodyMat = (k, wm) => new THREE.MeshLambertMaterial({ map: facade(wm, k, false), emissiveMap: facade(wm, k, true), emissive: 0x000000 });
+    const sideMat = bodyMat('side', BD); const frontMat = bodyMat('front', BW); const backMat = bodyMat('back', BW);
+    P.bodyMats = [sideMat, frontMat, backMat];
+    const gravel = new THREE.MeshLambertMaterial({ map: canvasTex(512, 352, (g, w, h) => { g.fillStyle = '#A39C90'; g.fillRect(0, 0, w, h); const r = seeded(19); for (let i = 0; i < 2600; i++) { g.fillStyle = r() < 0.5 ? 'rgba(90,84,76,.35)' : 'rgba(240,232,220,.35)'; g.fillRect(r() * w, r() * h, 2, 2); } }) });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(BW, BH, BD), [sideMat, sideMat, gravel, gravel, frontMat, backMat]);
+    body.position.y = STREET + BH / 2; S.add(body);
+    const bodyInk = new THREE.Mesh(body.geometry, inkMat); bodyInk.scale.set((BW + 0.12) / BW, (BH + 0.12) / BH, (BD + 0.12) / BD); body.add(bodyInk);
+    // 지붕 처마와 난간벽, 실외기·물탱크
+    box(S, BW + 0.7, 0.35, BD + 0.7, 0xEFE3CF, 0, TOP - 0.45, 0, { line: 0.03, cast: false });
+    const para = (w, d, x, z) => { box(S, w, 0.75, d, 0xD9CBB2, x, TOP, z, { line: 0.02, cast: false }); box(S, w + 0.1, 0.08, d + 0.1, 0xEFE3CF, x, TOP + 0.75, z, { line: 0.012, cast: false }); };
+    para(BW, 0.3, 0, BD / 2 - 0.15); para(BW, 0.3, 0, -BD / 2 + 0.15); para(0.3, BD - 0.6, BW / 2 - 0.15, 0); para(0.3, BD - 0.6, -BW / 2 + 0.15, 0);
+    [[10.4, -5.6], [10.4, 5.4]].forEach(([x, z]) => { const u = new THREE.Group(); box(u, 1.4, 0.9, 1.0, 0xC5CCD2, 0, 0, 0, { line: 0.02 }); const fan = new THREE.Mesh(new THREE.CircleGeometry(0.34, 18), toon(0x5A6470)); fan.rotation.x = -Math.PI / 2; fan.position.y = 0.91; u.add(fan); u.position.set(x, TOP, z); S.add(u); });
+    [[-0.5, -0.5], [0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]].forEach(([a, b]) => box(S, 0.1, 0.6, 0.1, 0x6B6F75, -10.4 + a, TOP, 5.6 + b, { line: 0.008 }));
+    cyl(S, 0.75, 0.75, 1.4, 0x8FA3A8, -10.4, TOP + 0.6, 5.6, { line: 0.02 });
+    // 정문: 초록 줄무늬 차양, 간판, 돌계단, 문 옆 등
+    P.streetGlow = [];
+    const awning = canvasTex(256, 64, (g) => { for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#FFF6E6' : '#3E6B58'; g.fillRect(i * 32, 0, 32, 64); } });
+    const aw = solid(new THREE.BoxGeometry(4.6, 0.12, 1.6), 0xffffff, { line: 0.02, mat: toon(0xffffff, { map: awning }) }); aw.rotation.x = 0.28; aw.position.set(0, STREET + 5.0, BD / 2 + 0.75); S.add(aw);
+    plane(S, 3.6, 0.8, toon(0xffffff, { map: signTex('꼬깃 서고', { bg: '#3E6B58', fg: '#FFF3DC' }) }), 0, STREET + 6.2, BD / 2 + 0.03);
+    box(S, 4.6, 0.18, 1.3, 0xD9CBB2, 0, STREET, BD / 2 + 0.65, { line: 0.015, cast: false });
+    box(S, 4.0, 0.18, 0.7, 0xD9CBB2, 0, STREET + 0.18, BD / 2 + 0.35, { line: 0.015, cast: false });
+    [-2.4, 2.4].forEach((x) => { box(S, 0.14, 0.42, 0.14, 0x2E241C, x, STREET + 3.2, BD / 2 + 0.1, { line: 0.008 }); P.streetGlow.push(glow(S, 0xffd98a, 1.4, x, STREET + 3.45, BD / 2 + 0.3)); });
+    // 거리: 36m×30m 구획마다 차도(가운데 점선)·보도·건널목. 우리 건물은 가운데 구획
+    const tile = canvasTex(576, 480, (g, w, h) => {
+      const px = 16;
+      g.fillStyle = '#4A4D55'; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#BDB5A8'; g.fillRect(3.5 * px, 3.5 * px, w - 7 * px, h - 7 * px);
+      g.strokeStyle = '#8E877C'; g.lineWidth = 3; g.strokeRect(3.5 * px, 3.5 * px, w - 7 * px, h - 7 * px);
+      g.fillStyle = '#ADA597'; g.fillRect(5.5 * px, 5.5 * px, w - 11 * px, h - 11 * px);
+      g.fillStyle = '#E8D9A0';
+      for (let y = 4 * px; y < h - 4 * px; y += 3 * px) { g.fillRect(0, y, 2, 1.6 * px); g.fillRect(w - 2, y, 2, 1.6 * px); }
+      for (let x = 4 * px; x < w - 4 * px; x += 3 * px) { g.fillRect(x, 0, 1.6 * px, 2); g.fillRect(x, h - 2, 1.6 * px, 2); }
+      g.fillStyle = 'rgba(245,240,230,.85)';
+      [3.9, h / px - 6.3].forEach((m) => { for (let x = 0; x < 3.4; x += 0.9) { g.fillRect(x * px, m * px, 0.5 * px, 2.4 * px); g.fillRect(w - (x + 0.5) * px, m * px, 0.5 * px, 2.4 * px); } });
+      [3.9, w / px - 6.3].forEach((m) => { for (let y = 0; y < 3.4; y += 0.9) { g.fillRect(m * px, y * px, 2.4 * px, 0.5 * px); g.fillRect(m * px, h - (y + 0.5) * px, 2.4 * px, 0.5 * px); } });
+    }, { repeat: [9, 11] });
+    plane(S, 36 * 9, 30 * 11, new THREE.MeshLambertMaterial({ map: tile }), 0, STREET, 0, { rx: -Math.PI / 2, receive: false });
+    // 가로등(밤에 켜진다)과 가로수
+    const post = (x, z) => { cyl(S, 0.06, 0.08, 4.2, 0x2E3338, x, STREET, z, { line: 0.01, seg: 8 }); cyl(S, 0.2, 0.12, 0.25, 0x2E3338, x, STREET + 4.2, z, { line: 0.01, seg: 10 }); P.streetGlow.push(glow(S, 0xffd98a, 2.6, x, STREET + 4.25, z)); };
+    [-45, -36, -27, -9, 0, 9, 27, 36, 45].forEach((x) => { post(x, 11.3); post(x, -11.3); });
+    [-38, -30, -22, -5, 5, 22, 30, 38].forEach((z) => { post(14.3, z); post(-14.3, z); });
+    const tree = (x, z, s = 1) => { cyl(S, 0.12 * s, 0.16 * s, 2.2 * s, 0x6B4430, x, STREET, z, { line: 0.012, seg: 8 }); const c = solid(new THREE.IcosahedronGeometry(1.25 * s, 1), 0x6E8B74, { line: 0.03 }); c.position.set(x, STREET + 3.1 * s, z); S.add(c); };
+    [-11, -5.5, 5.5, 11].forEach((x) => tree(x, 10.3));
+    [-11, -5.5, 0, 5.5, 11].forEach((x) => tree(x, -10.3, 0.9));
+    [-4, 4].forEach((z) => { tree(13.4, z, 0.9); tree(-13.4, z, 0.9); });
+    // 둘레 건물: 구획마다 한두 채, 모두 길에 선다. 창은 3m 한 층 크기로 되풀이하고 지붕에는 창을 그리지 않는다
     const towers = new THREE.Group();
-    // 건물 벽(창은 조금 어둡게)과, 밤에 불 켜진 창만 빛나는 무늬
-    const windows = canvasTex(64, 128, (g) => { g.fillStyle = '#ffffff'; g.fillRect(0, 0, 64, 128); g.fillStyle = '#9aa6b0'; for (let y = 6; y < 128; y += 16) for (let x = 6; x < 64; x += 14) g.fillRect(x, y, 7, 9); });
-    const litWindows = canvasTex(64, 128, (g) => { g.fillStyle = '#000000'; g.fillRect(0, 0, 64, 128); const r = seeded(77); g.fillStyle = '#ffd27a'; for (let y = 6; y < 128; y += 16) for (let x = 6; x < 64; x += 14) if (r() < 0.4) g.fillRect(x, y, 7, 9); });
-    P.towerMat = new THREE.MeshLambertMaterial({ color: 0xffffff, map: windows, emissive: 0x000000, emissiveMap: litWindows });
-    P.towerTints = [];
+    const windows = canvasTex(64, 128, (g) => { g.fillStyle = '#ffffff'; g.fillRect(0, 0, 64, 128); g.fillStyle = '#9aa6b0'; for (let y = 6; y < 128; y += 16) for (let x = 6; x < 64; x += 14) g.fillRect(x, y, 7, 9); }, { repeat: [1, 1] });
+    const litWindows = canvasTex(64, 128, (g) => { g.fillStyle = '#000000'; g.fillRect(0, 0, 64, 128); const r = seeded(77); g.fillStyle = '#ffd27a'; for (let y = 6; y < 128; y += 16) for (let x = 6; x < 64; x += 14) if (r() < 0.4) g.fillRect(x, y, 7, 9); }, { repeat: [1, 1] });
     const tints = [0xD9C7A7, 0xC5D2DA, 0xE8C9B8, 0xB9C8B4, 0xD8D2E6, 0xEFE3CF];
-    for (let i = 0; i < 54; i++) {
-      const a = rand() * Math.PI * 2; const r = 22 + rand() * 50;
-      const h = 6 + rand() * 18; const w = 4 + rand() * 7;
-      const m = P.towerMat.clone(); m.color.setHex(tints[i % tints.length]);
-      P.towerTints.push([m, tints[i % tints.length]]);
-      const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, w * (0.7 + rand() * 0.6)), m);
-      t.position.set(Math.cos(a) * r, h / 2 - 16 + rand() * 6, Math.sin(a) * r - 4);
-      towers.add(t);
+    P.towerTints = tints.map((tint) => [new THREE.MeshLambertMaterial({ color: tint, map: windows, emissive: 0x000000, emissiveMap: litWindows }), tint]);
+    const towerGeo = (w, h, d) => {
+      const geo = new THREE.BoxGeometry(w, h, d); const uv = geo.attributes.uv;
+      [[d, h], [d, h], null, null, [w, h], [w, h]].forEach((span, f) => { for (let k = 0; k < 4; k++) { const i = f * 4 + k; if (span) uv.setXY(i, (uv.getX(i) * span[0]) / 8, (uv.getY(i) * span[1]) / 24); else uv.setXY(i, 0.03, 0.03); } });
+      return geo;
+    };
+    for (let i = -4; i <= 4; i++) for (let j = -5; j <= 5; j++) {
+      const cx = i * 36; const cz = j * 30; const far = Math.hypot(cx, cz);
+      if ((!i && !j) || far > 135) continue;
+      const near = far < 50; const n = rand() < 0.35 ? 2 : 1;
+      for (let k = 0; k < n; k++) {
+        const w = n === 2 ? 9 + rand() * 4 : 12 + rand() * 12; const d = 9 + rand() * 9;
+        const h = near ? 9 + rand() * 13 : 18 + rand() * 50; // 바로 옆 구획은 우리 건물(25m)보다 낮게
+        const ox = n === 2 ? (k ? 7 : -7) : (rand() - 0.5) * 4; const oz = (rand() - 0.5) * 3;
+        const mat = P.towerTints[Math.abs(i * 7 + j * 3 + k) % tints.length][0];
+        const t = new THREE.Mesh(towerGeo(w, h, d), mat); t.position.set(cx + ox, STREET + h / 2, cz + oz); towers.add(t);
+        if (rand() < 0.4) { const cap = new THREE.Mesh(towerGeo(w * 0.35, 2.2, d * 0.35), mat); cap.position.set(cx + ox + (rand() - 0.5) * w * 0.3, STREET + h + 1.1, cz + oz + (rand() - 0.5) * d * 0.3); towers.add(cap); }
+      }
     }
     S.add(towers);
     P.sky = canvasTex(32, 512, (g, w, h) => g.fillRect(0, 0, w, h));
-    P.dome = new THREE.Mesh(new THREE.SphereGeometry(140, 32, 16), new THREE.MeshBasicMaterial({ map: P.sky, side: THREE.BackSide, depthWrite: false, fog: false }));
+    P.dome = new THREE.Mesh(new THREE.SphereGeometry(240, 32, 16), new THREE.MeshBasicMaterial({ map: P.sky, side: THREE.BackSide, depthWrite: false, fog: false }));
     S.add(P.dome);
     const nightStars = [];
     for (let i = 0; i < 400; i++) { const a = rand() * Math.PI * 2; const e = 0.15 + rand() * 1.3; nightStars.push(Math.cos(a) * Math.cos(e) * 120, Math.sin(e) * 120, Math.sin(a) * Math.cos(e) * 120); }
@@ -1107,7 +1197,7 @@ function start() {
     Object.assign(P.sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 2, far: 50 });
     P.sun.shadow.bias = -0.0006; P.sun.shadow.normalBias = 0.03;
     S.add(P.sun, P.sun.target);
-    S.fog = new THREE.Fog(0xcfe3f2, 30, 110);
+    S.fog = new THREE.Fog(0xcfe3f2, 45, 170); // 가까이·멀리는 매 프레임 카메라 거리에 맞춘다
     // 날씨: 그날 날짜로 정해서 모두에게 같다(비·눈·맑음)
     const drops = [];
     for (let i = 0; i < 700; i++) { const x = -14 + rand() * 28; const y = rand() * 16; const z = -12 + rand() * 24; drops.push(x, y, z, x - 0.04, y - 0.4, z); }
@@ -2016,6 +2106,8 @@ function start() {
       m.color.setHex(tod === 'night' ? 0x2a3048 : tod === 'dusk' ? new THREE.Color(tint).multiplyScalar(0.55).getHex() : tint);
     });
     roof.bulbs.forEach((b) => b.material.color.setHex(T.lamps ? 0xfff1b5 : 0xb8ad90));
+    roof.bodyMats.forEach((m) => m.emissive.setHex(tod === 'night' || tod === 'dusk' ? 0xffc77a : 0x000000));
+    roof.streetGlow.forEach((g) => { g.visible = T.lamps; });
     roof.rain.visible = weather === 'rain';
     roof.snow.visible = weather === 'snow';
     updateLamps();
@@ -2051,6 +2143,7 @@ function start() {
     camera.position.set(cam.target.x + Math.sin(cam.yaw) * c * cam.dist, cam.target.y + Math.sin(cam.pitch) * cam.dist, cam.target.z + Math.cos(cam.yaw) * c * cam.dist);
     camera.lookAt(cam.target);
   };
+  const maxDist = () => (current && current.maxDist) || 26;
   const camRight = () => [Math.cos(cam.yaw), -Math.sin(cam.yaw)];
 
   // ───────── 종이 인형 ─────────
@@ -2877,6 +2970,7 @@ function start() {
       me.layer = portal.arrive.layer; me.x = portal.arrive.x; me.z = portal.arrive.z;
       me.y = heightAt(to, me.layer, me.x, me.z);
       current = to;
+      cam.distT = Math.min(cam.distT, maxDist());
       cam.target.set(me.x, me.y + 1, me.z);
       people.forEach((p) => { p.label.hidden = p.place !== current.id; });
       root.querySelector('.lib-place').textContent = to.label;
@@ -3281,7 +3375,7 @@ function start() {
   });
   canvas.addEventListener('pointermove', (event) => {
     if (pointers.has(event.pointerId)) pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    if (pinch && pointers.size === 2) { const [a, b] = [...pointers.values()]; cam.distT = clamp(pinch.dist * (pinch.d / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y))), 6, 26); return; }
+    if (pinch && pointers.size === 2) { const [a, b] = [...pointers.values()]; cam.distT = clamp(pinch.dist * (pinch.d / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y))), 6, maxDist()); return; }
     if (drag) {
       const dx = event.clientX - drag.x; const dy = event.clientY - drag.y;
       if (!drag.moved && Math.hypot(dx, dy) > 6) { drag.moved = true; root.classList.add('turning'); }
@@ -3298,7 +3392,7 @@ function start() {
   };
   canvas.addEventListener('pointerup', endPointer);
   canvas.addEventListener('pointercancel', endPointer);
-  canvas.addEventListener('wheel', (event) => { event.preventDefault(); cam.distT = clamp(cam.distT * (1 + event.deltaY * 0.0012), 6, 26); }, { passive: false });
+  canvas.addEventListener('wheel', (event) => { event.preventDefault(); cam.distT = clamp(cam.distT * (1 + event.deltaY * 0.0012), 6, maxDist()); }, { passive: false });
   let hoverAt = 0;
   const hover = (x, y) => {
     const now = performance.now();
@@ -3315,8 +3409,8 @@ function start() {
     const what = b.dataset.cam;
     if (what === 'left') cam.yawT -= Math.PI / 4;
     else if (what === 'right') cam.yawT += Math.PI / 4;
-    else if (what === 'in') cam.distT = clamp(cam.distT * 0.8, 6, 26);
-    else if (what === 'out') cam.distT = clamp(cam.distT * 1.25, 6, 26);
+    else if (what === 'in') cam.distT = clamp(cam.distT * 0.8, 6, maxDist());
+    else if (what === 'out') cam.distT = clamp(cam.distT * 1.25, 6, maxDist());
   });
   const KEYMAP = { Shift: 'run', ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right', ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down' };
   const typing = (event) => event.target.closest('input, textarea, select');
@@ -3605,7 +3699,9 @@ function start() {
       // 내 인형이 화면 아래쪽 가운데에 오게: 바라보는 쪽으로 조금 앞을 본다(방 밖 허공은 보지 않게)
       const [bx0, bz0, bx1, bz1] = current.bounds;
       const ahead = clamp((cam.dist - 4) * 0.25, 0, 1.8 + cam.dist * 0.06); // 가까이 당기면 내 인형을 가운데에
-      project.set(clamp(me.x - Math.sin(cam.yaw) * ahead, bx0 + 3, bx1 - 3), me.y + 0.9, clamp(me.z - Math.cos(cam.yaw) * ahead, bz0 + 2.5, bz1 - 2.5));
+      const sink = current.sink ? clamp((cam.dist - 26) / (maxDist() - 26), 0, 1) * current.sink : 0;
+      project.set(clamp(me.x - Math.sin(cam.yaw) * ahead, bx0 + 3, bx1 - 3), me.y + 0.9 - sink, clamp(me.z - Math.cos(cam.yaw) * ahead, bz0 + 2.5, bz1 - 2.5));
+      if (current === roof) { roof.scene.fog.near = cam.dist + 18; roof.scene.fog.far = cam.dist + 150; }
       cam.target.lerp(project, reduceMotion ? 1 : 1 - Math.pow(0.004, dt));
     }
     people.forEach((person) => {
