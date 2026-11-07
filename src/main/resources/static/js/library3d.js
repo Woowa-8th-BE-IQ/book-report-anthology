@@ -309,12 +309,12 @@ function start() {
   // 지하 서고 굴: 28m×18m 큰 동굴 서고. 뒤에 두 층 책 굴 벽과 위 회랑, 가운데 이 문집이 떠 있는 받침과 그루터기 여섯,
   // 양옆 천장까지 닿는 뿌리 기둥, 왼쪽 벽 폭포에서 흐르는 물길과 아치 다리, 오른쪽 광차 길, 오른쪽 앞 수정 웅덩이,
   // 물길 건너 거대 버섯 숲과 굴방 셋, 둥근 독서 자리
-  const CAVE = { w: 28, d: 18, h: 6.5 };
+  const CAVE = { w: 28, d: 22, h: 6.5 };
   const PED = [0, -1.5]; // 받침
   const STUMPS = [0, 1, 2, 3, 4, 5].map((k) => { const a = Math.PI / 6 + (k * Math.PI) / 3; return [PED[0] + Math.sin(a) * 2.1, PED[1] + Math.cos(a) * 2.1, a + Math.PI, a]; });
   const STREAM = { z0: 4.6, z1: 5.8, x1: 5.8, bridge: [-3.8, -2.2] }; // 물길(왼쪽 벽에서 수정 웅덩이까지), 다리 자리
-  const BURROWS = [-11.5, -9.0, -6.5]; // 굴방 x(z 7.6)
-  const PIT = [1.8, 7.3]; // 둥근 독서 자리 가운데
+  const BURROWS = [-11.8, -8.8, -5.8]; // 굴방 x(z 9.6)
+  const PIT = [1.6, 8.4]; const PIT_R = 1.8; // 둥근 독서 자리 가운데
   const cave = newPlace('cave', '지하 서고 굴', {
     label: '지하 서고 굴', short: '지하', tag: '지하 굴',
     toRatio: (x, z) => [(x + CAVE.w / 2) / CAVE.w, (z + CAVE.d / 2) / CAVE.d],
@@ -325,16 +325,16 @@ function start() {
     fixedLight: true,
     layers: {
       0: {
-        rect: [-13.75, -8.0, 13.75, 8.75],
+        rect: [-13.75, -10.0, 13.75, 10.75],
         blocks: [
           { c: [PED[0], PED[1], 0.85] }, ...STUMPS.map(([x, z]) => ({ c: [x, z, 0.24] })), // 받침과 그루터기
           { c: [-7.5, -5.0, 0.95] }, { c: [7.5, -5.0, 0.95] }, // 뿌리 기둥
           { r: [-14, STREAM.z0, STREAM.bridge[0], STREAM.z1] }, { r: [STREAM.bridge[1], STREAM.z0, STREAM.x1, STREAM.z1] }, { c: [6.8, 5.2, 1.25] }, // 물길(다리만 건넌다), 웅덩이
           { c: [8.7, 6.9, 0.9] }, { c: [8.4, 3.5, 0.6] }, { c: [5.6, 7.6, 0.45] }, // 수정
           { r: [10.6, -8.6, 12.1, 8.6] }, { r: [12.5, -6.2, 14, -2.8] }, { r: [12.5, 2.8, 14, 6.2] }, // 광차 길, 책 상자
-          ...BURROWS.map((x) => ({ c: [x, 7.6, 0.95] })), // 굴방
-          { c: [-1.6, 7.9, 0.45] }, { c: [-13.0, 7.9, 0.45] }, { c: [4.2, 8.3, 0.4] }, // 거대 버섯
-          ...[0, 1, 2, 3, 4].map((k) => { const a = (k * 2 * Math.PI) / 5; return { c: [PIT[0] + Math.sin(a) * 1.5, PIT[1] + Math.cos(a) * 1.5, 0.42] }; }), // 독서 방석
+          ...BURROWS.map((x) => ({ c: [x, 9.6, 0.95] })), // 굴방
+          { c: [-2.4, 10.0, 0.45] }, { c: [-13.0, 7.4, 0.45] }, { c: [5.4, 10.0, 0.4] }, // 거대 버섯
+          ...[0, 1, 2, 3, 4].map((k) => { const a = (k * 2 * Math.PI) / 5; return { c: [PIT[0] + Math.sin(a) * PIT_R, PIT[1] + Math.cos(a) * PIT_R, 0.42] }; }), // 독서 방석
           ...[[-4.5, -3.0], [4.5, -3.0], [-9.0, 2.0], [9.0, 2.0]].map(([x, z]) => ({ c: [x, z, 0.12] })), // 등불 기둥
         ],
       },
@@ -483,8 +483,8 @@ function start() {
   }));
   ARMS.forEach((a) => seat(cafe, { id: a.id, kind: 'sofa', x: a.x, z: a.z, top: 0.5, yaw: a.yaw, from: turnAt(a.x, a.z, a.yaw, 0, 0.95) }));
   STUMPS.forEach(([x, z, yaw, a], i) => seat(cave, { id: `stump-${i + 1}`, kind: 'stool', x, z, top: 0.45, yaw, from: [PED[0] + Math.sin(a) * 2.9, PED[1] + Math.cos(a) * 2.9] }));
-  BURROWS.forEach((x, i) => seat(cave, { id: `burrow-${i + 1}`, kind: 'cushion', x, z: 7.6, top: 0.17, yaw: 0, from: [x, 6.3] }));
-  [0, 1, 2, 3, 4].forEach((k) => { const a = (k * 2 * Math.PI) / 5; seat(cave, { id: `pit-${k + 1}`, kind: 'cushion', x: PIT[0] + Math.sin(a) * 1.5, z: PIT[1] + Math.cos(a) * 1.5, top: 0.18, yaw: a + Math.PI, from: [PIT[0] + Math.sin(a) * 0.55, PIT[1] + Math.cos(a) * 0.55] }); });
+  BURROWS.forEach((x, i) => seat(cave, { id: `burrow-${i + 1}`, kind: 'cushion', x, z: 9.6, top: 0.17, yaw: 0, from: [x, 8.3] }));
+  [0, 1, 2, 3, 4].forEach((k) => { const a = (k * 2 * Math.PI) / 5; seat(cave, { id: `pit-${k + 1}`, kind: 'cushion', x: PIT[0] + Math.sin(a) * PIT_R, z: PIT[1] + Math.cos(a) * PIT_R, top: 0.18, yaw: a + Math.PI, from: [PIT[0] + Math.sin(a) * 0.7, PIT[1] + Math.cos(a) * 0.7] }); });
   DESK_ROWS.forEach((z, r) => DESKS.forEach((x, i) => seat(scribe, { id: `desk-${r * 4 + i + 1}`, kind: 'chair', desk: true, x, z: z + 0.8, top: 0.47, yaw: Math.PI, from: [x + 0.65, z + 1.15], lamp: `S-${r * 4 + i + 1}` })));
   [6.8, 8.2].forEach((x, i) => seat(scribe, { id: `window-${i + 1}`, kind: 'bench', x, z: -6.45, top: 0.45, yaw: 0, from: [x, -5.65] }));
   NOOK.forEach(([x, yaw], i) => seat(scribe, { id: `nook-${i + 1}`, kind: 'sofa', x, z: 4.6, top: 0.5, yaw, from: turnAt(x, 4.6, yaw, 0, 0.95) }));
@@ -2082,8 +2082,8 @@ function start() {
       const gl = glow(g, c, 2.6, 0, h - 0.2, 0); gl.material.opacity = 0.55;
       g.position.set(x, 0, z); S.add(g);
     };
-    bigShroom(-1.6, 7.9, 2.6, 0x7FE0D0, 0x2A8C80); bigShroom(-13.0, 7.9, 3.0, 0xB6A0F0, 0x5A40A0); bigShroom(4.2, 8.3, 2.2, 0x9FE07A, 0x3C8A28);
-    [[-4.6, 7.4, 6], [-12.6, 6.4, 4], [3.0, 6.2, 4], [-7.8, -6.6, 5], [5.6, -7.0, 4], [-11.8, 2.6, 4]].forEach(([cx, cz, n], k) => {
+    bigShroom(-2.4, 10.0, 2.6, 0x7FE0D0, 0x2A8C80); bigShroom(-13.0, 7.4, 3.0, 0xB6A0F0, 0x5A40A0); bigShroom(5.4, 10.0, 2.2, 0x9FE07A, 0x3C8A28);
+    [[-3.8, 7.2, 6], [-12.4, 9.6, 4], [5.2, 8.0, 4], [-7.8, -6.6, 5], [5.6, -7.0, 4], [-11.8, 2.6, 4]].forEach(([cx, cz, n], k) => {
       for (let i = 0; i < n; i++) {
         const g = new THREE.Group(); const a = (i / n) * Math.PI * 2 + k; const r = i ? 0.15 + (i % 3) * 0.13 : 0;
         const h = 0.18 + ((i * 7) % 5) * 0.08; cyl(g, 0.03, 0.04, h, 0xF4EBDD, 0, 0, 0, { line: 0.006, seg: 6 });
@@ -2093,8 +2093,8 @@ function start() {
       }
       const gl = glow(S, [0x7FE0D0, 0xB6A0F0, 0x9FE07A][k % 3], 1.4, cx, 0.4, cz); gl.material.opacity = 0.55;
     });
-    const pitRug = new THREE.Mesh(new THREE.CircleGeometry(2.2, 40), toon(0x5E4A6E)); pitRug.rotation.x = -Math.PI / 2; pitRug.position.set(PIT[0], 0.012, PIT[1]); pitRug.receiveShadow = true; S.add(pitRug); mark(P, pitRug, { floor: 0 });
-    const pitRing = new THREE.Mesh(new THREE.RingGeometry(1.95, 2.1, 40), toon(0xE3A857)); pitRing.rotation.x = -Math.PI / 2; pitRing.position.set(PIT[0], 0.014, PIT[1]); S.add(pitRing);
+    const pitRug = new THREE.Mesh(new THREE.CircleGeometry(2.5, 40), toon(0x5E4A6E)); pitRug.rotation.x = -Math.PI / 2; pitRug.position.set(PIT[0], 0.012, PIT[1]); pitRug.receiveShadow = true; S.add(pitRug); mark(P, pitRug, { floor: 0 });
+    const pitRing = new THREE.Mesh(new THREE.RingGeometry(2.3, 2.45, 40), toon(0xE3A857)); pitRing.rotation.x = -Math.PI / 2; pitRing.position.set(PIT[0], 0.014, PIT[1]); S.add(pitRing);
     P.seats.filter((st) => st.id.startsWith('pit')).forEach((st, i) => { const c = cyl(S, 0.42, 0.46, 0.17, [0xE3A857, 0x9BB7D4, 0xB98DB5, 0x6E8B74, 0xD98C6C][i % 5], st.x, 0.012, st.z, { line: 0.02 }); mark(P, c, { seat: st.id }); st.mesh = c; });
     const lantern = new THREE.Group(); box(lantern, 0.24, 0.32, 0.24, 0x3B2618, 0, 0, 0, { line: 0.008 }); glow(lantern, 0xffd27a, 1.6, 0, 0.18, 0); const pl = new THREE.PointLight(0xffb86a, 2.2, 5, 1.5); pl.position.y = 0.25; lantern.add(pl); lantern.position.set(PIT[0], 0.01, PIT[1]); S.add(lantern);
     // 등불 기둥 넷
