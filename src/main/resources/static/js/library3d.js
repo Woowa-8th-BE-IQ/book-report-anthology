@@ -306,25 +306,36 @@ function start() {
       },
     },
   });
-  // 지하 서고 굴: 16m×10m. 두더지 굴 같은 아카이브. 흙벽 책 굴, 가운데 이 문집이 놓인 받침, 둥근 굴방, 책 실은 광차, 빛나는 버섯
-  const STUMPS = [[0, -2.3, 0], [1.9, -0.5, -Math.PI / 2], [0, 1.3, Math.PI], [-1.9, -0.5, Math.PI / 2]];
+  // 지하 서고 굴: 28m×18m 큰 동굴 서고. 뒤에 두 층 책 굴 벽과 위 회랑, 가운데 이 문집이 떠 있는 받침과 그루터기 여섯,
+  // 양옆 천장까지 닿는 뿌리 기둥, 왼쪽 벽 폭포에서 흐르는 물길과 아치 다리, 오른쪽 광차 길, 오른쪽 앞 수정 웅덩이,
+  // 물길 건너 거대 버섯 숲과 굴방 셋, 둥근 독서 자리
+  const CAVE = { w: 28, d: 18, h: 6.5 };
+  const PED = [0, -1.5]; // 받침
+  const STUMPS = [0, 1, 2, 3, 4, 5].map((k) => { const a = Math.PI / 6 + (k * Math.PI) / 3; return [PED[0] + Math.sin(a) * 2.1, PED[1] + Math.cos(a) * 2.1, a + Math.PI, a]; });
+  const STREAM = { z0: 4.6, z1: 5.8, x1: 5.8, bridge: [-3.8, -2.2] }; // 물길(왼쪽 벽에서 수정 웅덩이까지), 다리 자리
+  const BURROWS = [-11.5, -9.0, -6.5]; // 굴방 x(z 7.6)
+  const PIT = [1.8, 7.3]; // 둥근 독서 자리 가운데
   const cave = newPlace('cave', '지하 서고 굴', {
     label: '지하 서고 굴', short: '지하', tag: '지하 굴',
-    toRatio: (x, z) => [(x + 8) / 16, (z + 5) / 10],
-    fromRatio: (rx, ry) => [rx * 16 - 8, ry * 10 - 5],
-    bounds: [-8, -5, 8, 5],
-    spawn: () => [-6.9, -3.2],
+    toRatio: (x, z) => [(x + CAVE.w / 2) / CAVE.w, (z + CAVE.d / 2) / CAVE.d],
+    fromRatio: (rx, ry) => [rx * CAVE.w - CAVE.w / 2, ry * CAVE.d - CAVE.d / 2],
+    bounds: [-CAVE.w / 2, -CAVE.d / 2, CAVE.w / 2, CAVE.d / 2],
+    spawn: () => [-12.85, -3.2],
     stairs: null,
     fixedLight: true,
     layers: {
       0: {
-        rect: [-7.75, -4.75, 7.75, 4.75],
+        rect: [-13.75, -8.0, 13.75, 8.75],
         blocks: [
-          { r: [-6.4, -5, 6.4, -4.3] }, // 뒤 책 굴
-          { c: [0, -0.5, 0.75] }, ...STUMPS.map(([x, z]) => ({ c: [x, z, 0.24] })), // 받침과 그루터기
-          { r: [6.1, -4.8, 7.9, 4.8] }, // 광차 길
-          { c: [-5.4, 3.7, 0.95] }, { c: [-2.9, 3.7, 0.95] }, // 굴방 둘(앞이 트였지만 둘레는 막힌다)
-          { c: [3.4, 3.5, 0.55] }, { c: [4.6, 2.8, 0.35] }, { c: [-7.2, -4.3, 0.3] }, // 버섯 무리, 물웅덩이 옆 바위
+          { c: [PED[0], PED[1], 0.85] }, ...STUMPS.map(([x, z]) => ({ c: [x, z, 0.24] })), // 받침과 그루터기
+          { c: [-7.5, -5.0, 0.95] }, { c: [7.5, -5.0, 0.95] }, // 뿌리 기둥
+          { r: [-14, STREAM.z0, STREAM.bridge[0], STREAM.z1] }, { r: [STREAM.bridge[1], STREAM.z0, STREAM.x1, STREAM.z1] }, { c: [6.8, 5.2, 1.25] }, // 물길(다리만 건넌다), 웅덩이
+          { c: [8.7, 6.9, 0.9] }, { c: [8.4, 3.5, 0.6] }, { c: [5.6, 7.6, 0.45] }, // 수정
+          { r: [10.6, -8.6, 12.1, 8.6] }, { r: [12.5, -6.2, 14, -2.8] }, { r: [12.5, 2.8, 14, 6.2] }, // 광차 길, 책 상자
+          ...BURROWS.map((x) => ({ c: [x, 7.6, 0.95] })), // 굴방
+          { c: [-1.6, 7.9, 0.45] }, { c: [-13.0, 7.9, 0.45] }, { c: [4.2, 8.3, 0.4] }, // 거대 버섯
+          ...[0, 1, 2, 3, 4].map((k) => { const a = (k * 2 * Math.PI) / 5; return { c: [PIT[0] + Math.sin(a) * 1.5, PIT[1] + Math.cos(a) * 1.5, 0.42] }; }), // 독서 방석
+          ...[[-4.5, -3.0], [4.5, -3.0], [-9.0, 2.0], [9.0, 2.0]].map(([x, z]) => ({ c: [x, z, 0.12] })), // 등불 기둥
         ],
       },
     },
@@ -471,8 +482,9 @@ function start() {
     seat(cafe, { id: `${s.id}-${i + 1}`, kind: 'sofa', x, z, top: 0.5, yaw: s.yaw, from: turnAt(s.x, s.z, s.yaw, lx, 1.0) });
   }));
   ARMS.forEach((a) => seat(cafe, { id: a.id, kind: 'sofa', x: a.x, z: a.z, top: 0.5, yaw: a.yaw, from: turnAt(a.x, a.z, a.yaw, 0, 0.95) }));
-  STUMPS.forEach(([x, z, yaw], i) => seat(cave, { id: `stump-${i + 1}`, kind: 'stool', x, z, top: 0.45, yaw, from: [x + Math.sin(yaw + Math.PI / 2) * 0.7, z + Math.cos(yaw + Math.PI / 2) * 0.7] }));
-  [-5.4, -2.9].forEach((x, i) => seat(cave, { id: `burrow-${i + 1}`, kind: 'cushion', x, z: 3.75, top: 0.17, yaw: 0, from: [x, 2.45] }));
+  STUMPS.forEach(([x, z, yaw, a], i) => seat(cave, { id: `stump-${i + 1}`, kind: 'stool', x, z, top: 0.45, yaw, from: [PED[0] + Math.sin(a) * 2.9, PED[1] + Math.cos(a) * 2.9] }));
+  BURROWS.forEach((x, i) => seat(cave, { id: `burrow-${i + 1}`, kind: 'cushion', x, z: 7.6, top: 0.17, yaw: 0, from: [x, 6.3] }));
+  [0, 1, 2, 3, 4].forEach((k) => { const a = (k * 2 * Math.PI) / 5; seat(cave, { id: `pit-${k + 1}`, kind: 'cushion', x: PIT[0] + Math.sin(a) * 1.5, z: PIT[1] + Math.cos(a) * 1.5, top: 0.18, yaw: a + Math.PI, from: [PIT[0] + Math.sin(a) * 0.55, PIT[1] + Math.cos(a) * 0.55] }); });
   DESK_ROWS.forEach((z, r) => DESKS.forEach((x, i) => seat(scribe, { id: `desk-${r * 4 + i + 1}`, kind: 'chair', desk: true, x, z: z + 0.8, top: 0.47, yaw: Math.PI, from: [x + 0.65, z + 1.15], lamp: `S-${r * 4 + i + 1}` })));
   [6.8, 8.2].forEach((x, i) => seat(scribe, { id: `window-${i + 1}`, kind: 'bench', x, z: -6.45, top: 0.45, yaw: 0, from: [x, -5.65] }));
   NOOK.forEach(([x, yaw], i) => seat(scribe, { id: `nook-${i + 1}`, kind: 'sofa', x, z: 4.6, top: 0.5, yaw, from: turnAt(x, 4.6, yaw, 0, 0.95) }));
@@ -484,7 +496,7 @@ function start() {
   [-2.6, -1.6, 1.6, 2.6].forEach((x, i) => seat(forum, { id: `gallery-${i + 1}`, kind: 'bench', x, z: 5.92, top: 0.45, yaw: Math.PI, from: [x, 5.1] }));
   hall.hots = { book: { at: [0, -2.3], level: 0, card: 'book', tip: '펼친 책' }, board: { at: [-9.2, -0.9], level: 0, card: 'board', tip: '글감 질문' }, shelf: { at: [7.6, -0.6], level: 0, card: 'shelf', tip: '우리 책장' } };
   roof.hots = { stars: { at: [8.8, 5.4], level: 0, card: 'stars', tip: '별 보는 망원경' }, bar: { at: [0.7, -4.6], level: 0, card: 'cafe', tip: '별빛 바' }, shelf: { at: [-10.3, -4.3], level: 0, card: 'shelf', tip: '옥상 책장' } };
-  cave.hots = { archive: { at: [0, 0.75], level: 0, card: 'book', tip: '이 문집' }, cart: { at: [5.6, 0], level: 0, card: 'shelf', tip: '책 광차' } };
+  cave.hots = { archive: { at: [0, 0.9], level: 0, card: 'book', tip: '이 문집' }, cart: { at: [10.2, 0], level: 0, card: 'shelf', tip: '책 광차' } };
   scribe.hots = { wall: { at: [10.9, -0.9], level: 0, card: 'wall', tip: '필사 벽' }, shelf: { at: [-3.5, 5.4], level: 0, card: 'shelf', tip: '필사실 책장' } };
   forum.hots = { topic: { at: [0, -4.4], level: 0, card: 'topic', tip: '발제 칠판' }, shelf: { at: [10.8, -4.8], level: 0, card: 'shelf', tip: '토론 책장' } };
   cafe.hots = { counter: { at: [8.55, 0], level: 0, card: 'cafe', tip: '사락 카운터' }, shelf: { at: [-10.8, 3.75], level: 0, card: 'shelf', tip: '카페 책장' } };
@@ -504,10 +516,10 @@ function start() {
     { id: 'down', dir: 'down', level: 0, zone: (x, z) => x < -11.5 && z > 0.3 && z < 1.3, at: [-11.45, 0.8] },
   ];
   cave.portals = [
-    { id: 'lift', lift: true, level: 0, zone: (x, z) => x < -7.5 && z > -3.7 && z < -2.7, at: [-7.45, -3.2], tip: '책 엘리베이터' },
-    { id: 'up', dir: 'up', level: 0, zone: (x, z) => x < -7.5 && z > -1.7 && z < -0.7, at: [-7.45, -1.2] },
+    { id: 'lift', lift: true, level: 0, zone: (x, z) => x < -13.5 && z > -3.7 && z < -2.7, at: [-13.45, -3.2], tip: '책 엘리베이터' },
+    { id: 'up', dir: 'up', level: 0, zone: (x, z) => x < -13.5 && z > -1.7 && z < -0.7, at: [-13.45, -1.2] },
   ];
-  cave.arriveFromAbove = { x: -6.85, z: -1.2, layer: 0 }; cave.liftArrive = { x: -6.85, z: -3.2, layer: 0 };
+  cave.arriveFromAbove = { x: -12.85, z: -1.2, layer: 0 }; cave.liftArrive = { x: -12.85, z: -3.2, layer: 0 };
   scribe.portals = [
     { id: 'lift', lift: true, level: 0, zone: (x, z) => x < -11.5 && z > -3.7 && z < -2.7, at: [-11.45, -3.2], tip: '책 엘리베이터' },
     { id: 'up', dir: 'up', level: 0, zone: (x, z) => x < -11.5 && z > -1.7 && z < -0.7, at: [-11.45, -1.2] },
@@ -1944,114 +1956,176 @@ function start() {
 
 
 
-  // ───────── 지하 서고 굴 짓기 ─────────
+  // ───────── 지하 서고 굴 짓기: 큰 동굴 서고 ─────────
   const buildCave = (P) => {
     const S = P.scene;
-    box(S, 16.6, 0.59, 10.6, 0x3B2A1E, 0, -0.6, 0, { line: 0.05, cast: false });
-    const dirt = canvasTex(1024, 640, (g, w, h) => {
+    const { w: W, d: D, h: H } = CAVE; const hw = W / 2; const hd = D / 2;
+    box(S, W + 0.6, 0.59, D + 0.6, 0x3B2A1E, 0, -0.6, 0, { line: 0.05, cast: false });
+    const dirt = canvasTex(2048, 1317, (g, w, h) => {
       const rand = seeded(131); g.fillStyle = '#7A5A40'; g.fillRect(0, 0, w, h);
-      for (let i = 0; i < 2600; i++) { const v = rand(); g.fillStyle = v < 0.5 ? 'rgba(60,40,26,.25)' : 'rgba(160,120,84,.22)'; g.fillRect(rand() * w, rand() * h, 3 + rand() * 6, 2 + rand() * 4); }
-      for (let i = 0; i < 90; i++) { g.fillStyle = ['#A08670', '#8C7460', '#B59C80'][i % 3]; g.beginPath(); g.ellipse(rand() * w, rand() * h, 5 + rand() * 9, 4 + rand() * 6, rand() * 3, 0, Math.PI * 2); g.fill(); g.strokeStyle = 'rgba(46,36,28,.5)'; g.lineWidth = 1.5; g.stroke(); }
+      for (let i = 0; i < 7000; i++) { const v = rand(); g.fillStyle = v < 0.5 ? 'rgba(60,40,26,.25)' : 'rgba(160,120,84,.22)'; g.fillRect(rand() * w, rand() * h, 3 + rand() * 6, 2 + rand() * 4); }
+      for (let i = 0; i < 260; i++) { g.fillStyle = ['#A08670', '#8C7460', '#B59C80'][i % 3]; g.beginPath(); g.ellipse(rand() * w, rand() * h, 5 + rand() * 9, 4 + rand() * 6, rand() * 3, 0, Math.PI * 2); g.fill(); g.strokeStyle = 'rgba(46,36,28,.5)'; g.lineWidth = 1.5; g.stroke(); }
     });
-    const floor = plane(S, 16, 10, toon(0xffffff, { map: dirt }), 0, 0, 0, { rx: -Math.PI / 2 }); mark(P, floor, { floor: 0 });
-    const strata = canvasTex(1024, 320, (g, w, h) => {
+    const floor = plane(S, W, D, toon(0xffffff, { map: dirt }), 0, 0, 0, { rx: -Math.PI / 2 }); mark(P, floor, { floor: 0 });
+    const strata = (rep) => canvasTex(1024, 320, (g, w, h) => {
       const bands = ['#6B4E3A', '#7E5E45', '#5E4332', '#8A6A4E', '#6B4E3A', '#5A402F'];
       bands.forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.moveTo(0, (i / bands.length) * h); for (let x = 0; x <= w; x += 32) g.lineTo(x, (i / bands.length) * h + Math.sin(x * 0.02 + i) * 8); g.lineTo(w, h); g.lineTo(0, h); g.fill(); });
       const rand = seeded(137); for (let i = 0; i < 70; i++) { g.fillStyle = 'rgba(180,150,110,.5)'; g.beginPath(); g.arc(rand() * w, rand() * h, 3 + rand() * 6, 0, Math.PI * 2); g.fill(); }
-    }, { repeat: [3, 1] });
-    const wallMat = toon(0xffffff, { map: strata });
-    // 뒤 흙벽: 책을 꽂은 굴 일곱(아치 구멍 안이 책장)
-    const back = new THREE.Group();
-    const bw = new THREE.Mesh(new THREE.BoxGeometry(16.6, 4.8, 0.6), wallMat); bw.position.set(0, 2.4, -5.3); bw.receiveShadow = true; back.add(bw);
-    for (let i = 0; i < 7; i++) {
-      const x = -5.4 + i * 1.8;
-      box(back, 1.5, 2.6, 0.7, 0x4A3526, x, 0.3, -4.65, { line: 0.03, cast: false });
-      shelfFace(P, back, 1.3, 2.4, 4, 141 + i, x, 0.4, -4.295);
-      const arch = solid(new THREE.TorusGeometry(0.75, 0.12, 6, 14, Math.PI), 0x5E4332, { line: 0.02 }); arch.position.set(x, 2.9, -4.35); back.add(arch);
-      [-0.75, 0.75].forEach((dx) => box(back, 0.24, 2.6, 0.3, 0x5E4332, x + dx, 0.3, -4.35, { line: 0.015 }));
-    }
-    // 벽 위에서 늘어진 뿌리
+    }, { repeat: [rep, 1.4] });
     const rand = seeded(149);
-    for (let i = 0; i < 26; i++) { const len = 0.6 + rand() * 1.6; const root = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.035, len, 4), toon(0x8C6A4A)); root.position.set(-7.6 + rand() * 15.2, 4.8 - len / 2, -4.95 + rand() * 0.2); root.rotation.z = (rand() - 0.5) * 0.4; back.add(root); }
-    const plate = plane(back, 3.0, 0.6, toon(0xffffff, { map: signTex('지하 서고 굴', { bg: '#3B2618', fg: '#F2D16B' }) }), 0, 4.05, -4.98); plate.castShadow = false;
+    // 뒤 흙벽: 아래층 책 굴 열하나, 위층 회랑과 책 굴, 늘어진 뿌리
+    const back = new THREE.Group();
+    const bw = new THREE.Mesh(new THREE.BoxGeometry(W + 0.6, H, 0.6), toon(0xffffff, { map: strata(5) })); bw.position.set(0, H / 2, -hd - 0.3); bw.receiveShadow = true; back.add(bw);
+    const alcove = (x, y, z, n) => {
+      box(back, 1.6, 2.5, 0.7, 0x4A3526, x, y, z, { line: 0.03, cast: false });
+      shelfFace(P, back, 1.36, 2.3, 4, 141 + n, x, y + 0.1, z + 0.355);
+      const arch = solid(new THREE.TorusGeometry(0.8, 0.13, 6, 14, Math.PI), 0x5E4332, { line: 0.02 }); arch.position.set(x, y + 2.5, z + 0.3); back.add(arch);
+      [-0.8, 0.8].forEach((dx) => box(back, 0.26, 2.5, 0.3, 0x5E4332, x + dx, y, z + 0.3, { line: 0.015 }));
+    };
+    for (let i = 0; i < 11; i++) alcove(-11 + i * 2.2, 0.15, -hd + 0.35, i);
+    for (let i = 0; i < 10; i++) alcove(-9.9 + i * 2.2, 3.55, -hd + 0.35, 20 + i);
+    box(back, W - 2, 0.16, 1.1, 0x6B4430, 0, 3.35, -hd + 0.75, { line: 0.02 }); // 위 회랑 마루
+    for (let x = -hw + 1.2; x <= hw - 1.2; x += 0.6) cyl(back, 0.03, 0.03, 0.8, 0xB98A5E, x, 3.51, -hd + 1.25, { line: 0.008, seg: 6 });
+    box(back, W - 2, 0.07, 0.08, 0x8C5A3B, 0, 4.31, -hd + 1.25, { line: 0.01 });
+    for (let x = -hw + 1.5; x < hw - 1; x += 3.0) { const br = box(back, 0.12, 0.6, 0.12, 0x5E4332, x, 2.75, -hd + 0.75, { line: 0.01 }); br.rotation.x = 0.6; }
+    [-hw + 0.9, hw - 0.9].forEach((x) => { const lad = new THREE.Group(); [-0.22, 0.22].forEach((dx) => box(lad, 0.07, 3.6, 0.07, 0xB98A5E, dx, 0, 0, { line: 0.012 })); for (let i = 1; i < 11; i++) box(lad, 0.44, 0.05, 0.06, 0xB98A5E, 0, i * 0.33, 0, { line: 0.008 }); lad.position.set(x, 0, -hd + 1.5); lad.rotation.x = -0.18; back.add(lad); });
+    for (let i = 0; i < 46; i++) { const len = 0.6 + rand() * 1.8; const root = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.035, len, 4), toon(0x8C6A4A)); root.position.set(-hw + 0.5 + rand() * (W - 1), H - len / 2, -hd + 0.05 + rand() * 0.2); root.rotation.z = (rand() - 0.5) * 0.4; back.add(root); }
+    const plate = plane(back, 3.6, 0.7, toon(0xffffff, { map: signTex('지하 서고 굴', { bg: '#3B2618', fg: '#F2D16B' }) }), 0, H - 0.55, -hd + 0.02); plate.castShadow = false;
     block(P, back); S.add(back); P.walls.push({ group: back, nx: 0, nz: 1 });
+    // 왼쪽 벽: 엘리베이터·계단 문, 앞쪽 폭포
     const left = new THREE.Group();
-    const lw = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4.8, 10.6), wallMat); lw.position.set(-8.3, 2.4, 0); lw.receiveShadow = true; left.add(lw);
-    box(left, 2.2, 3.2, 0.12, 0x5E4332, -7.97, 0, -3.2, { line: 0.02, ry: Math.PI / 2 });
-    liftDoor(P, left, -7.95, -3.2, Math.PI / 2);
-    stairDoor(P, left, -7.97, -1.2, Math.PI / 2, 'up');
+    const lw = new THREE.Mesh(new THREE.BoxGeometry(0.6, H, D + 0.6), toon(0xffffff, { map: strata(3.5) })); lw.position.set(-hw - 0.3, H / 2, 0); lw.receiveShadow = true; left.add(lw);
+    box(left, 2.2, 3.2, 0.12, 0x5E4332, -hw + 0.03, 0, -3.2, { line: 0.02, ry: Math.PI / 2 });
+    liftDoor(P, left, -hw + 0.05, -3.2, Math.PI / 2);
+    stairDoor(P, left, -hw + 0.03, -1.2, Math.PI / 2, 'up');
+    P.fall = canvasTex(128, 256, (g, w, h) => { g.fillStyle = '#7FC4D8'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(240,252,255,.7)'; g.lineWidth = 3; const r = seeded(9); for (let i = 0; i < 30; i++) { const x = r() * w; g.beginPath(); g.moveTo(x, r() * h); g.lineTo(x + (r() - 0.5) * 4, r() * h + 40); g.stroke(); } }, { repeat: [1, 2] });
+    const fall = plane(left, 1.3, 3.6, new THREE.MeshLambertMaterial({ map: P.fall, transparent: true, opacity: 0.85, emissive: 0x1a4a58 }), -hw + 0.12, 1.8, 5.2, { ry: Math.PI / 2, receive: false });
+    fall.renderOrder = 2;
+    [-0.8, 0.8].forEach((dz) => { const rk = solid(new THREE.DodecahedronGeometry(0.45, 0), 0x6E6258, { line: 0.02 }); rk.position.set(-hw + 0.35, 3.6 + Math.abs(dz) * 0.2, 5.2 + dz); left.add(rk); });
     block(P, left); S.add(left); P.walls.push({ group: left, nx: 1, nz: 0 });
     const right = new THREE.Group();
-    const rw = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4.8, 10.6), wallMat); rw.position.set(8.3, 2.4, 0); rw.receiveShadow = true; right.add(rw);
+    const rw = new THREE.Mesh(new THREE.BoxGeometry(0.6, H, D + 0.6), toon(0xffffff, { map: strata(3.5) })); rw.position.set(hw + 0.3, H / 2, 0); rw.receiveShadow = true; right.add(rw);
     block(P, right); S.add(right); P.walls.push({ group: right, nx: -1, nz: 0 });
-    // 가운데 받침: 이 문집이 펼쳐져 떠 있고, 둘레에 그루터기 넷
-    const rune = canvasTex(512, 512, (g) => { g.strokeStyle = '#F2D16B'; g.globalAlpha = 0.55; g.lineWidth = 6; g.beginPath(); g.arc(256, 256, 240, 0, Math.PI * 2); g.stroke(); g.setLineDash([18, 14]); g.beginPath(); g.arc(256, 256, 200, 0, Math.PI * 2); g.stroke(); });
-    const ring = new THREE.Mesh(new THREE.CircleGeometry(2.4, 40), new THREE.MeshBasicMaterial({ map: rune, transparent: true, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.set(0, 0.015, -0.5); S.add(ring); mark(P, ring, { floor: 0 });
+    // 가운데 받침: 이 문집이 펼쳐져 떠 있고, 둘레에 룬 고리와 그루터기 여섯
+    const rune = canvasTex(512, 512, (g) => { g.strokeStyle = '#F2D16B'; g.globalAlpha = 0.6; g.lineWidth = 6; g.beginPath(); g.arc(256, 256, 244, 0, Math.PI * 2); g.stroke(); g.setLineDash([18, 14]); g.beginPath(); g.arc(256, 256, 204, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); g.lineWidth = 3; for (let k = 0; k < 12; k++) { const a = (k / 12) * Math.PI * 2; g.beginPath(); g.moveTo(256 + Math.cos(a) * 150, 256 + Math.sin(a) * 150); g.lineTo(256 + Math.cos(a) * 190, 256 + Math.sin(a) * 190); g.stroke(); } });
+    const ring = new THREE.Mesh(new THREE.CircleGeometry(3.2, 48), new THREE.MeshBasicMaterial({ map: rune, transparent: true, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.set(PED[0], 0.015, PED[1]); S.add(ring); mark(P, ring, { floor: 0 });
+    P.rune = ring;
     const ped = new THREE.Group();
-    cyl(ped, 0.7, 0.85, 0.5, 0x8C7460, 0, 0, 0, { line: 0.03, seg: 10 });
-    cyl(ped, 0.55, 0.6, 0.35, 0x9C846E, 0, 0.5, 0, { line: 0.02, seg: 10 });
-    const bookG = new THREE.Group(); bookG.position.y = 1.25; ped.add(bookG);
-    [-1, 1].forEach((k) => { const c = box(bookG, 0.5, 0.04, 0.7, 0xE4572E, k * 0.25, 0, 0, { line: 0.012 }); c.rotation.z = -k * 0.18; const pg = box(bookG, 0.46, 0.05, 0.64, 0xFFFDF8, k * 0.23, 0.04, 0, { line: 0.01 }); pg.rotation.z = -k * 0.18; });
-    P.bookGlow = glow(bookG, 0xFFE9A8, 1.8, 0, 0.1, 0);
-    const bookLight = new THREE.PointLight(0xffd98a, 5, 7, 1.4); bookLight.position.y = 0.3; bookG.add(bookLight);
+    cyl(ped, 0.75, 0.9, 0.5, 0x8C7460, 0, 0, 0, { line: 0.03, seg: 10 });
+    cyl(ped, 0.58, 0.64, 0.4, 0x9C846E, 0, 0.5, 0, { line: 0.02, seg: 10 });
+    [0, 1, 2, 3].forEach((k) => { const a = (k / 4) * Math.PI * 2 + 0.4; const c = solid(new THREE.OctahedronGeometry(0.16, 0), 0xB6A0F0, { line: 0.008, mat: new THREE.MeshToonMaterial({ color: 0xB6A0F0, emissive: 0x5A40A0, emissiveIntensity: 0.9, gradientMap: gradient }) }); c.scale.y = 1.8; c.position.set(Math.cos(a) * 0.62, 0.95, Math.sin(a) * 0.62); ped.add(c); });
+    const bookG = new THREE.Group(); bookG.position.y = 1.35; ped.add(bookG);
+    [-1, 1].forEach((k) => { const c = box(bookG, 0.6, 0.05, 0.8, 0xE4572E, k * 0.3, 0, 0, { line: 0.012 }); c.rotation.z = -k * 0.18; const pg = box(bookG, 0.56, 0.06, 0.74, 0xFFFDF8, k * 0.28, 0.04, 0, { line: 0.01 }); pg.rotation.z = -k * 0.18; });
+    P.bookGlow = glow(bookG, 0xFFE9A8, 2.4, 0, 0.1, 0);
+    const bookLight = new THREE.PointLight(0xffd98a, 6, 9, 1.4); bookLight.position.y = 0.3; bookG.add(bookLight);
     P.bookG = bookG;
-    ped.position.set(0, 0, -0.5); mark(P, ped, { hot: 'archive' }); block(P, ped); S.add(ped);
-    P.seats.filter((st) => st.id.startsWith('stump')).forEach((st) => { const g = new THREE.Group(); const t = cyl(g, 0.22, 0.26, 0.45, 0x8C6A4A, 0, 0, 0, { line: 0.02, seg: 9 }); const top = new THREE.Mesh(new THREE.CircleGeometry(0.22, 9), toon(0xD9B98C)); top.rotation.x = -Math.PI / 2; top.position.y = 0.452; g.add(top); g.position.set(st.x, 0, st.z); mark(P, g, { seat: st.id }); S.add(g); st.mesh = g; });
-    // 굴방 둘: 앞이 트인 흙 반구 안에 방석과 작은 등
-    P.seats.filter((st) => st.id.startsWith('burrow')).forEach((st, i) => {
+    ped.position.set(PED[0], 0, PED[1]); mark(P, ped, { hot: 'archive' }); block(P, ped); S.add(ped);
+    P.seats.filter((st) => st.id.startsWith('stump')).forEach((st) => { const g = new THREE.Group(); cyl(g, 0.22, 0.26, 0.45, 0x8C6A4A, 0, 0, 0, { line: 0.02, seg: 9 }); const top = new THREE.Mesh(new THREE.CircleGeometry(0.22, 9), toon(0xD9B98C)); top.rotation.x = -Math.PI / 2; top.position.y = 0.452; g.add(top); g.position.set(st.x, 0, st.z); mark(P, g, { seat: st.id }); S.add(g); st.mesh = g; });
+    // 뿌리 기둥 둘: 천장에서 바닥까지 꼬여 내려온다
+    [-7.5, 7.5].forEach((x, k) => {
       const g = new THREE.Group();
-      const dome = solid(new THREE.SphereGeometry(1.0, 18, 10, Math.PI * 0.75, Math.PI * 1.5, 0, Math.PI / 2), 0x7E5E45, { line: 0.03, mat: toon(0x7E5E45, { side: THREE.DoubleSide }) });
-      dome.scale.set(1, 1.25, 1); g.add(dome);
-      const c = cyl(g, 0.42, 0.46, 0.16, i ? 0x9BB7D4 : 0xE3A857, 0, 0.012, 0, { line: 0.02 });
-      const lan = glow(g, 0xffd27a, 0.9, 0.45, 0.95, -0.45); const ll = new THREE.PointLight(0xffc77a, 1.6, 3, 1.5); ll.position.set(0.4, 0.9, -0.4); g.add(ll);
-      g.position.set(st.x, 0, st.z); mark(P, c, { seat: st.id }); S.add(g); st.mesh = c;
+      for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; const pts = []; for (let j = 0; j <= 10; j++) { const y = (j / 10) * H; const tw = a + j * 0.35 * (k ? 1 : -1); const r = 0.55 + Math.sin(j * 0.8 + i) * 0.12 + (j < 2 ? (2 - j) * 0.35 : 0); pts.push(new THREE.Vector3(Math.cos(tw) * r, y, Math.sin(tw) * r)); } const tube = solid(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.22, 7), 0x7A5A40, { line: 0.02 }); g.add(tube); }
+      for (let i = 0; i < 6; i++) { const lan = glow(g, 0x9FE07A, 0.5, Math.cos(i) * 0.75, 1.2 + i * 0.8, Math.sin(i) * 0.75); lan.material.opacity = 0.7; }
+      g.position.set(x, 0, -5.0); block(P, g); S.add(g);
     });
-    // 광차 길과 책 실은 광차(천천히 오간다)
-    [6.35, 7.05].forEach((x) => box(S, 0.06, 0.06, 9.6, 0x6E7A84, x, 0, 0, { line: 0.01 }));
-    for (let z = -4.6; z <= 4.6; z += 0.5) box(S, 1.0, 0.05, 0.14, 0x5E4332, 6.7, 0, z, { line: 0.008 });
+    // 물길: 폭포 아래 웅덩이에서 수정 웅덩이까지, 둑 돌과 아치 나무다리
+    P.stream = canvasTex(256, 64, (g, w, h) => { g.fillStyle = '#4F8FA8'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(230,250,255,.55)'; g.lineWidth = 2; const r = seeded(17); for (let i = 0; i < 22; i++) { const x = r() * w; const y = r() * h; g.beginPath(); g.moveTo(x, y); g.bezierCurveTo(x + 10, y - 4, x + 20, y + 4, x + 32, y); g.stroke(); } }, { repeat: [10, 1] });
+    const sw = STREAM.x1 + hw; const water = plane(S, sw, STREAM.z1 - STREAM.z0, new THREE.MeshLambertMaterial({ map: P.stream, emissive: 0x153a48, emissiveIntensity: 0.7 }), -hw + sw / 2, 0.02, (STREAM.z0 + STREAM.z1) / 2, { rx: -Math.PI / 2, receive: false });
+    for (let x = -hw + 0.6; x < STREAM.x1; x += 0.9) [STREAM.z0 - 0.05, STREAM.z1 + 0.05].forEach((z, j) => { if (x > STREAM.bridge[0] - 0.3 && x < STREAM.bridge[1] + 0.3) return; const rk = solid(new THREE.DodecahedronGeometry(0.18 + ((x * 7 + j) % 3) * 0.05, 0), 0x8C7460, { line: 0.012 }); rk.position.set(x + (j ? 0.4 : 0), 0.08, z); rk.scale.y = 0.6; S.add(rk); });
+    const pool = new THREE.Mesh(new THREE.CircleGeometry(1.3, 32), new THREE.MeshLambertMaterial({ color: 0x5FB8C8, emissive: 0x1a5560, emissiveIntensity: 0.8 })); pool.rotation.x = -Math.PI / 2; pool.position.set(6.8, 0.025, 5.2); S.add(pool);
+    const fallPool = new THREE.Mesh(new THREE.CircleGeometry(1.0, 24), new THREE.MeshLambertMaterial({ color: 0x5FB8C8, emissive: 0x1a5560, emissiveIntensity: 0.6 })); fallPool.rotation.x = -Math.PI / 2; fallPool.scale.set(0.8, 1.3, 1); fallPool.position.set(-hw + 0.6, 0.025, 5.2); S.add(fallPool);
+    P.ripples = [0, 1, 2].map((i) => { const r = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 24), new THREE.MeshBasicMaterial({ color: 0xDDF0F7, transparent: true, opacity: 0.5, depthWrite: false })); r.rotation.x = -Math.PI / 2; r.position.set(i < 2 ? 6.8 : -hw + 0.6, 0.03, 5.2); r.userData.phase = i * 0.5; S.add(r); return r; });
+    const bridge = new THREE.Group();
+    const bx = (STREAM.bridge[0] + STREAM.bridge[1]) / 2;
+    for (let i = 0; i <= 8; i++) { const t = i / 8; const z = STREAM.z0 - 0.5 + t * (STREAM.z1 - STREAM.z0 + 1.0); const y = Math.sin(t * Math.PI) * 0.35; box(bridge, 1.5, 0.08, 0.2, 0xB98A5E, bx, y, z, { line: 0.008 }); }
+    [-0.78, 0.78].forEach((dx) => { const pts = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push(new THREE.Vector3(bx + dx, 0.9 + Math.sin(t * Math.PI) * 0.35, STREAM.z0 - 0.5 + t * (STREAM.z1 - STREAM.z0 + 1.0))); } const rl = solid(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.04, 6), 0x8C5A3B, { line: 0.008 }); bridge.add(rl); [0, 0.5, 1].forEach((t) => cyl(bridge, 0.04, 0.04, 0.9, 0x8C5A3B, bx + dx, Math.sin(t * Math.PI) * 0.35, STREAM.z0 - 0.5 + t * (STREAM.z1 - STREAM.z0 + 1.0), { line: 0.008, seg: 6 })); });
+    S.add(bridge);
+    // 수정 웅덩이: 보라·청록으로 빛나는 수정 무리
+    P.crystals = [];
+    [[8.7, 6.9, 7, 1.0], [8.4, 3.5, 5, 0.7], [5.6, 7.6, 4, 0.5]].forEach(([cx, cz, n, s], k) => {
+      for (let i = 0; i < n; i++) {
+        const c = [0xB6A0F0, 0x7FE0D0, 0xE8A0D8][(i + k) % 3]; const e = [0x5A40A0, 0x2A8C80, 0x8A3A78][(i + k) % 3];
+        const cr = solid(new THREE.ConeGeometry(0.16 * s + (i % 3) * 0.06, (0.9 + (i % 4) * 0.45) * s * 1.6, 6), c, { line: 0.012, mat: new THREE.MeshToonMaterial({ color: c, emissive: e, emissiveIntensity: 0.9, gradientMap: gradient }) });
+        const a = (i / n) * Math.PI * 2 + k; const r = i ? 0.25 + (i % 3) * 0.18 : 0;
+        cr.position.set(cx + Math.cos(a) * r * s * 1.4, (0.45 + (i % 4) * 0.22) * s * 1.6, cz + Math.sin(a) * r * s * 1.4); cr.rotation.set(Math.sin(a) * 0.35, 0, -Math.cos(a) * 0.35); S.add(cr); P.crystals.push(cr);
+      }
+      const gl = glow(S, [0xB6A0F0, 0x7FE0D0, 0xE8A0D8][k], 2.6 * s + 0.8, cx, 0.8, cz); gl.material.opacity = 0.7;
+    });
+    P.crystalLight = new THREE.PointLight(0xb6a0f0, 4, 9, 1.4); P.crystalLight.position.set(8.0, 1.6, 5.6); S.add(P.crystalLight);
+    // 광차 길과 책 실은 광차(오른쪽 벽을 따라 천천히 오간다), 책 상자 더미
+    [11.0, 11.7].forEach((x) => box(S, 0.06, 0.06, D - 1.4, 0x6E7A84, x, 0, 0, { line: 0.01 }));
+    for (let z = -hd + 0.8; z <= hd - 0.8; z += 0.5) box(S, 1.0, 0.05, 0.14, 0x5E4332, 11.35, 0, z, { line: 0.008 });
+    [-hd + 0.6, hd - 0.6].forEach((z) => box(S, 1.2, 0.5, 0.25, 0x8C5A3B, 11.35, 0, z, { line: 0.015 }));
     const cart = new THREE.Group();
     box(cart, 0.95, 0.55, 1.3, 0x6E7A84, 0, 0.15, 0, { line: 0.025 });
     box(cart, 1.0, 0.06, 1.35, 0x4A545C, 0, 0.7, 0, { line: 0.012 });
     for (let i = 0; i < 8; i++) box(cart, 0.12, 0.3 + (i % 3) * 0.05, 0.4, new THREE.Color(BOOK_COLORS[(i * 3) % BOOK_COLORS.length]).getHex(), -0.4 + (i % 4) * 0.25, 0.7, i < 4 ? -0.25 : 0.25, { line: 0.008 });
-    [-0.4, 0.4].forEach((z) => [-0.35, 0.35].forEach((x) => { const w = cyl(cart, 0.13, 0.13, 0.06, 0x2B1C12, x, 0.02, z, { line: 0.008, seg: 12 }); w.rotation.z = Math.PI / 2; w.position.y = 0.13; }));
-    cart.position.set(6.7, 0, 0); mark(P, cart, { hot: 'cart' }); S.add(cart); P.cart = cart;
-    // 빛나는 버섯 무리, 물웅덩이, 등불 기둥
+    [-0.4, 0.4].forEach((z) => [-0.35, 0.35].forEach((x) => { const wh = cyl(cart, 0.13, 0.13, 0.06, 0x2B1C12, x, 0.02, z, { line: 0.008, seg: 12 }); wh.rotation.z = Math.PI / 2; wh.position.y = 0.13; }));
+    cart.position.set(11.35, 0, 0); mark(P, cart, { hot: 'cart' }); S.add(cart); P.cart = cart;
+    [[-4.5, 3], [4.5, 3]].forEach(([zc, n]) => { for (let i = 0; i < 6; i++) { const cr = box(S, 0.8, 0.55, 0.8, i % 2 ? 0x8C5A3B : 0x9C6B48, 13.2 - (i % 2) * 0.05, Math.floor(i / 2) * 0.55, zc - 1.0 + (i % 3) * 1.0, { line: 0.015 }); cr.rotation.y = (i % 3) * 0.08; } box(S, 0.5, 0.06, 0.4, 0xE3A857, 13.0, 1.65, zc, { line: 0.008 }); });
+    // 물길 건너: 굴방 셋, 거대 버섯 숲, 둥근 독서 자리
+    P.seats.filter((st) => st.id.startsWith('burrow')).forEach((st, i) => {
+      const g = new THREE.Group();
+      const dome = solid(new THREE.SphereGeometry(1.0, 18, 10, Math.PI * 0.75, Math.PI * 1.5, 0, Math.PI / 2), 0x7E5E45, { line: 0.03, mat: toon(0x7E5E45, { side: THREE.DoubleSide }) });
+      dome.scale.set(1, 1.25, 1); g.add(dome);
+      const c = cyl(g, 0.42, 0.46, 0.16, [0xE3A857, 0x9BB7D4, 0xB98DB5][i % 3], 0, 0.012, 0, { line: 0.02 });
+      glow(g, 0xffd27a, 0.9, 0.45, 0.95, -0.45); const ll = new THREE.PointLight(0xffc77a, 1.4, 3, 1.5); ll.position.set(0.4, 0.9, -0.4); g.add(ll);
+      g.position.set(st.x, 0, st.z); mark(P, c, { seat: st.id }); S.add(g); st.mesh = c;
+    });
     P.shrooms = [];
-    [[3.4, 3.5, 7], [4.6, 2.8, 4], [-7.3, 2.0, 3], [5.6, -4.3, 4]].forEach(([cx, cz, n], k) => {
+    const bigShroom = (x, z, h, c, e) => {
+      const g = new THREE.Group();
+      cyl(g, 0.14, 0.22, h, 0xF4EBDD, 0, 0, 0, { line: 0.015, seg: 10 });
+      const cap = solid(new THREE.SphereGeometry(0.9, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2), c, { line: 0.02, mat: new THREE.MeshToonMaterial({ color: c, emissive: e, emissiveIntensity: 0.8, gradientMap: gradient }) });
+      cap.scale.set(1, 0.55, 1); cap.position.y = h; g.add(cap); P.shrooms.push(cap);
+      for (let i = 0; i < 6; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 4), toon(0xFFFDF8)); const a = i * 1.1; d.position.set(Math.cos(a) * 0.55, h + 0.35, Math.sin(a) * 0.55); g.add(d); }
+      const gl = glow(g, c, 2.6, 0, h - 0.2, 0); gl.material.opacity = 0.55;
+      g.position.set(x, 0, z); S.add(g);
+    };
+    bigShroom(-1.6, 7.9, 2.6, 0x7FE0D0, 0x2A8C80); bigShroom(-13.0, 7.9, 3.0, 0xB6A0F0, 0x5A40A0); bigShroom(4.2, 8.3, 2.2, 0x9FE07A, 0x3C8A28);
+    [[-4.6, 7.4, 6], [-12.6, 6.4, 4], [3.0, 6.2, 4], [-7.8, -6.6, 5], [5.6, -7.0, 4], [-11.8, 2.6, 4]].forEach(([cx, cz, n], k) => {
       for (let i = 0; i < n; i++) {
         const g = new THREE.Group(); const a = (i / n) * Math.PI * 2 + k; const r = i ? 0.15 + (i % 3) * 0.13 : 0;
         const h = 0.18 + ((i * 7) % 5) * 0.08; cyl(g, 0.03, 0.04, h, 0xF4EBDD, 0, 0, 0, { line: 0.006, seg: 6 });
-        const cap = solid(new THREE.SphereGeometry(0.1 + (i % 3) * 0.04, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), [0x7FE0D0, 0xB6A0F0, 0x9FE07A][(i + k) % 3], { line: 0.008, mat: new THREE.MeshToonMaterial({ color: [0x7FE0D0, 0xB6A0F0, 0x9FE07A][(i + k) % 3], emissive: [0x2A8C80, 0x5A40A0, 0x3C8A28][(i + k) % 3], emissiveIntensity: 0.9, gradientMap: gradient }) });
+        const col = [0x7FE0D0, 0xB6A0F0, 0x9FE07A][(i + k) % 3];
+        const cap = solid(new THREE.SphereGeometry(0.1 + (i % 3) * 0.04, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), col, { line: 0.008, mat: new THREE.MeshToonMaterial({ color: col, emissive: [0x2A8C80, 0x5A40A0, 0x3C8A28][(i + k) % 3], emissiveIntensity: 0.9, gradientMap: gradient }) });
         cap.position.y = h; g.add(cap); g.position.set(cx + Math.cos(a) * r, 0, cz + Math.sin(a) * r); S.add(g); P.shrooms.push(cap);
       }
-      const gl = glow(S, [0x7FE0D0, 0xB6A0F0, 0x9FE07A, 0x7FE0D0][k], 1.6, cx, 0.4, cz); gl.material.opacity = 0.6;
+      const gl = glow(S, [0x7FE0D0, 0xB6A0F0, 0x9FE07A][k % 3], 1.4, cx, 0.4, cz); gl.material.opacity = 0.55;
     });
-    const puddle = new THREE.Mesh(new THREE.CircleGeometry(0.7, 24), new THREE.MeshBasicMaterial({ color: 0x4F6D8A, transparent: true, opacity: 0.6 })); puddle.rotation.x = -Math.PI / 2; puddle.scale.set(1.3, 1, 1); puddle.position.set(-6.3, 0.014, -3.6); S.add(puddle);
-    P.ripples = [0, 1].map((i) => { const r = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 24), new THREE.MeshBasicMaterial({ color: 0xDDF0F7, transparent: true, opacity: 0.5, depthWrite: false })); r.rotation.x = -Math.PI / 2; r.position.set(-6.3, 0.02, -3.6); r.userData.phase = i * 0.5; S.add(r); return r; });
-    const rock = solid(new THREE.DodecahedronGeometry(0.35, 0), 0x8C7460, { line: 0.02 }); rock.position.set(-7.2, 0.2, -4.3); S.add(rock);
-    [[-3.5, -2.6], [3.5, -2.6], [-1.2, 2.6], [4.6, 0.6]].forEach(([x, z]) => {
-      const g = new THREE.Group(); cyl(g, 0.05, 0.06, 2.0, 0x5E4332, 0, 0, 0, { line: 0.01, seg: 6 });
-      box(g, 0.3, 0.05, 0.05, 0x5E4332, 0.12, 1.95, 0, { line: 0.006 });
-      const lan = new THREE.Group(); lan.position.set(0.25, 1.75, 0); g.add(lan);
+    const pitRug = new THREE.Mesh(new THREE.CircleGeometry(2.2, 40), toon(0x5E4A6E)); pitRug.rotation.x = -Math.PI / 2; pitRug.position.set(PIT[0], 0.012, PIT[1]); pitRug.receiveShadow = true; S.add(pitRug); mark(P, pitRug, { floor: 0 });
+    const pitRing = new THREE.Mesh(new THREE.RingGeometry(1.95, 2.1, 40), toon(0xE3A857)); pitRing.rotation.x = -Math.PI / 2; pitRing.position.set(PIT[0], 0.014, PIT[1]); S.add(pitRing);
+    P.seats.filter((st) => st.id.startsWith('pit')).forEach((st, i) => { const c = cyl(S, 0.42, 0.46, 0.17, [0xE3A857, 0x9BB7D4, 0xB98DB5, 0x6E8B74, 0xD98C6C][i % 5], st.x, 0.012, st.z, { line: 0.02 }); mark(P, c, { seat: st.id }); st.mesh = c; });
+    const lantern = new THREE.Group(); box(lantern, 0.24, 0.32, 0.24, 0x3B2618, 0, 0, 0, { line: 0.008 }); glow(lantern, 0xffd27a, 1.6, 0, 0.18, 0); const pl = new THREE.PointLight(0xffb86a, 2.2, 5, 1.5); pl.position.y = 0.25; lantern.add(pl); lantern.position.set(PIT[0], 0.01, PIT[1]); S.add(lantern);
+    // 등불 기둥 넷
+    [[-4.5, -3.0], [4.5, -3.0], [-9.0, 2.0], [9.0, 2.0]].forEach(([x, z]) => {
+      const g = new THREE.Group(); cyl(g, 0.05, 0.06, 2.2, 0x5E4332, 0, 0, 0, { line: 0.01, seg: 6 });
+      box(g, 0.3, 0.05, 0.05, 0x5E4332, 0.12, 2.15, 0, { line: 0.006 });
+      const lan = new THREE.Group(); lan.position.set(0.25, 1.95, 0); g.add(lan);
       box(lan, 0.18, 0.24, 0.18, 0x3B2618, 0, 0, 0, { line: 0.008 }); glow(lan, 0xffd27a, 1.2, 0, 0.12, 0);
-      const l = new THREE.PointLight(0xffb86a, 2.4, 6, 1.5); l.position.set(0, 0.1, 0); lan.add(l);
+      const l = new THREE.PointLight(0xffb86a, 2.4, 7, 1.5); l.position.set(0, 0.1, 0); lan.add(l);
       g.position.set(x, 0, z); S.add(g);
     });
-    // 반딧불(종이 반딧불이 떠다닌다)
-    const flyGeo = new THREE.BufferGeometry(); const fly = []; for (let i = 0; i < 40; i++) fly.push(-7 + rand() * 13, 0.5 + rand() * 3, -4.5 + rand() * 9);
+    // 종유석: 벽 가까이 천장에서
+    for (let i = 0; i < 24; i++) { const len = 0.5 + rand() * 1.4; const st = solid(new THREE.ConeGeometry(0.12 + rand() * 0.12, len, 6), 0x6E6258, { line: 0.01 }); st.rotation.x = Math.PI; const side = i % 3; st.position.set(side === 0 ? -hw + 0.4 + rand() * 0.6 : side === 1 ? hw - 0.4 - rand() * 0.6 : -hw + rand() * W, H - len / 2, side === 2 ? -hd + 1.4 + rand() * 0.6 : -hd + rand() * D); S.add(st); }
+    // 반딧불
+    const flyGeo = new THREE.BufferGeometry(); const fly = []; for (let i = 0; i < 90; i++) fly.push(-hw + 1 + rand() * (W - 2), 0.5 + rand() * 4, -hd + 1 + rand() * (D - 2));
     flyGeo.setAttribute('position', new THREE.Float32BufferAttribute(fly, 3));
     P.flies = new THREE.Points(flyGeo, new THREE.PointsMaterial({ size: 0.12, map: glowTex, color: 0xF2E39A, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); S.add(P.flies);
     P.hemi = new THREE.HemisphereLight(0xa89888, 0x4a3a2e, 1.2); S.add(P.hemi);
-    P.sun = new THREE.DirectionalLight(0xffd9a8, 0.6); P.sun.position.set(-4, 10, 6); P.sun.castShadow = true; P.sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(P.sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 2, far: 40 }); P.sun.shadow.bias = -0.0006; P.sun.shadow.normalBias = 0.03;
+    P.sun = new THREE.DirectionalLight(0xffd9a8, 0.6); P.sun.position.set(-4, 12, 8); P.sun.castShadow = true; P.sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(P.sun.shadow.camera, { left: -17, right: 17, top: 17, bottom: -17, near: 2, far: 50 }); P.sun.shadow.bias = -0.0006; P.sun.shadow.normalBias = 0.03;
     S.add(P.sun, P.sun.target);
     S.background = new THREE.Color(0x1A120C);
     P.anim = (dt, t) => {
-      P.bookG.position.y = 1.25 + Math.sin(t * 1.4) * 0.06; P.bookG.rotation.y = t * 0.3;
+      P.bookG.position.y = 1.35 + Math.sin(t * 1.4) * 0.06; P.bookG.rotation.y = t * 0.3;
       P.bookGlow.material.opacity = 0.75 + Math.sin(t * 2) * 0.2;
-      P.cart.position.z = Math.sin(t * 0.12) * 3.6;
+      P.rune.rotation.z = t * 0.05;
+      P.cart.position.z = Math.sin(t * 0.1) * (hd - 2.2);
       P.cart.children.filter((m) => m.geometry && m.geometry.type === 'CylinderGeometry').forEach((w) => { w.rotation.x = P.cart.position.z * 6; });
-      P.ripples.forEach((r) => { const k = (t * 0.5 + r.userData.phase) % 1; r.scale.setScalar(0.1 + k * 0.6); r.material.opacity = 0.5 * (1 - k); });
+      P.stream.offset.x = (-t * 0.12) % 1; P.fall.offset.y = (t * 0.6) % 1;
+      P.crystalLight.intensity = 3.6 + Math.sin(t * 1.3) * 0.8;
+      P.ripples.forEach((r) => { const k = (t * 0.5 + r.userData.phase) % 1; r.scale.setScalar(0.1 + k * 0.9); r.material.opacity = 0.5 * (1 - k); });
       const pos = P.flies.geometry.attributes.position; for (let i = 0; i < pos.count; i++) { pos.setY(i, pos.getY(i) + Math.sin(t * 1.3 + i) * dt * 0.15); pos.setX(i, pos.getX(i) + Math.cos(t * 0.7 + i * 2) * dt * 0.12); } pos.needsUpdate = true;
       P.flies.material.opacity = 0.6 + Math.sin(t * 3) * 0.3;
     };
