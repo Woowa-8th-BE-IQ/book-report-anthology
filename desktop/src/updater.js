@@ -2,7 +2,7 @@
 // GitHub 릴리스에서 새 버전(pet-v…)을 찾아 뒤에서 받아 두고, 준비되면 알린다.
 // 사람이 "다시 시작"을 누르면 바로, 아니면 펫을 끌 때 바꿔 끼운다.
 // (서명·공증을 하지 않는 앱이라 Squirrel 대신 직접 바꿔 끼운다.)
-const { app, net } = require('electron');
+const { app, net, powerMonitor } = require('electron');
 const { execFile, spawn } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -17,6 +17,11 @@ const FIRST_CHECK_MS = 15 * 1000;
 const CHECK_EVERY_MS = 30 * 60 * 1000;
 const NEED_BYTES = 420 * 1024 * 1024;
 const RETRY_MS = 30 * 60 * 1000;
+const OFFLINE_RETRY_MS = 2 * 60 * 1000;
+// 잠자기에서 막 깼거나 와이파이가 잠깐 끊긴 것처럼, 조금 뒤 저절로 풀리는 실패. 사람에게 알리지 않고 다시 본다
+const passing = (message) => /ERR_(INTERNET_DISCONNECTED|NETWORK_CHANGED|NETWORK_IO_SUSPENDED|NAME_NOT_RESOLVED|ADDRESS_UNREACHABLE|TIMED_OUT|CONNECTION_\w+|PROXY_\w+|SSL_PROTOCOL_ERROR)|fetch failed|ENOTFOUND|ETIMEDOUT|ECONNRESET|EAI_AGAIN|릴리스 목록 (403|429|5\d\d)|받기 실패 (403|429|5\d\d)/.test(message);
+let retryTimer = null;
+const retryIn = (ms) => { clearTimeout(retryTimer); retryTimer = setTimeout(check, ms); };
 
 let state = { status: 'idle', version: null, staged: null, error: null, checkedAt: null };
 
@@ -105,6 +110,11 @@ const mb = (bytes) => `${Math.round(bytes / 1024 / 1024)}MB`;
 
 async function check() {
   if (!app.isPackaged || ['checking', 'downloading', 'preparing', 'ready', 'applying'].includes(state.status)) return;
+  if (!net.isOnline()) { // 인터넷이 아직 안 붙었으면 확인하지 않고 조금 뒤에 본다
+    log('인터넷 연결 전이라 나중에 확인');
+    retryIn(OFFLINE_RETRY_MS);
+    return;
+  }
   try {
     set({ status: 'checking', error: null });
     log(`확인 시작 (지금 ${app.getVersion()})`);
@@ -155,9 +165,15 @@ async function check() {
     set({ status: 'ready', version, staged, error: null });
   } catch (error) {
     const message = String(error && error.message || error);
+    if (passing(message)) {
+      log(`잠깐 연결이 안 됨, 조금 뒤 다시: ${message}`);
+      set({ status: 'idle', error: null });
+      retryIn(OFFLINE_RETRY_MS);
+      return;
+    }
     log(`실패: ${message}`);
     set({ status: 'idle', error: `업데이트 중 문제가 생겼어요: ${message}` });
-    setTimeout(check, RETRY_MS);
+    retryIn(RETRY_MS);
   }
 }
 
@@ -201,6 +217,8 @@ module.exports = {
     listener = onChange || (() => {});
     setTimeout(check, FIRST_CHECK_MS);
     setInterval(check, CHECK_EVERY_MS);
+    // 잠자기에서 깨면 인터넷이 다시 붙을 틈을 주고 확인한다
+    powerMonitor.on('resume', () => retryIn(30 * 1000));
     // 받아 두기만 하고 누르지 않았으면, 끌 때 조용히 바꿔 끼운다(다음 실행부터 새 버전)
     app.on('before-quit', () => {
       if (state.status === 'ready' && !applyingOnQuit) {

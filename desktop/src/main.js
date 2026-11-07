@@ -1,6 +1,6 @@
 // 덕후감 펫: 모임방의 내 아바타를 바탕화면 위에 띄운다.
 // 창은 투명하고 항상 위에 있으며, 아바타·말풍선·대화창이 아닌 곳의 클릭은 뒤의 앱으로 지나간다.
-const { app, BrowserWindow, Tray, Menu, ipcMain, screen, shell, nativeImage, net } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, screen, shell, nativeImage, net, globalShortcut } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const updater = require('./updater');
@@ -25,6 +25,9 @@ let walking = null;
 let wanderOn = true;
 let wanderTimer = null;
 let refreshTray = () => {};
+// 펫 보이기·숨기기(오버레이): 숨겨도 앱은 켜져 있어 새 말을 계속 받는다. 숨긴 채로 두면 다음에 켤 때도 숨겨 둔다
+const TOGGLE_KEY = process.platform === 'darwin' ? 'Control+Alt+Command+H' : 'Control+Alt+Shift+H';
+let unseen = false; // 숨긴 동안 온 새 말
 
 // ───────── 설정(개인 링크) ─────────
 
@@ -157,14 +160,15 @@ function openPet(link) {
     transparent: true, frame: false, resizable: false, movable: true, hasShadow: false,
     alwaysOnTop: true, skipTaskbar: true, fullscreenable: false, show: false,
     backgroundColor: '#00000000', title: '덕후감 펫',
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true },
+    // 숨겨 둔 동안에도 새 말을 받도록 화면이 쉬지 않게 한다
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true, backgroundThrottling: false },
   });
   pet.setAlwaysOnTop(true, 'floating');
   pet.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   pet.setIgnoreMouseEvents(true, { forward: true });
   guard(pet);
   pet.loadURL(`${link}?to=pet`);
-  pet.once('ready-to-show', () => pet.showInactive());
+  pet.once('ready-to-show', () => { if (!readConfig().hidden) pet.showInactive(); });
   pet.webContents.on('did-finish-load', () => {
     sendUpdate(updater.state());
     pet.webContents.send('pet:layout', { flip }); // 새로 그린 화면에도 지금 배치를 알린다
@@ -309,8 +313,35 @@ ipcMain.on('pet:drag-end', (event) => {
 });
 
 ipcMain.on('pet:attention', (event) => {
-  if (pet && event.sender === pet.webContents && process.platform === 'darwin' && app.dock) app.dock.bounce('informational');
+  if (!pet || event.sender !== pet.webContents) return;
+  if (!pet.isVisible()) { // 숨겨 둔 동안 온 새 말은 메뉴 막대 아이콘 옆 점으로 알린다
+    unseen = true;
+    markTray();
+    return;
+  }
+  if (process.platform === 'darwin' && app.dock) app.dock.bounce('informational');
 });
+
+function markTray() {
+  if (!tray) return;
+  if (process.platform === 'darwin') tray.setTitle(unseen ? '●' : '');
+  tray.setToolTip(unseen ? '덕후감 펫 · 새 말이 있어요' : '덕후감 펫');
+}
+
+/** 펫을 보이거나 숨긴다. 숨겨도 꺼지지 않는다. */
+function setPetVisible(on) {
+  writeConfig({ ...readConfig(), hidden: !on });
+  if (on) {
+    if (!pet) { const links = linksOf(readConfig()); if (links.length) openPet(links.at(-1)); else openSetup(); }
+    else pet.showInactive();
+    unseen = false;
+    markTray();
+  } else if (pet) {
+    if (expanded) pet.webContents.send('pet:command', 'collapse');
+    pet.hide();
+  }
+  refreshTray();
+}
 
 ipcMain.on('pet:relink', () => openSetup());
 
@@ -343,7 +374,7 @@ async function currentRoomUrl() {
 }
 
 ipcMain.on('pet:hide', (event) => {
-  if (pet && event.sender === pet.webContents) { pet.hide(); refreshTray(); }
+  if (pet && event.sender === pet.webContents) setPetVisible(false);
 });
 ipcMain.on('pet:add', () => openSetup());
 
@@ -380,7 +411,7 @@ function buildTray() {
   };
   const command = (name) => {
     if (!pet) return;
-    pet.showInactive();
+    if (!pet.isVisible()) setPetVisible(true);
     pet.webContents.send('pet:command', name);
   };
   refreshTray = () => {
@@ -400,11 +431,8 @@ function buildTray() {
       { label: `덕후감 펫 ${app.getVersion()}`, enabled: false },
       ...updateItems,
       { type: 'separator' },
-      ...(pet && pet.isVisible() ? [] : [{ label: '펫 다시 띄우기', click: () => {
-        if (!pet) { const links = linksOf(readConfig()); links.length ? openPet(links.at(-1)) : openSetup(); }
-        else pet.showInactive();
-        refreshTray();
-      } }]),
+      { label: unseen ? '펫 보이기 · 새 말 있음' : '펫 보이기', type: 'checkbox', checked: Boolean(pet && pet.isVisible()),
+        accelerator: TOGGLE_KEY, registerAccelerator: false, click: (item) => setPetVisible(item.checked) },
       { label: '산책하기', type: 'checkbox', checked: wanderOn, click: (item) => { wanderOn = item.checked; if (!wanderOn) stopWalk(); } },
       { label: '제자리로', click: () => {
         if (!pet) return;
@@ -436,20 +464,14 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   // 숨긴 펫을 다시 보이게: 응용 프로그램에서 다시 열면 맥은 새로 켜지 않고 activate만 보낸다
-  const reveal = () => {
-    if (pet) {
-      pet.showInactive();
-      refreshTray();
-    } else {
-      const links = linksOf(readConfig());
-      if (links.length) openPet(links.at(-1)); else openSetup();
-    }
-  };
+  const reveal = () => setPetVisible(true);
   app.on('second-instance', reveal);
   app.on('activate', reveal);
   app.whenReady().then(() => {
     if (process.platform === 'darwin' && app.dock) app.dock.hide();
     buildTray();
+    // 어느 앱을 쓰고 있든 단축키로 펫을 숨기고 다시 띄운다
+    globalShortcut.register(TOGGLE_KEY, () => setPetVisible(!(pet && pet.isVisible())));
     updater.start((state) => { refreshTray(); sendUpdate(state); });
     watchBuild();
     setInterval(watchBuild, 5 * 60 * 1000);
@@ -457,4 +479,5 @@ if (!app.requestSingleInstanceLock()) {
     if (links.length) openPet(links.at(-1)); else openSetup();
   });
   app.on('window-all-closed', (event) => event.preventDefault()); // 트레이에 남는다
+  app.on('will-quit', () => globalShortcut.unregisterAll());
 }

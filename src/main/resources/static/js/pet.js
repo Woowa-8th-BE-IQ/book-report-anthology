@@ -281,6 +281,7 @@
     if (command === 'chat') expand(true);
     if (command === 'menu') openMenu();
     if (command === 'create') { expand(true); openCreator(); }
+    if (command === 'collapse') expand(false); // 펫을 숨길 때는 펼친 대화창을 접어 둔다
   });
 
   // ───────── 아바타: 끌면 창이 따라오고, 그냥 누르면 대화창 ─────────
