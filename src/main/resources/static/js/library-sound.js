@@ -84,6 +84,34 @@
     osc.start(t);
     osc.stop(t + attack + decay + 0.05);
   };
+  // 뜯는 줄(베이스·기타): 밝게 시작해 어두워지고, drive면 살짝 찌그러뜨린다
+  let curve = null;
+  const pluck = (d, t, { type = 'sawtooth', freq = 110, level = 0.2, len = 0.3, cutoff = 800, open = 2000, drive = false }) => {
+    const osc = ctx.createOscillator(); osc.type = type; osc.frequency.setValueAtTime(freq, t);
+    const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.Q.value = 1.2;
+    filter.frequency.setValueAtTime(open, t); filter.frequency.exponentialRampToValueAtTime(cutoff, t + Math.min(0.25, len));
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(level, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(level * 0.55, t + len * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + len + 0.08);
+    let head = osc;
+    if (drive) {
+      if (!curve) { curve = new Float32Array(256); for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curve[i] = Math.tanh(x * 3); } }
+      const shaper = ctx.createWaveShaper(); shaper.curve = curve; osc.connect(shaper); head = shaper;
+    }
+    head.connect(filter).connect(g).connect(d);
+    osc.start(t); osc.stop(t + len + 0.12);
+  };
+  // 노래(우~ 아~): 톱니파 둘에 떨림을 주고 모음 공명(포먼트) 둘로 거른다
+  const sing = (d, t, freq, len, level) => {
+    const vib = ctx.createOscillator(); vib.frequency.value = 5.4; const depth = ctx.createGain(); depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(freq * 0.012, t + Math.min(0.35, len)); vib.connect(depth);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(level, t + 0.06);
+    g.gain.setValueAtTime(level, t + Math.max(0.07, len - 0.08)); g.gain.exponentialRampToValueAtTime(0.0001, t + len + 0.12);
+    const vowel = freq > 500 ? [650, 1080] : [420, 820];
+    vowel.forEach((f, i) => { const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = 6; const v = ctx.createGain(); v.gain.value = i ? 0.6 : 1; bp.connect(v).connect(g); [0, 0.006].forEach((det) => { const osc = ctx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(freq * (1 + det), t); depth.connect(osc.frequency); osc.connect(bp); osc.start(t); osc.stop(t + len + 0.15); }); });
+    const lp = ctx.createGain(); lp.gain.value = 2.2; g.connect(lp).connect(d);
+    vib.start(t); vib.stop(t + len + 0.15);
+  };
   const thud = (d, t, level) => tone(d, t, { freq: 125, to: 52, level, attack: 0.003, decay: 0.15 });
   const poof = (d, t, level, decay = 0.24) => burst(d, t, { type: 'lowpass', freq: 950, to: 150, level, attack: 0.014, decay });
   // 나무 삐걱: 불규칙하게 걸리는 마찰을 나무 울림통에 통과시킨다
@@ -251,12 +279,25 @@
     /** 입구 종: 딸랑 */
     bell(sp) { play(sp, 1, (d, t) => { bellHit(d, t, 1320, 0.11); bellHit(d, t + 0.13, 1480, 0.08); bellHit(d, t + 0.27, 1320, 0.05); }); },
     pop(sp) { play(sp, 1, (d, t) => tone(d, t, { freq: 420, to: 980, glide: 0.05, level: 0.11, attack: 0.003, decay: 0.07 })); },
-    /** 피아노 한 음: 망치로 친 듯 바로 올라 길게 사그라든다(바탕음에 배음 둘) */
-    piano(freq, sp, { level = 0.1, len = 1 } = {}) {
-      play(sp, 1, (d, t) => {
-        tone(d, t, { type: 'triangle', freq, level, attack: 0.004, decay: len });
-        tone(d, t, { freq: freq * 2, level: level * 0.3, attack: 0.003, decay: len * 0.45 });
-        tone(d, t, { freq: freq * 3, level: level * 0.1, attack: 0.002, decay: len * 0.2 });
+    /**
+     * 밴드 한 소리. part: kick·snare·hat·crash·tom·floor(드럼), bass, guitar, keys, vocal.
+     * o = { delay(초 뒤), midi, chord[midi…], len(초), level, open(하이햇 열림) }
+     */
+    band(part, sp, o = {}) {
+      play(sp, 1, (d, t0) => {
+        const t = t0 + (o.delay || 0);
+        const lv = o.level ?? 1;
+        const len = o.len || 0.3;
+        const hz = (m) => 440 * 2 ** ((m - 69) / 12);
+        if (part === 'kick') { tone(d, t, { freq: 150, to: 44, glide: 0.1, level: 0.6 * lv, attack: 0.002, decay: 0.3 }); burst(d, t, { type: 'lowpass', freq: 2800, to: 300, level: 0.1 * lv, attack: 0.001, decay: 0.02 }); }
+        else if (part === 'snare') { burst(d, t, { type: 'highpass', freq: 1300, level: 0.3 * lv, attack: 0.001, decay: 0.17 }); tone(d, t, { type: 'triangle', freq: 230, to: 160, level: 0.16 * lv, attack: 0.001, decay: 0.08 }); }
+        else if (part === 'hat') burst(d, t, { type: 'highpass', freq: 7600, level: 0.11 * lv, attack: 0.001, decay: o.open ? 0.3 : 0.035 });
+        else if (part === 'crash') { burst(d, t, { type: 'highpass', freq: 4200, level: 0.2 * lv, attack: 0.002, decay: 1.5 }); burst(d, t, { type: 'bandpass', freq: 6200, q: 0.6, level: 0.08 * lv, attack: 0.002, decay: 0.9 }); }
+        else if (part === 'tom' || part === 'floor') { const f = hz(o.midi || (part === 'tom' ? 50 : 41)); tone(d, t, { freq: f * 1.6, to: f, glide: 0.08, level: 0.42 * lv, attack: 0.002, decay: 0.32 }); burst(d, t, { type: 'lowpass', freq: 1500, level: 0.06 * lv, attack: 0.001, decay: 0.04 }); }
+        else if (part === 'bass') { pluck(d, t, { type: 'sawtooth', freq: hz(o.midi), level: 0.2 * lv, len, cutoff: 520, open: 1500 }); pluck(d, t, { type: 'sine', freq: hz(o.midi), level: 0.16 * lv, len, cutoff: 900, open: 900 }); }
+        else if (part === 'guitar') { const f = hz(o.midi); [1, 1.4983, 2].forEach((k, i) => pluck(d, t + i * 0.007, { type: 'sawtooth', freq: f * k * (1 + (i - 1) * 0.004), level: 0.05 * lv, len, cutoff: 1900, open: 4200, drive: true })); }
+        else if (part === 'keys') (o.chord || [o.midi]).forEach((m) => { const f = hz(m); tone(d, t, { type: 'triangle', freq: f, level: 0.05 * lv, attack: 0.004, decay: len }); tone(d, t, { freq: f * 2, level: 0.016 * lv, attack: 0.003, decay: len * 0.4 }); });
+        else if (part === 'vocal') sing(d, t, hz(o.midi), len, 0.11 * lv);
       });
     },
     /** 물 첨벙: 헤엄칠 때와 튜브에 올라탈 때 */
