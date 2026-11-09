@@ -276,7 +276,23 @@ function start() {
   // 가운데 불멍 라운지, 왼쪽 앞 온실·화단·해먹, 왼쪽 뒤 옥상 책장, 오른쪽 앞 망원경과 별 보는 벤치
   const ROOF = { w: 24, d: 16 };
   const ROOF_BAR = [-2.8, -1.4, 0, 1.4, 2.8];
-  const LOUNGERS = [-5.0, -2.6, -0.2, 2.2]; // 선베드 z(x 6.6), 2.4m 간격
+  const LOUNGERS = [-3.4, -1.0, 1.4, 3.8]; // 선베드 z(x LOUNGER_X), 2.4m 간격
+  const LOUNGER_X = 4.9;
+  const POOL = { x0: 7.0, x1: 11.75, z0: -5.6, z1: 4.4, rim: 0.25, deep: 0.5 }; // 수영장(가장자리 rim은 걷는 돌, 안은 물)
+  const FLOATS = [ // 튜브: 플라밍고 둘, 도넛 하나(물 위에 둥실)
+    { id: 'float-1', kind: 'flamingo', x: 8.6, z: -3.4, yaw: -Math.PI / 2 - 0.4, color: 0xF4A6B8 },
+    { id: 'float-2', kind: 'flamingo', x: 10.3, z: 2.4, yaw: -Math.PI / 2 + 0.5, color: 0xF7B8C6 },
+    { id: 'float-3', kind: 'donut', x: 10.1, z: -0.6, yaw: -Math.PI / 2, color: 0xF2D16B },
+  ];
+  // 물속 깊이: 가장자리에서 0.7m는 비탈(걸어 들어간다), 그 안은 허리까지
+  const poolDepth = (x, z) => {
+    const { x0, x1, z0, z1, rim, deep } = POOL;
+    if (x < x0 || x > x1 || z < z0 || z > z1) return 0;
+    const inside = Math.min(x - x0, x1 - x, z - z0, z1 - z) - rim;
+    if (inside <= 0) return 0.12;
+    return -deep * Math.min(1, inside / 0.7);
+  };
+  const inPool = (P, x, z) => P && P.id === 'roof' && poolDepth(x, z) < -0.05;
   const PIT_X = -1.2; // 불멍 라운지 가운데 x
   const FIRE_SOFAS = [
     { id: 'rsofa-n', x: -1.2, z: -2.15, yaw: 0, color: 0xE3A857, pillow: 0x4F8F8A },
@@ -292,6 +308,7 @@ function start() {
     bounds: [-ROOF.w / 2, -ROOF.d / 2, ROOF.w / 2, ROOF.d / 2],
     spawn: () => [-10.2, -5.0],
     stairs: null,
+    raised: poolDepth,
     layers: {
       0: {
         rect: [-11.6, -7.6, 11.6, 7.6],
@@ -300,8 +317,8 @@ function start() {
           { r: [-7.85, -8, -6.15, -6.8] }, // 책 엘리베이터
           { r: [-3.7, -8, 3.7, -6.0] }, ...ROOF_BAR.map((x) => ({ c: [x, -5.45, 0.2] })), // 바와 높은 의자
           ...[[-4.2, -7.6], [4.2, -7.6], [-4.2, -4.6], [4.2, -4.6]].map(([x, z]) => ({ c: [x, z, 0.14] })), // 퍼걸러 기둥
-          { r: [8.2, -5.75, 12, 3.75] }, // 수영장
-          ...LOUNGERS.map((z) => ({ r: [5.65, z - 0.35, 7.55, z + 0.35] })), { c: [4.6, -3.8, 0.25] }, { c: [4.6, 1.0, 0.25] }, // 선베드, 파라솔
+          ...FLOATS.map((f) => ({ c: [f.x, f.z, 0.5] })), // 수영장은 걸어(헤엄쳐) 들어가고, 튜브만 비켜 간다
+          ...LOUNGERS.map((z) => ({ r: [LOUNGER_X - 0.95, z - 0.35, LOUNGER_X + 0.95, z + 0.35] })), { c: [3.1, -2.2, 0.25] }, { c: [3.1, 2.6, 0.25] }, // 선베드, 파라솔
           { c: [-1.2, 0, 0.66] }, ...FIRE_SOFAS.map((s) => boxAt(s.x, s.z, s.yaw, 2.3, 0.95)), // 화로와 소파
           ...HAMMOCKS.map((z) => ({ r: [-7.15, z - 0.55, -4.05, z + 0.55] })), // 해먹
           { r: [-11.5, 4.65, -8.9, 7.35] }, { r: [-11.6, -2.0, -10.45, 2.4] }, { r: [-11.6, -5.25, -10.9, -3.35] }, // 온실, 화단, 옥상 책장
@@ -477,8 +494,10 @@ function start() {
   HAMMOCKS.forEach((z, i) => seat(roof, { id: `roof-ham-${i + 1}`, kind: 'hammock', x: -5.6, z, top: 0.62, yaw: Math.PI / 2, from: [-6.2, z + 1.0] }));
   [5.0, 6.2].forEach((x, i) => seat(roof, { id: `roof-bench-${i + 1}`, kind: 'bench', x, z: 7.0, top: 0.47, yaw: 0, from: [x, 6.2] }));
   ROOF_BAR.forEach((x, i) => seat(roof, { id: `roof-bar-${i + 1}`, kind: 'stool', x, z: -5.45, top: 0.78, yaw: Math.PI, from: [x, -4.7] }));
-  LOUNGERS.forEach((z, i) => seat(roof, { id: `roof-lounge-${i + 1}`, kind: 'lounger', x: 6.6, z, top: 0.42, yaw: Math.PI / 2, from: [6.6, z + 0.75] }));
+  LOUNGERS.forEach((z, i) => seat(roof, { id: `roof-lounge-${i + 1}`, kind: 'lounger', x: LOUNGER_X, z, top: 0.42, yaw: Math.PI / 2, from: [LOUNGER_X, z + 0.75] }));
+  FLOATS.forEach((f) => seat(roof, { id: f.id, kind: 'float', x: f.x, z: f.z, top: 0.36, yaw: f.yaw, from: [f.x - 0.95, f.z] }));
   FIRE_SOFAS.forEach((f) => [-0.53, 0.53].forEach((lx, i) => { const [x, z] = turnAt(f.x, f.z, f.yaw, lx, 0.08); seat(roof, { id: `${f.id}-${i + 1}`, kind: 'sofa', x, z, top: 0.5, yaw: f.yaw, from: turnAt(f.x, f.z, f.yaw, lx, 1.0) }); }));
+  seat(cafe, { id: 'piano', kind: 'bench', piano: true, word: '♪', tip: '피아노 치기', x: PIANO.x + 0.75, z: PIANO.z, top: 0.53, yaw: -Math.PI / 2, from: [PIANO.x + 0.75, PIANO.z + 0.9] });
   STOOLS.forEach((z, i) => seat(cafe, { id: `bar-${i + 1}`, kind: 'stool', x: 8.75, z, top: 0.78, yaw: Math.PI / 2, from: [8.0, z] }));
   CAFE_TABLES.forEach(([x, z], i) => {
     seat(cafe, { id: `ct${i + 1}-l`, kind: 'chair', x: x - 0.85, z, top: 0.47, yaw: Math.PI / 2, from: [x - 0.85, z + 0.8], lamp: `C-${i + 1}` });
@@ -748,7 +767,7 @@ function start() {
     box(back, 7.2, 0.12, 0.14, 0x5E3B27, 0, 3.25, -8.05, { line: 0.02 });
     box(back, 7.9, 0.16, 0.6, 0x8A5A3B, 0, 0.78, -7.95, { line: 0.03 });
     P.sky = canvasTex(1024, 1024, skyDraw('day', true));
-    plane(back, 17, 9, new THREE.MeshBasicMaterial({ map: P.sky }), 0, 4.0, -9.0, { receive: false });
+    plane(back, 17, HALL.h, new THREE.MeshBasicMaterial({ map: P.sky }), 0, HALL.h / 2, -8.62, { receive: false });
     P.rainGlass = plane(back, 7.4, 5.8, new THREE.MeshBasicMaterial({ map: canvasTex(256, 256, (g) => { g.strokeStyle = 'rgba(220,235,255,.55)'; g.lineWidth = 2; const rand = seeded(3); for (let i = 0; i < 70; i++) { const x = rand() * 256; const y = rand() * 256; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 3, y + 14 + rand() * 10); g.stroke(); } }, { repeat: [3, 2] }), transparent: true, depthWrite: false }), 0, 3.7, -8.12, { receive: false });
     P.rainGlass.visible = false;
     const plate = plane(back, 3.2, 0.62, toon(0xffffff, { map: signTex('꼬깃 서고') }), 0, 7.6, -7.97);
@@ -1128,7 +1147,7 @@ function start() {
     block(P, pergola); S.add(pergola);
     // 오른쪽: 수영장(가장자리 유리, 물결이 흐른다)과 선베드 넷, 파라솔 둘
     const pool = new THREE.Group();
-    const px0 = 8.2; const px1 = hw - 0.25; const pz0 = -5.75; const pz1 = 3.75; const pcx = (px0 + px1) / 2; const pcz = (pz0 + pz1) / 2;
+    const { x0: px0, x1: px1, z0: pz0, z1: pz1 } = POOL; const pcx = (px0 + px1) / 2; const pcz = (pz0 + pz1) / 2;
     box(pool, px1 - px0, 0.12, pz1 - pz0, 0xE8E2D6, pcx, 0, pcz, { line: 0.02, cast: false });
     P.water = canvasTex(256, 256, (g, w, h) => {
       g.fillStyle = '#5FC4D0'; g.fillRect(0, 0, w, h); const rr = seeded(7);
@@ -1154,7 +1173,36 @@ function start() {
       const cone = solid(new THREE.ConeGeometry(1.4, 0.5, 8, 1, true), c, { line: 0.02, mat: toon(c, { side: THREE.DoubleSide }) }); cone.position.y = 2.45; g.add(cone);
       g.position.set(x, 0, z); S.add(g);
     };
-    parasol(4.6, -3.8, 0xD9654B); parasol(4.6, 1.0, 0x4F8F8A);
+    parasol(3.1, -2.2, 0xD9654B); parasol(3.1, 2.6, 0x4F8F8A);
+    // 튜브: 물 위에 둥실 떠서 천천히 흔들린다(눌러서 올라탄다)
+    FLOATS.forEach((f) => {
+      const g = new THREE.Group();
+      const st = P.seatById(f.id);
+      if (f.kind === 'flamingo') {
+        const pink = f.color; const deep = shadeOf(pink, 0.85);
+        const ring = solid(new THREE.TorusGeometry(0.42, 0.17, 12, 28), pink, { line: 0.012 }); ring.rotation.x = Math.PI / 2; ring.position.y = 0.12; g.add(ring);
+        const seatPad = new THREE.Mesh(new THREE.CircleGeometry(0.3, 20), toon(shadeOf(pink, 1.08))); seatPad.rotation.x = -Math.PI / 2; seatPad.position.y = 0.06; g.add(seatPad);
+        const neckPath = new THREE.CatmullRomCurve3([[0, 0.18, 0.45], [0, 0.55, 0.56], [0, 0.92, 0.5], [0, 1.12, 0.6], [0, 1.1, 0.74]].map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+        g.add(solid(new THREE.TubeGeometry(neckPath, 20, 0.085, 10), pink, { line: 0.01 }));
+        const head = solid(new THREE.SphereGeometry(0.13, 14, 10), pink, { line: 0.01 }); head.position.set(0, 1.1, 0.76); g.add(head);
+        const beakBase = solid(new THREE.CylinderGeometry(0.075, 0.06, 0.12, 10), 0xFFFDF8, { line: 0.006 }); beakBase.position.set(0, 1.05, 0.9); beakBase.rotation.x = Math.PI / 2 + 0.5; g.add(beakBase);
+        const beakTip = solid(new THREE.ConeGeometry(0.06, 0.14, 10), 0x2A2427, { line: 0.006 }); beakTip.position.set(0, 0.99, 0.99); beakTip.rotation.x = Math.PI / 2 + 0.75; g.add(beakTip);
+        [-1, 1].forEach((k) => {
+          const eye = solid(new THREE.SphereGeometry(0.03, 8, 6), 0xE8B04A, { line: 0.004 }); eye.position.set(k * 0.11, 1.14, 0.8); g.add(eye);
+          const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.016, 6, 5), toon(0x2A2427)); pupil.position.set(k * 0.13, 1.14, 0.81); g.add(pupil);
+          const wing = solid(new THREE.SphereGeometry(0.2, 12, 8), deep, { line: 0.01 }); wing.scale.set(0.55, 0.9, 1.4); wing.position.set(k * 0.5, 0.28, -0.12); wing.rotation.z = k * 0.35; g.add(wing);
+        });
+        const tail = solid(new THREE.ConeGeometry(0.13, 0.36, 8), pink, { line: 0.008 }); tail.position.set(0, 0.36, -0.58); tail.rotation.x = -0.6; g.add(tail);
+      } else {
+        const stripes = canvasTex(256, 32, (cg) => { ['#F2D16B', '#FFFDF8', '#D9654B', '#FFFDF8'].forEach((c, i) => { cg.fillStyle = c; for (let k = 0; k < 4; k++) cg.fillRect((k * 4 + i) * 16, 0, 16, 32); }); });
+        const ring = solid(new THREE.TorusGeometry(0.42, 0.18, 12, 28), 0xffffff, { line: 0.012, mat: toon(0xffffff, { map: stripes }) }); ring.rotation.x = Math.PI / 2; ring.position.y = 0.12; g.add(ring);
+      }
+      g.position.set(f.x, 0.04, f.z); g.rotation.y = f.yaw;
+      mark(P, g, { seat: f.id }); S.add(g); st.mesh = g; st.float = { y: 0.04, yaw: f.yaw, phase: f.x * 1.7 };
+    });
+    // 물결: 헤엄치는 자리마다 퍼지는 동그라미
+    P.ripples = [];
+    P.rippleGeo = new THREE.RingGeometry(0.16, 0.22, 28); P.rippleGeo.rotateX(-Math.PI / 2);
     // 가운데: 불멍 라운지(돌 화로와 ㄷ자 소파, 둥근 깔개)
     const fireRug = new THREE.Mesh(new THREE.CircleGeometry(3.0, 48), toon(0xC9B79A)); fireRug.rotation.x = -Math.PI / 2; fireRug.position.set(PIT_X, 0.011, 0); fireRug.receiveShadow = true; S.add(fireRug); mark(P, fireRug, { floor: 0 });
     const ring2 = new THREE.Mesh(new THREE.RingGeometry(2.75, 2.9, 48), toon(0x8C5A3B)); ring2.rotation.x = -Math.PI / 2; ring2.position.set(PIT_X, 0.013, 0); S.add(ring2);
@@ -1466,7 +1514,7 @@ function start() {
       box(back, wr * 2, 0.08, 0.1, 0x5E3B27, cx, y1 - 0.4, -hd, { line: 0.015 });
     });
     P.sky = canvasTex(1024, 512, skyDraw('day', true));
-    plane(back, w + 1, h + 2.2, new THREE.MeshBasicMaterial({ map: P.sky }), 0, h * 0.58, -hd - 1.2, { receive: false });
+    plane(back, w + 0.6, h, new THREE.MeshBasicMaterial({ map: P.sky }), 0, h / 2, -hd - 0.32, { receive: false }); // 창밖 하늘: 벽 바로 뒤에 벽만 하게 붙여 비스듬히 봐도 삐져나오지 않는다
     P.rainGlass = plane(back, w, y1 + wr - y0 + 1.15, new THREE.MeshBasicMaterial({ map: canvasTex(256, 256, (g) => { g.strokeStyle = 'rgba(220,235,255,.55)'; g.lineWidth = 2; const rand = seeded(5); for (let i = 0; i < 60; i++) { const x = rand() * 256; const y = rand() * 256; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 3, y + 14 + rand() * 10); g.stroke(); } }, { repeat: [Math.round(w * 0.375), 2] }), transparent: true, depthWrite: false }), 0, (y0 + y1 + wr) / 2, -hd - 0.05, { receive: false });
     P.rainGlass.visible = false;
     if (sign) { const plate = plane(back, 3.0, 0.6, toon(0xffffff, { map: signTex(sign) }), 0, h - 0.45, -hd + 0.02); plate.castShadow = false; }
@@ -1855,10 +1903,12 @@ function start() {
     [[-0.62, -0.2], [0.62, -0.2], [-0.4, -1.75]].forEach(([x, z]) => cyl(piano, 0.06, 0.05, 0.62, BLACK, x, 0, z, { line: 0.01, seg: 10 }));
     box(piano, 0.2, 0.5, 0.06, BLACK, 0, 0.02, -0.3, { line: 0.008 });
     [-0.05, 0.05].forEach((x) => box(piano, 0.04, 0.02, 0.12, BRASS, x, 0.03, -0.22, { line: 0.004 }));
-    box(piano, 0.85, 0.08, 0.36, BLACK, 0, 0.42, 0.75, { line: 0.012 });
-    box(piano, 0.8, 0.06, 0.32, 0x8E3E3A, 0, 0.5, 0.75, { line: 0.01 });
-    [[-0.36, 0.6], [0.36, 0.6], [-0.36, 0.9], [0.36, 0.9]].forEach(([x, z]) => cyl(piano, 0.025, 0.025, 0.42, BLACK, x, 0, z, { line: 0.005, seg: 6 }));
+    const pbench = new THREE.Group(); pbench.position.z = 0.75; piano.add(pbench); // 피아노 의자: 앉으면 곡을 친다
+    box(pbench, 0.85, 0.08, 0.36, BLACK, 0, 0.42, 0, { line: 0.012 });
+    box(pbench, 0.8, 0.06, 0.32, 0x8E3E3A, 0, 0.5, 0, { line: 0.01 });
+    [[-0.36, -0.15], [0.36, -0.15], [-0.36, 0.15], [0.36, 0.15]].forEach(([x, z]) => cyl(pbench, 0.025, 0.025, 0.42, BLACK, x, 0, z, { line: 0.005, seg: 6 }));
     piano.position.set(PIANO.x, 0, PIANO.z); piano.rotation.y = Math.PI / 2; block(P, piano); S.add(piano);
+    mark(P, pbench, { seat: 'piano' }); P.seatById('piano').mesh = pbench;
 
     // 가운데: 별무늬 바닥 장식, 꽃 섬, 위에 샹들리에
     const medal = canvasTex(1024, 1024, (g, w) => {
@@ -3152,10 +3202,20 @@ function start() {
     }
   };
   const prints = [];
+  // 물결 동그라미(옥상 수영장): 퍼지며 옅어진다
+  const ripple = (P, x, z, size = 1) => {
+    if (!P.ripples || reduceMotion) return;
+    const m = new THREE.Mesh(P.rippleGeo, new THREE.MeshBasicMaterial({ color: 0xF2FFFF, transparent: true, opacity: 0.8, depthWrite: false }));
+    m.position.set(x, 0.135, z); m.renderOrder = 2;
+    P.scene.add(m);
+    P.ripples.push({ m, t: 0, size });
+    if (P.ripples.length > 40) { const old = P.ripples.shift(); old.m.parent?.remove(old.m); old.m.material.dispose(); }
+  };
   const printGeo = new THREE.PlaneGeometry(0.26, 0.19); printGeo.rotateX(-Math.PI / 2);
   const slimeGeo = new THREE.PlaneGeometry(0.6, 0.15); slimeGeo.rotateX(-Math.PI / 2);
   const footprint = (person, ux, uz) => {
     const P = PLACES[person.place];
+    if (inPool(P, person.x, person.z)) { ripple(P, person.x, person.z, person.running ? 1.4 : 1); return; } // 물속: 발자국 대신 물결
     const onRug = P === hall && ((person.x / 5.4) ** 2 + ((person.z + 2.68) / 3.32) ** 2 < 1);
     if (!onRug) {
       const snail = person.critter === 'snail';
@@ -3186,8 +3246,48 @@ function start() {
       const P = PLACES[person.place];
       sp.soft = P === hall && ((person.x / 5.4) ** 2 + ((person.z + 2.68) / 3.32) ** 2 < 1);
       sp.stairs = inStairs(P, person.x, person.z);
-      sfx('step', person.critter, sp);
+      if (inPool(P, person.x, person.z)) sfx('splash', sp, 0.45); else sfx('step', person.critter, sp);
     }
+  };
+  // 피아노 곡: 누가 2층 피아노 의자에 앉으면 짧은 왈츠(여기서 지은 곡, 다장조 3/4박 16마디)를 되풀이해 친다.
+  // 다른 사람이 치면 멀수록 작게 들린다. 효과음을 켜 두어야 들린다.
+  const WALTZ = (() => {
+    const CHORDS = { C: [48, 55, 64], Am: [45, 52, 60], F: [41, 57, 60], G: [43, 59, 62], Em: [40, 55, 59], G7: [43, 59, 65] };
+    const BARS = [
+      ['C', [[76, 2], [74, 1]]], ['Am', [[72, 1], [76, 1], [81, 1]]], ['F', [[81, 2], [77, 1]]], ['G', [[79, 3]]],
+      ['C', [[76, 2], [79, 1]]], ['Em', [[83, 1], [79, 1], [76, 1]]], ['F', [[77, 2], [81, 1]]], ['G7', [[79, 2], [77, 1]]],
+      ['Am', [[76, 2], [72, 1]]], ['F', [[77, 1], [76, 1], [74, 1]]], ['C', [[72, 1], [76, 1], [79, 1]]], ['G', [[79, 2], [74, 1]]],
+      ['F', [[77, 1], [81, 1], [84, 1]]], ['G', [[83, 2], [79, 1]]], ['C', [[84, 3]]], ['C', [[72, 3]]],
+    ];
+    const notes = []; // { beat, midi, len(박), level }
+    BARS.forEach(([name, tune], bar) => {
+      const [root, a, b] = CHORDS[name]; const at = bar * 3; const last = bar === BARS.length - 1;
+      notes.push({ beat: at, midi: root, len: 3, level: 0.075 });
+      if (last) { notes.push({ beat: at, midi: a, len: 3, level: 0.045 }, { beat: at, midi: b, len: 3, level: 0.045 }); } else [1, 2].forEach((k) => notes.push({ beat: at + k, midi: a, len: 1, level: 0.04 }, { beat: at + k, midi: b, len: 1, level: 0.04 }));
+      let beat = at; tune.forEach(([midi, len]) => { notes.push({ beat, midi, len, level: 0.1 }); beat += len; });
+    });
+    return { notes, beats: BARS.length * 3 + 3 }; // 끝나고 한 마디 쉬고 처음부터
+  })();
+  const BEAT = 0.6; // 초
+  let pianoClock = -1; // 친 박(음수면 아무도 안 친다)
+  let pianoTime = 0;
+  const playPiano = (dt) => {
+    let player = null;
+    people.forEach((person) => { if (!player && person.place === 'cafe' && person.seated === 'piano' && !person.hop) player = person; });
+    if (!player || !me || me.place !== 'cafe') { pianoClock = -1; return; }
+    if (pianoClock < 0) { pianoClock = 0; pianoTime = -0.5; } // 앉고 숨 한 번 고른 뒤 시작
+    pianoTime += dt;
+    while (pianoTime >= pianoClock * BEAT) {
+      const beat = pianoClock % WALTZ.beats;
+      if (sound && sound.on) {
+        const sp = hear(player);
+        WALTZ.notes.forEach((n) => { if (n.beat === beat) sound.piano(440 * 2 ** ((n.midi - 69) / 12), sp, { level: n.level, len: n.len * BEAT * 1.4 }); });
+      }
+      if (beat % 6 === 0 && beat < WALTZ.beats - 3) popWord(player, beat % 12 ? '♫' : '♪');
+      pianoClock += 1;
+      if (beat === WALTZ.beats - 1) { pianoClock = 0; pianoTime -= WALTZ.beats * BEAT; }
+    }
+    if (!reduceMotion) player.doll.root.rotation.z = Math.sin(pianoTime * Math.PI / (BEAT * 3)) * 0.05; // 박에 맞춰 살짝 흔들
   };
   const pops = [];
   const popWord = (person, word) => {
@@ -3222,8 +3322,8 @@ function start() {
   }
 
   // ───────── 앉기·눕기(깡충 → 털썩/폭신) ─────────
-  const HOP = { chair: 0.55, bench: 0.45, beanbag: 0.5, cushion: 0.4, futon: 0.5, hammock: 0.6, lounger: 0.45, stool: 0.75, sofa: 0.45 };
-  const WORD = { chair: '털썩', bench: '털썩', beanbag: '폭신', cushion: '폭신', futon: '폭신', hammock: '흔들', lounger: '폭신', stool: '쏙', sofa: '푹신' };
+  const HOP = { chair: 0.55, bench: 0.45, beanbag: 0.5, cushion: 0.4, futon: 0.5, hammock: 0.6, lounger: 0.45, stool: 0.75, sofa: 0.45, float: 0.5 };
+  const WORD = { chair: '털썩', bench: '털썩', beanbag: '폭신', cushion: '폭신', futon: '폭신', hammock: '흔들', lounger: '폭신', stool: '쏙', sofa: '푹신', float: '둥실' };
   // 앉은(누운) 자리의 인형 발끝 좌표와 높이
   const seatPose = (s, person) => {
     const d = person ? person.doll : { len: DOLL, hingeY: DOLL * HINGE };
@@ -3251,7 +3351,8 @@ function start() {
     bump(s);
     const P = PLACES[person.place];
     spawnBits(P, s.x, s.top + 0.1, s.z, { count: 7, color: s.kind === 'chair' ? 0xe2c8a0 : 0xfffaf0, spread: 1.1, up: 0.6, size: 0.24, life: 0.75 });
-    popWord(person, s.side ? (s.side === 'pro' ? '찬성!' : '반대!') : WORD[s.kind]);
+    popWord(person, s.word || (s.side ? (s.side === 'pro' ? '찬성!' : '반대!') : WORD[s.kind]));
+    if (s.float) { sfx('splash', hear(person)); ripple(P, s.x, s.z, 1.6); }
     sfx('sit', s.kind, hear(person));
     if (s.desk && person === me && me.status !== 'write') { me.statusBefore = me.status; setMyStatus('write'); }
     if (s.lie && person === me) { setTimeout(() => { if (me.seated === s.id && me.pose === 'up') setPose('sleep'); }, 600); }
@@ -3738,11 +3839,11 @@ function start() {
   };
   const visibleChain = (obj) => { for (let o = obj; o; o = o.parent) if (!o.visible) return false; return true; };
   const tip = root.querySelector('.lib-tip');
-  const SEAT_TIP = { chair: '앉기', bench: '앉기', beanbag: '푹 기대기', cushion: '앉기', futon: '낮잠 자기', hammock: '해먹에 눕기', lounger: '선베드에 눕기' };
+  const SEAT_TIP = { chair: '앉기', bench: '앉기', beanbag: '푹 기대기', cushion: '앉기', futon: '낮잠 자기', hammock: '해먹에 눕기', lounger: '선베드에 눕기', float: '튜브 타기' };
   const describe = (hit) => {
     if (!hit) return null;
     const u = hit.object.userData;
-    if (u.seat) { const s = current.seatById(u.seat); return s ? (seatTaken(current, s.id) ? '누가 있어요' : SEAT_TIP[s.kind]) : null; }
+    if (u.seat) { const s = current.seatById(u.seat); return s ? (seatTaken(current, s.id) ? '누가 있어요' : s.tip || SEAT_TIP[s.kind]) : null; }
     if (u.hot) return current.hots[u.hot]?.tip;
     if (u.portal) return current.portals.find((p) => p.id === u.portal)?.tip;
     return null;
@@ -4002,7 +4103,7 @@ function start() {
     d.body.position.y = bob;
     d.hinge.rotation.x = -person.fold * (Math.PI / 2 - 0.12);
     // 자리: 의자는 흔들, 방석·빈백은 꺼졌다 부풀고, 해먹은 늘 살랑
-    d.root.position.set(person.x, person.y + person.lift + person.air + (lying ? 0.02 : 0), person.z);
+    d.root.position.set(person.x, person.y + person.lift + person.air + (lying ? 0.02 : 0) + (s && s.bob ? s.bob : 0), person.z);
     d.blob.position.set(person.x, (s ? s.top - (s.lie ? 0 : 0) : heightAt(P, person.layer, person.x, person.z)) + 0.014, person.z);
     const blobScale = lying ? 1.6 : 1 - Math.min(0.55, (person.lift + person.air) * 0.5);
     d.blob.scale.set(blobScale, 1, lying ? 0.8 : blobScale);
@@ -4181,6 +4282,13 @@ function start() {
     P.seats.forEach((s) => {
       if (!s.mesh) return;
       const k2 = s.bumpT ? (now - s.bumpT) / 600 : 2;
+      if (s.float) { // 물 위 튜브: 늘 둥실, 올라타면 꿀렁 가라앉았다 뜬다
+        s.bob = reduceMotion ? 0 : Math.sin(t * 1.4 + s.float.phase) * 0.035 - (k2 < 1 ? Math.sin(k2 * Math.PI) * (1 - k2) * 0.1 : 0);
+        s.mesh.position.y = s.float.y + s.bob;
+        s.mesh.rotation.y = s.float.yaw + (reduceMotion ? 0 : Math.sin(t * 0.35 + s.float.phase) * 0.18);
+        s.mesh.rotation.z = reduceMotion ? 0 : Math.sin(t * 1.1 + s.float.phase) * 0.04;
+        return;
+      }
       if (s.kind === 'hammock') { const sway = Math.sin(t * (people.size ? 1.1 : 0.7) + s.x) * 0.06 + (k2 < 1 ? Math.sin(k2 * Math.PI * 3) * (1 - k2) * 0.2 : 0); s.mesh.rotation.x = sway; return; }
       if (k2 >= 1) { if (s.base) { s.mesh.scale.copy(s.base); s.mesh.rotation.z = 0; } return; }
       if (!s.base) s.base = s.mesh.scale.clone();
@@ -4189,7 +4297,7 @@ function start() {
       else s.mesh.scale.set(s.base.x * (1 + e * 0.12), s.base.y * (1 - e * 0.28), s.base.z * (1 + e * 0.12));
     });
     // 해먹에 누운 사람은 해먹과 함께 흔들린다
-    people.forEach((person) => { const s = seatOf(person); if (s && s.kind === 'hammock' && s.mesh) { person.doll.root.rotation.x = s.mesh.rotation.x * 0.8; } else person.doll.root.rotation.x = 0; });
+    people.forEach((person) => { const s = seatOf(person); if (s && s.kind === 'hammock' && s.mesh) { person.doll.root.rotation.x = s.mesh.rotation.x * 0.8; } else person.doll.root.rotation.x = 0; person.doll.root.rotation.z = 0; });
     // 날리는 것들
     for (let i = bits.length - 1; i >= 0; i--) {
       const b = bits[i];
@@ -4207,6 +4315,10 @@ function start() {
       if (k4 >= 1) { p.m.parent?.remove(p.m); p.m.material.dispose(); prints.splice(i, 1); continue; }
       p.m.material.opacity = k4 < 0.4 ? 1 : 1 - (k4 - 0.4) / 0.6;
     }
+    (roof.ripples || []).forEach((r) => { r.t += dt; const k5 = r.t / 1.3; r.m.scale.setScalar(1 + k5 * 4 * r.size); r.m.material.opacity = Math.max(0, 0.8 * (1 - k5)); });
+    if (roof.ripples) for (let i = roof.ripples.length - 1; i >= 0; i--) if (roof.ripples[i].t >= 1.3) { const r = roof.ripples[i]; r.m.parent?.remove(r.m); r.m.material.dispose(); roof.ripples.splice(i, 1); }
+    if (current === roof && !reduceMotion) people.forEach((person) => { if (person.place === 'roof' && !seatOf(person) && inPool(roof, person.x, person.z) && !person.walking && Math.random() < dt * 0.7) ripple(roof, person.x, person.z, 0.6); }); // 물에 가만히 있어도 살랑
+    playPiano(dt);
     if (goalPin.g.visible) goalPin.pin.position.y = 0.5 + Math.abs(Math.sin(t * 5)) * 0.18;
     // 서고의 작은 움직임: 별이 흔들리고, 먼지가 떠오르고, 종이새가 난다
     if (current === hall && !reduceMotion) {

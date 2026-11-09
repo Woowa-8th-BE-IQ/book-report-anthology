@@ -251,6 +251,21 @@
     /** 입구 종: 딸랑 */
     bell(sp) { play(sp, 1, (d, t) => { bellHit(d, t, 1320, 0.11); bellHit(d, t + 0.13, 1480, 0.08); bellHit(d, t + 0.27, 1320, 0.05); }); },
     pop(sp) { play(sp, 1, (d, t) => tone(d, t, { freq: 420, to: 980, glide: 0.05, level: 0.11, attack: 0.003, decay: 0.07 })); },
+    /** 피아노 한 음: 망치로 친 듯 바로 올라 길게 사그라든다(바탕음에 배음 둘) */
+    piano(freq, sp, { level = 0.1, len = 1 } = {}) {
+      play(sp, 1, (d, t) => {
+        tone(d, t, { type: 'triangle', freq, level, attack: 0.004, decay: len });
+        tone(d, t, { freq: freq * 2, level: level * 0.3, attack: 0.003, decay: len * 0.45 });
+        tone(d, t, { freq: freq * 3, level: level * 0.1, attack: 0.002, decay: len * 0.2 });
+      });
+    },
+    /** 물 첨벙: 헤엄칠 때와 튜브에 올라탈 때 */
+    splash(sp, level = 1) {
+      play(sp, level, (d, t) => {
+        burst(d, t, { type: 'bandpass', freq: 1400, to: 500, q: 0.8, level: 0.22, attack: 0.01, decay: 0.22 });
+        for (let i = 0; i < 3; i++) tone(d, t + 0.04 + i * 0.05 + Math.random() * 0.03, { freq: 700 + Math.random() * 500, to: 1500 + Math.random() * 600, glide: 0.04, level: 0.035, attack: 0.003, decay: 0.05 });
+      });
+    },
     tick() { play({}, 1, (d, t) => tone(d, t, { freq: 1900, level: 0.035, attack: 0.001, decay: 0.025 })); },
     paper(open) {
       play({}, 1, (d, t) => {
