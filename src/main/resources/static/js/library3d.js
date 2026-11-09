@@ -487,7 +487,14 @@ function start() {
     { id: 'band-vocal', part: 'vocal', kind: 'stand', x: 0, z: -4.95, top: BSTAGE.h, from: [1.0, -4.35], tip: '노래하기', label: '보컬' },
     { id: 'band-bass', part: 'bass', kind: 'stand', x: 2.9, z: -5.4, top: BSTAGE.h, from: [3.9, -4.6], tip: '베이스 치기', label: '베이스' },
   ];
-  const AUD_ROWS = [1.6, 3.2, 4.8, 6.4]; // 관객석 줄 z(무대를 본다)
+  const AUD_ROWS = [4.4, 5.9, 7.4, 8.9]; // 관객석 줄 z(무대를 본다)
+  const ORCH_PIT = { x0: -7, x1: 7, z0: -3.35, z1: 0.35, h: 0.15 }; // 무대 앞 오케스트라석(한 뼘 높은 나무 단)
+  const PODIUM = [0, -0.1]; // 지휘대(무대를 본다)
+  const ORCH_SEATS = [ // 지휘대를 보고 반원으로 앉는다
+    { part: 'violin', x: -2.5, z: -1.7, tip: '바이올린 켜기' }, { part: 'flute', x: -1.0, z: -2.65, tip: '플루트 불기' },
+    { part: 'horn', x: 1.0, z: -2.65, tip: '호른 불기' }, { part: 'cello', x: 2.5, z: -1.7, tip: '첼로 켜기' },
+    { part: 'harp', x: -4.7, z: -1.0, tip: '하프 뜯기' }, { part: 'timpani', x: 4.9, z: -1.6, stand: true, tip: '팀파니 치기' },
+  ].map((o) => ({ ...o, id: `orch-${o.part}`, yaw: Math.atan2(PODIUM[0] - o.x, PODIUM[1] - o.z) }));
   const AUD_XS = [-4.85, -3.65, -2.45, -1.25, 1.25, 2.45, 3.65, 4.85];
   const VIP = [{ id: 'vip-a', x: -11.2, z: 3.6, yaw: Math.PI / 2, color: 0x6E2A33, pillow: 0xE8C07A }, { id: 'vip-b', x: -11.2, z: 7.4, yaw: Math.PI / 2, color: 0x2F3B5A, pillow: 0xD98C6C }];
   const LISTEN = [{ id: 'listen-1', x: 10.6, z: 1.6, yaw: -Math.PI / 2, color: 0xD8A24A }, { id: 'listen-2', x: 10.6, z: 4.2, yaw: -Math.PI / 2, color: 0x3E6B58 }];
@@ -503,6 +510,7 @@ function start() {
     raised: (x, z) => {
       const { x0, x1, z1, h, stair } = BSTAGE;
       if (x > x0 && x < x1 && z < z1) return h;
+      if (x > ORCH_PIT.x0 && x < ORCH_PIT.x1 && z > ORCH_PIT.z0 && z < ORCH_PIT.z1) return Math.hypot(x - PODIUM[0], z - PODIUM[1]) < 0.5 ? ORCH_PIT.h + 0.22 : ORCH_PIT.h;
       const ax = Math.abs(x);
       if (ax > stair[0] && ax < stair[1] && z >= z1 && z < z1 + 1.0) return h * (z1 + 1.0 - z); // 앞 계단: 1m 동안 오른다
       return 0;
@@ -518,11 +526,62 @@ function start() {
           { r: [-3.75, -9.75, -2.65, -9.1] }, { r: [3.0, -9.75, 4.3, -8.9] }, { c: [-8.7, -7.4, 0.55] }, { c: [8.7, -7.4, 0.55] }, // 앰프, 큰 스피커
           { c: [-9.95, -3.6, 0.25] }, { c: [9.95, -3.6, 0.25] }, // 무대 금빛 기둥
           ...AUD_ROWS.flatMap((z) => [{ r: [-5.35, z - 0.32, -0.75, z + 0.32] }, { r: [0.75, z - 0.32, 5.35, z + 0.32] }]), // 관객석
-          { r: [-1.3, 7.9, 1.3, 8.8] }, // 음향 콘솔
+          { r: [7.0, 8.0, 9.6, 9.0] }, // 음향 콘솔
+          { r: [-6.0, 0.36, 6.0, 0.46] }, // 오케스트라석 앞 난간(양 끝으로 드나든다)
+          ...ORCH_SEATS.map((o) => ({ c: [o.x, o.z, o.part === 'harp' ? 0.42 : 0.3] })), // 연주자 자리
+          ...ORCH_SEATS.filter((o) => !['harp', 'timpani'].includes(o.part)).map((o) => { const [x, z] = turnAt(o.x, o.z, o.yaw, 0, 0.75); return { c: [x, z, 0.16] }; }), // 보면대
+          (() => { const o = ORCH_SEATS.find((q) => q.part === 'harp'); const [x, z] = turnAt(o.x, o.z, o.yaw, 0.15, 0.55); return { c: [x, z, 0.38] }; })(), // 하프
+          (() => { const o = ORCH_SEATS.find((q) => q.part === 'timpani'); const [x, z] = turnAt(o.x, o.z, o.yaw, 0, 0.7); return { c: [x, z, 0.75] }; })(), // 팀파니
+          { c: [PODIUM[0], PODIUM[1] - 0.6, 0.15] }, // 지휘자 보면대
+          { r: [12.4, 7.0, 13.6, 8.0] }, // 주크박스(신청곡)
           ...VIP.map((v) => boxAt(v.x, v.z, v.yaw, 2.3, 0.95)), ...VIP.map((v) => ({ r: [v.x + 1.6, v.z - 0.55, v.x + 2.2, v.z + 0.55] })), { r: [-8.65, 2.3, -8.55, 4.9] }, { r: [-8.65, 6.1, -8.55, 8.7] }, // 벨벳 부스와 낮은 탁자, 줄 울타리
-          { r: [13.1, -4.0, 14, 6.0] }, { r: [12.4, 7.0, 13.6, 8.0] }, ...LISTEN.map((a) => ({ c: [a.x, a.z, 0.5] })), { c: [10.9, 2.9, 0.28] }, // LP 벽, 주크박스, 감상 의자와 곁탁자
+          { r: [13.1, -4.0, 14, 6.0] }, ...LISTEN.map((a) => ({ c: [a.x, a.z, 0.5] })), { c: [10.9, 2.9, 0.28] }, // LP 벽, 주크박스, 감상 의자와 곁탁자
           { r: [-13.6, -9.75, -10.4, -9.0] }, // 굿즈 탁자
           { c: [-13.1, -6.6, 0.42] }, { c: [13.1, -8.9, 0.42] }, { c: [-13.1, 9.1, 0.42] }, { c: [13.1, 9.1, 0.42] }, // 야자 화분
+        ],
+      },
+    },
+  });
+
+  // 6층 음악 라운지: 28m×20m. 가운데 건반 무늬 길을 두고 네 칸으로 나눈다(칸막이 안 음악은 밖에서 작고 먹먹하게 들린다)
+  // 뒤 왼쪽 재즈 바(그랜드 피아노·브러시 드럼·콘트라베이스·색소폰, 둥근 탁자, 바), 뒤 오른쪽 유리 LP 감상실(나팔 스피커·턴테이블·안락의자),
+  // 앞 왼쪽 버스킹 마당(통기타·카혼·우쿨렐레, 방석, 전구 줄), 앞 오른쪽 유리 라디오 DJ 부스(ON AIR, 턴테이블 둘, 빈백)
+  const LOUNGE6 = { w: 28, d: 20, h: 6.8 };
+  const JAZZ_STAGE = { x0: -11.2, x1: -3.0, z1: -7.0, h: 0.25 };
+  const JAZZ_TABLES = [[-10.4, -5.4], [-7.4, -5.4], [-4.4, -5.4]];
+  const JAZZ_STOOLS = [-8.8, -7.8, -6.8, -5.8]; // 바 의자 z(x -2.35)
+  const LP_CHAIRS = [4.6, 7.2, 9.8]; // 감상 의자 x(z -6.6, 턴테이블을 본다)
+  const BUSK_SIT = [[-8.6, 7.7], [-7.6, 8.1], [-6.4, 8.1], [-5.4, 7.7]];
+  const DJ_BAGS = [[5.0, 3.6], [7.0, 3.2], [9.0, 3.6]];
+  const lounge = newPlace('lounge', '음악 라운지', {
+    label: '6층 음악 라운지', short: '6층', tag: '6층 라운지',
+    toRatio: (x, z) => [(x + LOUNGE6.w / 2) / LOUNGE6.w, (z + LOUNGE6.d / 2) / LOUNGE6.d],
+    fromRatio: (rx, ry) => [rx * LOUNGE6.w - LOUNGE6.w / 2, ry * LOUNGE6.d - LOUNGE6.d / 2],
+    bounds: [-LOUNGE6.w / 2, -LOUNGE6.d / 2, LOUNGE6.w / 2, LOUNGE6.d / 2],
+    spawn: () => [-12.85, -3.2],
+    stairs: null,
+    indoor: true,
+    alwaysLit: true,
+    raised: (x, z) => (x > JAZZ_STAGE.x0 && x < JAZZ_STAGE.x1 && z < JAZZ_STAGE.z1 ? JAZZ_STAGE.h : 0),
+    layers: {
+      0: {
+        rect: [-13.75, -9.75, 13.75, 9.75],
+        blocks: [
+          { r: [-0.8, -10, 0.8, -4.0] }, // 재즈 바와 LP 감상실 사이 벽
+          { r: [-13.75, -4.05, -3.2, -3.95] }, { r: [-1.9, -4.05, -0.8, -3.95] }, // 재즈 바 앞 유리(문은 x -3.2~-1.9)
+          { r: [0.8, -4.05, 6.2, -3.95] }, { r: [8.2, -4.05, 13.75, -3.95] }, // LP 감상실 앞 유리(문은 x 6.2~8.2)
+          { r: [-11.0, -9.15, -8.6, -7.65] }, { c: [-8.25, -8.4, 0.35] }, // 그랜드 피아노와 의자
+          { c: [-6.2, -8.75, 0.75] }, { c: [-4.3, -8.4, 0.3] }, { c: [-4.4, -8.7, 0.22] }, { c: [-5.0, -7.6, 0.22] }, { c: [-5.6, -7.3, 0.15] }, // 드럼, 콘트라베이스, 서는 곳, 색소폰 받침
+          ...JAZZ_TABLES.flatMap(([x, z]) => [{ c: [x, z, 0.4] }, { c: [x - 0.7, z + 0.25, 0.28] }, { c: [x + 0.7, z + 0.25, 0.28] }]), // 둥근 탁자와 의자
+          { r: [-1.9, -9.5, -1.2, -5.3] }, ...JAZZ_STOOLS.map((z) => ({ c: [-2.35, z, 0.2] })), // 바와 높은 의자
+          { r: [6.2, -9.75, 8.2, -8.85] }, { c: [2.3, -8.9, 0.55] }, { c: [12.1, -8.9, 0.55] }, { r: [13.2, -9.5, 14, -4.5] }, { r: [0.8, -9.5, 1.3, -4.5] }, // 턴테이블 장, 나팔 스피커, LP 장
+          ...LP_CHAIRS.map((x) => ({ c: [x, -6.6, 0.5] })), { c: [5.9, -6.6, 0.25] }, { c: [8.5, -6.6, 0.25] }, // 감상 의자와 곁탁자
+          { c: [-8.5, 5.4, 0.25] }, { c: [-7.0, 5.0, 0.25] }, { c: [-5.5, 5.4, 0.25] }, { c: [-9.3, 4.9, 0.15] }, { c: [-4.7, 4.9, 0.15] }, { c: [-7.0, 6.5, 0.22] }, // 버스킹 자리, 악기 받침, 등불
+          ...BUSK_SIT.map(([x, z]) => ({ c: [x, z, 0.38] })), { r: [-13.75, 2.15, -9.2, 2.55] }, { r: [-4.8, 2.15, -0.8, 2.55] }, // 방석, 화단 띠
+          ...[[-12.6, 3.0], [-1.6, 3.0], [-12.6, 9.3], [-1.6, 9.3]].map(([x, z]) => ({ c: [x, z, 0.1] })), // 전구 줄 기둥
+          { r: [3.95, 5.6, 4.05, 10] }, { r: [9.95, 5.6, 10.05, 10] }, { r: [4.0, 5.55, 6.4, 5.65] }, { r: [7.6, 5.55, 10.0, 5.65] }, // DJ 부스 유리(문은 x 6.4~7.6)
+          { r: [5.7, 8.05, 8.3, 8.75] }, { c: [7.0, 9.2, 0.2] }, ...DJ_BAGS.map(([x, z]) => ({ c: [x, z, 0.45] })), { c: [3.5, 5.1, 0.35] }, { c: [10.5, 5.1, 0.35] }, // DJ 책상, 서는 곳, 빈백, 스피커
+          { c: [3.5, -2.6, 0.3] }, { c: [10.5, -2.6, 0.3] }, { c: [0, 1.45, 0.14] }, { c: [13.1, -3.4, 0.42] }, { c: [13.1, 1.4, 0.42] }, // 서서 쉬는 탁자, 길 안내 기둥, 야자 화분
         ],
       },
     },
@@ -558,10 +617,25 @@ function start() {
     seat(cafe, { id: `${s.id}-${i + 1}`, kind: 'sofa', x, z, top: 0.5, yaw: s.yaw, from: turnAt(s.x, s.z, s.yaw, lx, 1.0) });
   }));
   ARMS.forEach((a) => seat(cafe, { id: a.id, kind: 'sofa', x: a.x, z: a.z, top: 0.5, yaw: a.yaw, from: turnAt(a.x, a.z, a.yaw, 0, 0.95) }));
-  BAND.forEach((b) => seat(concert, { ...b, yaw: 0, word: '♪' }));
+  BAND.forEach((b) => seat(concert, { ...b, ens: 'stage', yaw: 0, word: '♪' }));
+  ORCH_SEATS.forEach((o) => seat(concert, { id: o.id, ens: 'stage', part: o.part, kind: o.stand ? 'stand' : 'chair', x: o.x, z: o.z, top: ORCH_PIT.h + (o.stand ? 0 : 0.47), yaw: o.yaw, from: turnAt(o.x, o.z, o.yaw, o.part === 'harp' ? -0.75 : 0.75, -0.35), tip: o.tip, word: '♪' }));
+  seat(concert, { id: 'orch-conductor', ens: 'stage', part: 'conductor', kind: 'stand', x: PODIUM[0], z: PODIUM[1], top: ORCH_PIT.h + 0.22, yaw: Math.PI, from: [0, 0.95], tip: '지휘하기(오케스트라가 따라 연주해요)', word: '♪' });
   AUD_ROWS.forEach((z, r) => AUD_XS.forEach((x, i) => seat(concert, { id: `aud-${r * 8 + i + 1}`, kind: 'chair', x, z, top: 0.45, yaw: Math.PI, from: [x, z - 0.75] })));
   VIP.forEach((v) => [-0.53, 0.53].forEach((lx, i) => { const [x, z] = turnAt(v.x, v.z, v.yaw, lx, 0.08); seat(concert, { id: `${v.id}-${i + 1}`, kind: 'sofa', x, z, top: 0.5, yaw: v.yaw, from: turnAt(v.x, v.z, v.yaw, lx, 1.0) }); }));
   LISTEN.forEach((a) => seat(concert, { id: a.id, kind: 'sofa', x: a.x, z: a.z, top: 0.5, yaw: a.yaw, from: turnAt(a.x, a.z, a.yaw, 0, 0.95) }));
+  seat(lounge, { id: 'jazz-piano', ens: 'jazz', part: 'piano', kind: 'bench', x: -8.25, z: -8.4, top: JAZZ_STAGE.h + 0.53, yaw: -Math.PI / 2, from: [-8.25, -7.35], tip: '피아노 치기', word: '♪' });
+  seat(lounge, { id: 'jazz-drums', ens: 'jazz', part: 'jdrums', kind: 'stool', x: -6.2, z: -9.5, top: JAZZ_STAGE.h + 0.5, yaw: 0, from: [-5.2, -9.45], tip: '브러시 드럼 치기', word: '♪' });
+  seat(lounge, { id: 'jazz-bass', ens: 'jazz', part: 'upright', kind: 'stand', x: -4.4, z: -8.7, top: JAZZ_STAGE.h, yaw: 0, from: [-3.55, -9.2], tip: '콘트라베이스 뜯기', word: '♪' });
+  seat(lounge, { id: 'jazz-sax', ens: 'jazz', part: 'sax', kind: 'stand', x: -5.0, z: -7.6, top: JAZZ_STAGE.h, yaw: 0.25, from: [-5.0, -6.6], tip: '색소폰 불기', word: '♪' });
+  JAZZ_TABLES.forEach(([x, z], i) => [-1, 1].forEach((k) => seat(lounge, { id: `jt${i + 1}-${k < 0 ? 'l' : 'r'}`, kind: 'chair', x: x + k * 0.7, z: z + 0.25, top: 0.47, yaw: Math.PI, from: [x + k * 1.25, z + 0.25] })));
+  JAZZ_STOOLS.forEach((z, i) => seat(lounge, { id: `jbar-${i + 1}`, kind: 'stool', x: -2.35, z, top: 0.78, yaw: Math.PI / 2, from: [-2.95, z] }));
+  LP_CHAIRS.forEach((x, i) => seat(lounge, { id: `lp-${i + 1}`, ens: 'lp', part: 'lp', kind: 'sofa', x, z: -6.6, top: 0.5, yaw: Math.PI, from: turnAt(x, -6.6, Math.PI, 0, 0.95), tip: 'LP 듣기', word: '♪' }));
+  seat(lounge, { id: 'busk-guitar', ens: 'acoustic', part: 'aguitar', kind: 'stool', x: -8.5, z: 5.4, top: 0.62, yaw: 0.3, from: [-8.5, 4.55], tip: '통기타 치기', word: '♪' });
+  seat(lounge, { id: 'busk-cajon', ens: 'acoustic', part: 'cajon', kind: 'stool', x: -7.0, z: 5.0, top: 0.48, yaw: 0, from: [-7.0, 4.15], tip: '카혼 치기', word: '♪' });
+  seat(lounge, { id: 'busk-uke', ens: 'acoustic', part: 'uke', kind: 'stool', x: -5.5, z: 5.4, top: 0.62, yaw: -0.3, from: [-5.5, 4.55], tip: '우쿨렐레 치기', word: '♪' });
+  BUSK_SIT.forEach(([x, z], i) => seat(lounge, { id: `busk-sit-${i + 1}`, kind: 'cushion', x, z, top: 0.17, yaw: Math.PI, from: [x, z + 0.8] }));
+  seat(lounge, { id: 'dj', ens: 'dj', part: 'dj', kind: 'stand', x: 7.0, z: 9.2, top: 0, yaw: Math.PI, from: [5.0, 9.1], tip: 'DJ 하기', word: '♪' });
+  DJ_BAGS.forEach(([x, z], i) => seat(lounge, { id: `dj-bag-${i + 1}`, kind: 'beanbag', x, z, top: 0.5, yaw: 0, from: [x, z - 0.95] }));
   STUMPS.forEach(([x, z, yaw, a], i) => seat(cave, { id: `stump-${i + 1}`, kind: 'stool', x, z, top: 0.45, yaw, from: [PED[0] + Math.sin(a) * 2.9, PED[1] + Math.cos(a) * 2.9] }));
   BURROWS.forEach((x, i) => seat(cave, { id: `burrow-${i + 1}`, kind: 'cushion', x, z: 9.6, top: 0.17, yaw: 0, from: [x, 8.3] }));
   [0, 1, 2, 3, 4].forEach((k) => { const a = (k * 2 * Math.PI) / 5; seat(cave, { id: `pit-${k + 1}`, kind: 'cushion', x: PIT[0] + Math.sin(a) * PIT_R, z: PIT[1] + Math.cos(a) * PIT_R, top: 0.18, yaw: a + Math.PI, from: [PIT[0] + Math.sin(a) * 0.7, PIT[1] + Math.cos(a) * 0.7] }); });
@@ -579,7 +653,7 @@ function start() {
   cave.hots = { archive: { at: [0, 0.9], level: 0, card: 'book', tip: '이 문집' }, cart: { at: [10.2, 0], level: 0, card: 'shelf', tip: '책 광차' } };
   scribe.hots = { wall: { at: [10.9, -0.9], level: 0, card: 'wall', tip: '필사 벽' }, shelf: { at: [-3.5, 5.4], level: 0, card: 'shelf', tip: '필사실 책장' } };
   forum.hots = { topic: { at: [0, -4.4], level: 0, card: 'topic', tip: '발제 칠판' }, shelf: { at: [10.8, -4.8], level: 0, card: 'shelf', tip: '토론 책장' } };
-  concert.hots = { shelf: { at: [12.6, 1.0], level: 0, card: 'shelf', tip: 'LP 벽(음악 책장)' } };
+  concert.hots = { shelf: { at: [12.6, 1.0], level: 0, card: 'shelf', tip: 'LP 벽(음악 책장)' }, juke: { at: [11.85, 7.5], level: 0, tip: '주크박스: 신청곡 바꾸기', run: () => { const name = pickSong('stage'); say(`신청곡: ${name} ♪ 무대에 오르면 이 곡으로 합주해요`); sfx('ding', {}); } } };
   cafe.hots = { counter: { at: [8.55, 0], level: 0, card: 'cafe', tip: '사락 카운터' }, shelf: { at: [-10.8, 3.75], level: 0, card: 'shelf', tip: '카페 책장' } };
   hall.portals = [
     { id: 'up', dir: 'up', level: 1, zone: (x, z) => x < -15.62 && z > -9.4 && z < -8.4, at: [-15.4, -8.9] },
@@ -617,13 +691,19 @@ function start() {
     { id: 'up', dir: 'up', level: 0, zone: (x, z) => x < -13.5 && z > -1.7 && z < -0.7, at: [-13.45, -1.2] },
     { id: 'down', dir: 'down', level: 0, zone: (x, z) => x < -13.5 && z > 0.3 && z < 1.3, at: [-13.45, 0.8] },
   ];
+  lounge.portals = [
+    { id: 'lift', lift: true, level: 0, zone: (x, z) => x < -13.5 && z > -3.7 && z < -2.7, at: [-13.45, -3.2], tip: '책 엘리베이터' },
+    { id: 'up', dir: 'up', level: 0, zone: (x, z) => x < -13.5 && z > -1.7 && z < -0.7, at: [-13.45, -1.2] },
+    { id: 'down', dir: 'down', level: 0, zone: (x, z) => x < -13.5 && z > 0.3 && z < 1.3, at: [-13.45, 0.8] },
+  ];
+  lounge.arriveFromBelow = { x: -12.85, z: 0.8, layer: 0 }; lounge.arriveFromAbove = { x: -12.85, z: -1.2, layer: 0 }; lounge.liftArrive = { x: -12.85, z: -3.2, layer: 0 };
   concert.arriveFromBelow = { x: -12.85, z: 0.8, layer: 0 }; concert.arriveFromAbove = { x: -12.85, z: -1.2, layer: 0 }; concert.liftArrive = { x: -12.85, z: -3.2, layer: 0 };
   forum.arriveFromBelow = { x: -10.85, z: 0.8, layer: 0 }; forum.arriveFromAbove = { x: -10.85, z: -1.2, layer: 0 }; forum.liftArrive = { x: -10.85, z: -3.2, layer: 0 };
   // 층 잇기: 아래에서 위로 놓인 순서. 계단 문은 바로 위·아래 층으로, 엘리베이터는 어느 층으로든
   hall.arriveFromAbove = { x: -15.0, z: -8.9, layer: 1 }; hall.arriveFromBelow = { x: -13.9, z: 7.7, layer: 0 }; hall.liftArrive = { x: -14.95, z: 1.25, layer: 0 };
   roof.arriveFromBelow = { x: -10.2, z: -5.0, layer: 0 }; roof.liftArrive = { x: -7.0, z: -5.7, layer: 0 };
   cafe.arriveFromBelow = { x: -10.85, z: 0.8, layer: 0 }; cafe.arriveFromAbove = { x: -10.85, z: -1.2, layer: 0 }; cafe.liftArrive = { x: -10.85, z: -3.2, layer: 0 };
-  const FLOORS = ['cave', 'hall', 'cafe', 'forum', 'scribe', 'band', 'roof'].filter((id) => PLACES[id]);
+  const FLOORS = ['cave', 'hall', 'cafe', 'forum', 'scribe', 'band', 'lounge', 'roof'].filter((id) => PLACES[id]);
   FLOORS.forEach((id, i) => PLACES[id].portals.forEach((q) => {
     if (!q.dir) return;
     const next = PLACES[FLOORS[q.dir === 'up' ? i + 1 : i - 1]];
@@ -1750,6 +1830,232 @@ function start() {
     return m;
   };
 
+  // ───────── 음악 소품: 5층 공연장과 6층 라운지가 함께 쓴다 ─────────
+  const INKY = 0x2A2427; const CHROME = 0xC9CED3; const GOLD = 0xD9B25E; const COPPER = 0xB8733F; const SPRUCE = 0xC98A4B; const MAPLE = 0x8C4A2B;
+  const at3 = (g, x, y, z, ry = 0) => { g.position.set(x, y, z); g.rotation.y = ry; return g; };
+  const faceTo = (x, z, tx, tz) => Math.atan2(tx - x, tz - z); // (x,z)에서 (tx,tz)를 보는 yaw
+  // 보면대: 받침 셋, 대, 비스듬한 판과 악보, 작은 등(켜지면 빛난다)
+  const musicStand = (P, S, x, y, z, ry) => {
+    const g = at3(new THREE.Group(), x, y, z, ry); S.add(g);
+    [0, 2.1, 4.2].forEach((a) => { const l = box(g, 0.02, 0.02, 0.26, INKY, Math.sin(a) * 0.1, 0.01, Math.cos(a) * 0.1, { line: 0 }); l.rotation.y = a; });
+    cyl(g, 0.012, 0.012, 1.0, INKY, 0, 0, 0, { line: 0.003, seg: 6 });
+    const desk = new THREE.Group(); desk.position.y = 1.0; desk.rotation.x = -0.45; g.add(desk);
+    box(desk, 0.5, 0.34, 0.015, INKY, 0, 0, 0, { line: 0.004 });
+    const sheet = canvasTex(128, 96, (c, w, h) => { c.fillStyle = '#FFFDF8'; c.fillRect(0, 0, w, h); c.strokeStyle = '#8F857C'; c.lineWidth = 1; for (let r = 0; r < 4; r++) for (let l = 0; l < 5; l++) { const yy = 12 + r * 21 + l * 3; c.beginPath(); c.moveTo(6, yy); c.lineTo(w - 6, yy); c.stroke(); } c.fillStyle = '#2B1C12'; for (let i = 0; i < 26; i++) { c.beginPath(); c.arc(10 + ((i * 37) % 108), 14 + Math.floor(i / 7) * 21 + ((i * 5) % 9), 2, 0, Math.PI * 2); c.fill(); } });
+    plane(desk, 0.44, 0.3, toon(0xffffff, { map: sheet }), 0, 0.17, 0.01);
+    const lamp = glow(desk, 0xffe0a0, 0.45, 0, 0.38, 0.06); lamp.material = lamp.material.clone(); lamp.material.opacity = 0.5;
+    block(P, g); return lamp.material;
+  };
+  // 오케스트라 의자: 검은 다리, 붉은 방석
+  const orchChair = (P, S, st, color = 0x8E2B2E) => {
+    const g = at3(new THREE.Group(), st.x, st.top - 0.47, st.z, st.yaw); S.add(g);
+    [[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]].forEach(([a, b]) => cyl(g, 0.018, 0.018, 0.42, INKY, a, 0, b, { line: 0.003, seg: 6 }));
+    box(g, 0.44, 0.06, 0.42, color, 0, 0.42, 0, { line: 0.008 });
+    box(g, 0.42, 0.36, 0.05, INKY, 0, 0.48, -0.2, { line: 0.006 });
+    mark(P, g, { seat: st.id }); st.mesh = g; return g;
+  };
+  // 바이올린(턱에 괴고 활을 켠다)
+  const violinModel = (S) => {
+    const g = new THREE.Group(); S.add(g);
+    const sh = new THREE.Shape(); sh.moveTo(0, -0.18); sh.bezierCurveTo(0.11, -0.18, 0.12, -0.06, 0.07, -0.02); sh.bezierCurveTo(0.1, 0.03, 0.1, 0.14, 0, 0.14); sh.bezierCurveTo(-0.1, 0.14, -0.1, 0.03, -0.07, -0.02); sh.bezierCurveTo(-0.12, -0.06, -0.11, -0.18, 0, -0.18);
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.045, bevelEnabled: false }); geo.translate(0, 0, -0.022);
+    g.add(solid(geo, 0xA0522D, { line: 0.006 }));
+    box(g, 0.03, 0.2, 0.02, INKY, 0, 0.14, 0.012, { line: 0.002 });
+    const scroll = solid(new THREE.TorusGeometry(0.018, 0.008, 5, 10), 0x6E3A1E, { line: 0.002 }); scroll.position.set(0, 0.36, 0); g.add(scroll);
+    const bow = new THREE.Group(); g.add(bow); g.userData.bow = bow;
+    const stick = box(bow, 0.5, 0.008, 0.008, 0x5A3825, 0, 0, 0.04, { line: 0 }); stick.position.y = -0.02;
+    box(bow, 0.48, 0.004, 0.01, 0xFFF6E6, 0, -0.035, 0.04, { line: 0 });
+    return g;
+  };
+  // 플루트(가로로 든다)
+  const fluteModel = (S) => {
+    const g = new THREE.Group(); S.add(g);
+    const tube = solid(new THREE.CylinderGeometry(0.012, 0.012, 0.62, 10), CHROME, { line: 0.003 }); tube.rotation.z = Math.PI / 2; g.add(tube);
+    for (let i = 0; i < 6; i++) { const k = solid(new THREE.CylinderGeometry(0.008, 0.008, 0.01, 8), 0xE8E2D6, { line: 0 }); k.position.set(-0.15 + i * 0.07, 0.014, 0); g.add(k); }
+    return g;
+  };
+  // 호른(놋쇠 고리와 나팔)
+  const hornModel = (S) => {
+    const g = new THREE.Group(); S.add(g);
+    const coil = solid(new THREE.TorusGeometry(0.13, 0.016, 8, 26), GOLD, { line: 0.004 }); g.add(coil);
+    const coil2 = solid(new THREE.TorusGeometry(0.09, 0.012, 8, 22), GOLD, { line: 0.003 }); g.add(coil2);
+    const bell = solid(new THREE.CylinderGeometry(0.13, 0.025, 0.22, 18, 1, true), GOLD, { line: 0.004, mat: toon(GOLD, { side: THREE.DoubleSide }) }); bell.rotation.z = -Math.PI / 2 + 0.5; bell.position.set(0.2, -0.06, 0); g.add(bell);
+    return g;
+  };
+  // 첼로(바닥에 세워 무릎 사이에)
+  const celloModel = (S) => {
+    const g = new THREE.Group(); S.add(g);
+    const sh = new THREE.Shape(); sh.moveTo(0, -0.38); sh.bezierCurveTo(0.24, -0.38, 0.26, -0.12, 0.15, -0.04); sh.bezierCurveTo(0.21, 0.06, 0.2, 0.3, 0, 0.3); sh.bezierCurveTo(-0.2, 0.3, -0.21, 0.06, -0.15, -0.04); sh.bezierCurveTo(-0.26, -0.12, -0.24, -0.38, 0, -0.38);
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.16, bevelEnabled: false }); geo.translate(0, 0.5, -0.08);
+    g.add(solid(geo, 0x8C4A2B, { line: 0.008 }));
+    box(g, 0.05, 0.5, 0.03, INKY, 0, 0.78, 0.07, { line: 0.003 });
+    const scroll = solid(new THREE.TorusGeometry(0.03, 0.012, 5, 10), 0x5A2E18, { line: 0.002 }); scroll.position.set(0, 1.32, 0); g.add(scroll);
+    cyl(g, 0.008, 0.008, 0.14, CHROME, 0, 0, 0, { line: 0, seg: 5 });
+    const bow = new THREE.Group(); bow.position.set(0, 0.62, 0.12); g.add(bow); g.userData.bow = bow;
+    box(bow, 0.7, 0.01, 0.01, 0x5A3825, 0, 0, 0, { line: 0 });
+    return g;
+  };
+  // 하프(큰 세모 틀과 줄)
+  const harpModel = (S) => {
+    const g = new THREE.Group(); S.add(g);
+    cyl(g, 0.16, 0.2, 0.12, GOLD, 0, 0, 0, { line: 0.006, seg: 14 });
+    const pillar = cyl(g, 0.035, 0.04, 1.75, GOLD, -0.32, 0.1, 0, { line: 0.006, seg: 10 }); pillar.rotation.z = 0.05;
+    const neck = new THREE.CatmullRomCurve3([[-0.33, 1.82], [-0.05, 1.86], [0.2, 1.62], [0.38, 1.5], [0.48, 1.62]].map(([x, y]) => new THREE.Vector3(x, y, 0)));
+    g.add(solid(new THREE.TubeGeometry(neck, 20, 0.035, 8), GOLD, { line: 0.005 }));
+    const sound = new THREE.CatmullRomCurve3([[0.05, 0.12], [0.25, 0.8], [0.46, 1.6]].map(([x, y]) => new THREE.Vector3(x, y, 0)));
+    g.add(solid(new THREE.TubeGeometry(sound, 12, 0.06, 8), 0xC98A4B, { line: 0.006 }));
+    const strings = []; for (let i = 0; i < 15; i++) { const x0 = -0.28 + i * 0.05; const top = 1.82 - Math.max(0, x0 + 0.05) * 0.6; const bot = 0.15 + Math.max(0, (x0 - 0.05)) * 1.7; if (top - bot < 0.1) continue; const s2 = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, top - bot, 4), new THREE.MeshBasicMaterial({ color: i % 7 === 0 ? 0xC0392B : 0xFFF6E6 })); s2.position.set(x0, (top + bot) / 2, 0); g.add(s2); strings.push(s2); }
+    g.userData.strings = strings;
+    return g;
+  };
+  // 팀파니 둘(구리 솥 위 북가죽, 세 다리)
+  const timpaniPair = (P, S, x, y, z, ry) => {
+    const g = at3(new THREE.Group(), x, y, z, ry); S.add(g);
+    const pots = [-0.42, 0.42].map((dx, i) => {
+      const pot = new THREE.Group(); pot.position.x = dx; g.add(pot);
+      const r = i ? 0.33 : 0.38;
+      [0, 2.1, 4.2].forEach((a) => cyl(pot, 0.012, 0.012, 0.45, CHROME, Math.sin(a) * r * 0.8, 0, Math.cos(a) * r * 0.8, { line: 0, seg: 5 }));
+      const bowl = solid(new THREE.SphereGeometry(r, 18, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), COPPER, { line: 0.008 }); bowl.rotation.x = Math.PI; bowl.position.y = 0.78; pot.add(bowl);
+      const head = new THREE.Mesh(new THREE.CircleGeometry(r * 0.98, 24), toon(0xF3EADB)); head.rotation.x = -Math.PI / 2; head.position.y = 0.79; pot.add(head);
+      cyl(pot, r + 0.01, r + 0.01, 0.03, CHROME, 0, 0.765, 0, { line: 0.003, seg: 24 });
+      return pot;
+    });
+    block(P, g); g.userData.pots = pots; return g;
+  };
+  // 지휘봉
+  const batonModel = (S) => { const g = new THREE.Group(); S.add(g); const b = solid(new THREE.CylinderGeometry(0.004, 0.009, 0.42, 6), 0xFFFDF8, { line: 0.002 }); b.position.y = 0.21; g.add(b); const h = solid(new THREE.SphereGeometry(0.018, 8, 6), 0x5A3825, { line: 0.002 }); g.add(h); return g; };
+  // 그랜드 피아노(뚜껑을 연다)
+  const grandPiano = (P, S, x, y, z, ry) => {
+    const piano = at3(new THREE.Group(), x, y, z, ry); S.add(piano);
+    const BLACK = 0x2A2427;
+    const outline = () => { const s = new THREE.Shape(); s.moveTo(-0.75, 0); s.lineTo(0.75, 0); s.lineTo(0.75, 0.75); s.bezierCurveTo(0.75, 1.25, 0.2, 1.15, 0.05, 1.6); s.quadraticCurveTo(-0.1, 2.0, -0.45, 2.0); s.lineTo(-0.75, 2.0); s.lineTo(-0.75, 0); return s; };
+    const caseGeo = new THREE.ExtrudeGeometry(outline(), { depth: 0.34, bevelEnabled: false }); caseGeo.translate(0, -1, -0.17);
+    const body = solid(caseGeo, BLACK, { line: 0.02 }); body.rotation.x = -Math.PI / 2; body.position.set(0, 0.79, -1.0); piano.add(body);
+    const harp = new THREE.Mesh(new THREE.ShapeGeometry(outline()).translate(0, -1, 0), toon(BRASS)); harp.rotation.x = -Math.PI / 2; harp.scale.set(0.9, 0.9, 1); harp.position.set(0, 0.95, -1.0); piano.add(harp);
+    const hinge = new THREE.Group(); hinge.position.set(-0.75, 0.97, -1.0); hinge.rotation.z = 0.55; piano.add(hinge);
+    const lidGeo = new THREE.ExtrudeGeometry(outline(), { depth: 0.025, bevelEnabled: false }); lidGeo.translate(0, -1, -0.0125);
+    const lid = solid(lidGeo, BLACK, { line: 0.012 }); lid.rotation.x = -Math.PI / 2; lid.position.set(0.75, 0.0125, 0); hinge.add(lid);
+    cyl(piano, 0.012, 0.012, 0.62, BLACK, 0.3, 0.96, -0.9, { line: 0.004, seg: 6 });
+    box(piano, 1.5, 0.12, 0.3, BLACK, 0, 0.66, 0.15, { line: 0.015 });
+    [-1, 1].forEach((k) => box(piano, 0.07, 0.17, 0.3, BLACK, k * 0.715, 0.66, 0.15, { line: 0.008 }));
+    const keys = canvasTex(512, 64, (g, w, h) => {
+      g.fillStyle = '#FFFDF8'; g.fillRect(0, 0, w, h); g.strokeStyle = '#8F857C'; g.lineWidth = 1.5;
+      const n = 36; const kw = w / n; for (let i = 1; i < n; i++) { g.beginPath(); g.moveTo(i * kw, 0); g.lineTo(i * kw, h); g.stroke(); }
+      g.fillStyle = '#1E1A1C'; for (let i = 0; i < n - 1; i++) if ([0, 1, 3, 4, 5].includes(i % 7)) g.fillRect((i + 1) * kw - kw * 0.3, 0, kw * 0.6, h * 0.6);
+    });
+    plane(piano, 1.36, 0.17, toon(0xffffff, { map: keys }), 0, 0.785, 0.17, { rx: -Math.PI / 2 });
+    const desk = box(piano, 0.8, 0.26, 0.03, BLACK, 0, 0.96, -0.1, { line: 0.008 }); desk.rotation.x = -0.25;
+    plane(piano, 0.5, 0.2, toon(0xFFFDF8), 0, 1.09, -0.08, { rx: -0.25 });
+    [[-0.62, -0.2], [0.62, -0.2], [-0.4, -1.75]].forEach(([a, b]) => cyl(piano, 0.06, 0.05, 0.62, BLACK, a, 0, b, { line: 0.01, seg: 10 }));
+    box(piano, 0.2, 0.5, 0.06, BLACK, 0, 0.02, -0.3, { line: 0.008 });
+    [-0.05, 0.05].forEach((a) => box(piano, 0.04, 0.02, 0.12, BRASS, a, 0.03, -0.22, { line: 0.004 }));
+    const bench = new THREE.Group(); bench.position.z = 0.75; piano.add(bench);
+    box(bench, 0.85, 0.08, 0.36, BLACK, 0, 0.42, 0, { line: 0.012 }); box(bench, 0.8, 0.06, 0.32, 0x8E3E3A, 0, 0.5, 0, { line: 0.01 });
+    [[-0.36, -0.15], [0.36, -0.15], [-0.36, 0.15], [0.36, 0.15]].forEach(([a, b]) => cyl(bench, 0.025, 0.025, 0.42, BLACK, a, 0, b, { line: 0.005, seg: 6 }));
+    block(P, piano);
+    piano.userData.lid = hinge; piano.userData.bench = bench;
+    return piano;
+  };
+  // 작은 재즈 드럼(베이스드럼·스네어·하이햇·라이드, 브러시)
+  const jazzKit = (P, S, x, y, z, ry = 0) => {
+    const g = at3(new THREE.Group(), x, y, z, ry); S.add(g);
+    const drum = (r, len, dx, dy, dz, rx, shell) => { const d = new THREE.Group(); d.position.set(dx, dy, dz); d.rotation.x = rx; g.add(d); cyl(d, r, r, len, shell, 0, -len / 2, 0, { line: 0.01, seg: 20 }); cyl(d, r * 0.98, r * 0.98, 0.006, 0xF3EADB, 0, len / 2, 0, { line: 0, seg: 20 }); [-len / 2, len / 2 - 0.025].forEach((yy) => cyl(d, r + 0.01, r + 0.01, 0.025, CHROME, 0, yy, 0, { line: 0, seg: 20 })); return d; };
+    const kick = drum(0.28, 0.36, 0, 0.3, 0, Math.PI / 2, 0x3E6B58);
+    const snare = drum(0.17, 0.13, -0.42, 0.58, 0.18, 0.15, CHROME); cyl(g, 0.01, 0.01, 0.52, CHROME, -0.42, 0, 0.18, { line: 0, seg: 5 });
+    const tom = drum(0.14, 0.15, 0.05, 0.75, -0.02, 0.35, 0x3E6B58);
+    const cym = (r, dx, dy, dz, tilt) => { cyl(g, 0.01, 0.01, dy, CHROME, dx, 0, dz, { line: 0, seg: 5 }); const c = new THREE.Group(); c.position.set(dx, dy, dz); c.rotation.x = tilt; g.add(c); const m = solid(new THREE.ConeGeometry(r, 0.035, 24), GOLD, { line: 0.004 }); m.position.y = 0.018; c.add(m); return c; };
+    const hat = cym(0.15, -0.72, 0.78, 0.1, 0.05); const ride = cym(0.27, 0.62, 0.95, -0.1, -0.3);
+    [kick, snare, tom, hat, ride].forEach((d) => { d.userData.base = { rx: d.rotation.x, s: 1 }; d.userData.t = -9; });
+    g.userData.parts = { kick, snare, tom, hat, ride };
+    block(P, g); return g;
+  };
+  // 콘트라베이스(세워 둔다)
+  const uprightBass = (S) => {
+    const g = new THREE.Group(); S.add(g);
+    const sh = new THREE.Shape(); sh.moveTo(0, -0.5); sh.bezierCurveTo(0.32, -0.5, 0.34, -0.15, 0.2, -0.05); sh.bezierCurveTo(0.27, 0.08, 0.25, 0.38, 0, 0.4); sh.bezierCurveTo(-0.25, 0.38, -0.27, 0.08, -0.2, -0.05); sh.bezierCurveTo(-0.34, -0.15, -0.32, -0.5, 0, -0.5);
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.22, bevelEnabled: false }); geo.translate(0, 0.62, -0.11);
+    g.add(solid(geo, 0x7A3E22, { line: 0.01 }));
+    box(g, 0.06, 0.75, 0.04, INKY, 0, 1.0, 0.1, { line: 0.003 });
+    const scroll = solid(new THREE.TorusGeometry(0.04, 0.015, 5, 10), 0x5A2E18, { line: 0.002 }); scroll.position.set(0, 1.8, 0); g.add(scroll);
+    cyl(g, 0.01, 0.01, 0.12, CHROME, 0, 0, 0, { line: 0, seg: 5 });
+    const strings = [-0.02, -0.007, 0.007, 0.02].map((dx) => { const s2 = new THREE.Mesh(new THREE.CylinderGeometry(0.002, 0.002, 1.25, 4), new THREE.MeshBasicMaterial({ color: 0xE8DCC6 })); s2.position.set(dx, 1.0, 0.125); g.add(s2); return s2; });
+    g.userData.strings = strings;
+    return g;
+  };
+  // 색소폰(놋쇠 굽은 관과 나팔)
+  const saxModel = (S) => {
+    const g = new THREE.Group(); S.add(g);
+    const body = new THREE.CatmullRomCurve3([[0, 0.38, 0], [0.02, 0.2, 0], [0.0, -0.05, 0], [0.04, -0.2, 0], [0.12, -0.24, 0], [0.18, -0.12, 0]].map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+    g.add(solid(new THREE.TubeGeometry(body, 24, 0.028, 10), GOLD, { line: 0.004 }));
+    const bell = solid(new THREE.CylinderGeometry(0.075, 0.03, 0.12, 16, 1, true), GOLD, { line: 0.004, mat: toon(GOLD, { side: THREE.DoubleSide }) }); bell.position.set(0.19, -0.06, 0); g.add(bell);
+    const neck = solid(new THREE.CylinderGeometry(0.012, 0.015, 0.14, 8), GOLD, { line: 0.002 }); neck.position.set(-0.04, 0.42, 0); neck.rotation.z = 0.9; g.add(neck);
+    for (let i = 0; i < 5; i++) { const k = solid(new THREE.CylinderGeometry(0.014, 0.014, 0.01, 8), 0xFFF6E6, { line: 0 }); k.rotation.x = Math.PI / 2; k.position.set(0.02, 0.25 - i * 0.07, 0.03); g.add(k); }
+    return g;
+  };
+  // 통기타·우쿨렐레(둥근 몸통, 울림 구멍)
+  const acousticModel = (S, scale = 1, color = SPRUCE) => {
+    const g = new THREE.Group(); S.add(g);
+    const sh = new THREE.Shape(); sh.moveTo(0, -0.26); sh.bezierCurveTo(0.2, -0.26, 0.22, -0.06, 0.12, 0.0); sh.bezierCurveTo(0.17, 0.06, 0.15, 0.2, 0, 0.2); sh.bezierCurveTo(-0.15, 0.2, -0.17, 0.06, -0.12, 0.0); sh.bezierCurveTo(-0.22, -0.06, -0.2, -0.26, 0, -0.26);
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.09, bevelEnabled: false }); geo.translate(0, 0, -0.045);
+    g.add(solid(geo, color, { line: 0.007 }));
+    const hole = new THREE.Mesh(new THREE.CircleGeometry(0.05, 16), toon(0x2B1C12)); hole.position.set(0, 0.04, 0.046); g.add(hole);
+    box(g, 0.08, 0.025, 0.012, 0x2B1C12, 0, -0.15, 0.046, { line: 0 });
+    box(g, 0.045, 0.42, 0.025, MAPLE, 0, 0.18, 0, { line: 0.004 });
+    box(g, 0.075, 0.12, 0.028, MAPLE, 0, 0.6, 0, { line: 0.003 });
+    g.scale.setScalar(scale);
+    return g;
+  };
+  // 카혼(앉아서 치는 나무 상자)
+  const cajonBox = (P, S, st) => {
+    const g = at3(new THREE.Group(), st.x, st.top - 0.48, st.z, st.yaw); S.add(g);
+    box(g, 0.32, 0.48, 0.32, 0xB98A5E, 0, 0, 0, { line: 0.01 });
+    box(g, 0.29, 0.42, 0.01, 0x8C5A3B, 0, 0.03, 0.165, { line: 0 });
+    const hole = new THREE.Mesh(new THREE.CircleGeometry(0.05, 14), toon(0x2B1C12)); hole.position.set(0, 0.22, -0.162); hole.rotation.y = Math.PI; g.add(hole);
+    mark(P, g, { seat: st.id }); st.mesh = g; return g;
+  };
+  // 턴테이블(판이 돈다)
+  const turntable = (S, x, y, z, ry = 0) => {
+    const g = at3(new THREE.Group(), x, y, z, ry); S.add(g);
+    box(g, 0.46, 0.08, 0.36, WALNUT, 0, 0, 0, { line: 0.006 });
+    const rec = new THREE.Group(); rec.position.set(-0.04, 0.085, 0); g.add(rec);
+    rec.add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.008, 28), toon(0x1E1A1C)));
+    const label = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.01, 16), toon(0xD9654B)); rec.add(label);
+    const groove = new THREE.Mesh(new THREE.RingGeometry(0.08, 0.13, 28), new THREE.MeshBasicMaterial({ color: 0x3A3236 })); groove.rotation.x = -Math.PI / 2; groove.position.y = 0.006; rec.add(groove);
+    const arm = box(g, 0.02, 0.02, 0.22, CHROME, 0.17, 0.1, 0.02, { line: 0 }); arm.rotation.y = 0.35;
+    g.userData.rec = rec; return g;
+  };
+  // 연주 안내: 바닥에서 숨 쉬는 고리와 떠 있는 '♪ ○○ 치기' 판(누가 치면 사라진다)
+  const playHint = (P, S, { id, x, z, y = 0, label, color, tagY = 2.3 }) => {
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.62, 40), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2; ring.position.set(x, y + 0.03, z); S.add(ring);
+    const tex = canvasTex(320, 96, (g, w, hh) => {
+      g.fillStyle = 'rgba(30,20,24,.88)'; g.beginPath(); g.roundRect(4, 4, w - 8, hh - 8, 40); g.fill();
+      g.strokeStyle = `#${new THREE.Color(color).getHexString()}`; g.lineWidth = 6; g.stroke();
+      g.fillStyle = '#FFF3C4'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '700 46px "Gaegu", sans-serif'; g.fillText(`♪ ${label}`, w / 2, hh / 2 + 2);
+    });
+    const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); tag.scale.set(1.6, 0.48, 1);
+    tag.position.set(x, y + tagY, z); tag.renderOrder = 5; S.add(tag);
+    mark(P, ring, { seat: id });
+    return { seat: id, ring, tag, y0: y + tagY };
+  };
+  const updateHints = (hints, taken, now) => hints.forEach((hint, n) => {
+    const free = !taken(hint.seat); hint.ring.visible = free; hint.tag.visible = free;
+    if (free && !reduceMotion) { const k = 0.5 + 0.5 * Math.sin(now * 3 + n); hint.ring.material.opacity = 0.35 + k * 0.45; hint.ring.scale.setScalar(1 + k * 0.12); hint.tag.position.y = hint.y0 + Math.sin(now * 2 + n) * 0.08; }
+  });
+  // 손에 드는 악기: 사람이 있으면 인형 앞(hold)으로, 없으면 제자리(rest)로. 친 순간(t)에 살짝 흔들린다
+  const holdItems = (items, playerOf, now) => items.forEach((it) => {
+    const p = playerOf(it.seat);
+    if (it.g.userData.strap) it.g.userData.strap.visible = Boolean(p);
+    if (p) {
+      const yaw = p.doll.yaw.rotation.y; const k = Math.max(0, 1 - (now - it.t) / 0.3); const h = it.hold;
+      const side = h.side || 0;
+      it.g.position.set(p.x + Math.sin(yaw) * h.d + Math.cos(yaw) * side, p.doll.root.position.y + h.y, p.z + Math.cos(yaw) * h.d - Math.sin(yaw) * side);
+      it.g.rotation.set(h.rx || 0, yaw + (h.ry || 0), h.rz + (reduceMotion ? 0 : k * (h.wiggle ?? 0.12)), 'YXZ');
+      it.g.scale.setScalar(h.scale || 1);
+      if (it.g.userData.bow && !reduceMotion) it.g.userData.bow.position.x = Math.sin(now * 5) * 0.12;
+    } else { it.g.position.set(it.rest[0], it.rest[1], it.rest[2]); it.g.rotation.set(it.rest[4] || 0, it.rest[3] || 0, it.rest[5] || 0, 'YXZ'); it.g.scale.setScalar(it.restScale || 1); }
+  });
+
   // ───────── 5층 공연장 사락 밴드 짓기 ─────────
   const buildConcert = (P) => {
     const S = P.scene;
@@ -1866,8 +2172,9 @@ function start() {
     };
     const stand = (x, z) => { const g = new THREE.Group(); g.position.set(x, h, z); [-1, 1].forEach((k) => { const l = box(g, 0.025, 0.4, 0.025, INKY, k * 0.1, 0, 0.05, { line: 0 }); l.rotation.z = -k * 0.2; }); box(g, 0.025, 0.55, 0.025, INKY, 0, 0, -0.06, { line: 0 }); box(g, 0.26, 0.04, 0.12, INKY, 0, 0.18, 0, { line: 0.003 }); S.add(g); };
     stand(-4.2, -6.5); stand(4.2, -6.5);
-    B.held.push({ seat: 'band-guitar', g: axe(0xD9654B, 0.44, 0xFFFDF8), rest: [-4.2, h + 0.42, -6.5], t: -9 });
-    B.held.push({ seat: 'band-bass', g: axe(0x2F5D5A, 0.62, 0xF2D16B), rest: [4.2, h + 0.42, -6.5], t: -9 });
+    const GUITAR_HOLD = { d: 0.32, y: 0.62, rz: -1.05, scale: 1.25 };
+    B.held.push({ seat: 'band-guitar', g: axe(0xD9654B, 0.44, 0xFFFDF8), rest: [-4.2, h + 0.42, -6.5, 0.25, 0, 0.12], hold: GUITAR_HOLD, t: -9 });
+    B.held.push({ seat: 'band-bass', g: axe(0x2F5D5A, 0.62, 0xF2D16B), rest: [4.2, h + 0.42, -6.5, 0.25, 0, 0.12], hold: GUITAR_HOLD, t: -9 });
     B.held.forEach((it) => mark(P, it.g, { seat: it.seat }));
     // 마이크
     const mic = new THREE.Group(); mic.position.set(0, h, -4.5); mic.scale.setScalar(1.15); S.add(mic);
@@ -1930,21 +2237,54 @@ function start() {
       B.sweeps.push({ g, mat, phase: i * 1.3, side: x < 0 ? 1 : -1 });
     });
     // 연주 안내: 빈 악기 자리마다 빛나는 바닥 고리와 떠 있는 '♪ 드럼 치기' 안내판(누가 치면 사라진다)
-    B.hints = BAND.map((b) => {
-      const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.62, 40), new THREE.MeshBasicMaterial({ color: COLORS[b.part], transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
-      ring.rotation.x = -Math.PI / 2; ring.position.set(b.x, b.top - (b.kind === 'stool' ? 0.66 : 0) + 0.03 + (b.kind === 'stool' ? 0.12 : 0), b.z); S.add(ring);
-      const tex = canvasTex(320, 96, (g, w, hh) => {
-        g.fillStyle = 'rgba(30,20,24,.88)'; g.beginPath(); g.roundRect(4, 4, w - 8, hh - 8, 40); g.fill();
-        g.strokeStyle = `#${new THREE.Color(COLORS[b.part]).getHexString()}`; g.lineWidth = 6; g.stroke();
-        g.fillStyle = '#FFF3C4'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '700 46px "Gaegu", sans-serif'; g.fillText(`♪ ${b.tip}`, w / 2, hh / 2 + 2);
-      });
-      const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); tag.scale.set(1.6, 0.48, 1);
-      const y0 = h + (b.part === 'drums' ? 2.7 : 2.3); tag.position.set(b.x, y0, b.z); tag.renderOrder = 5; S.add(tag);
-      mark(P, ring, { seat: b.id });
-      return { part: b.part, ring, tag, y0 };
+    // 오케스트라석: 무대 앞 한 뼘 높은 나무 단, 앞 놋쇠 난간과 붉은 벨벳 가림막, 가운데 지휘대
+    const OP = ORCH_PIT; const ocx = (OP.x0 + OP.x1) / 2; const ocz = (OP.z0 + OP.z1) / 2;
+    const pitDeck = box(S, OP.x1 - OP.x0, OP.h, OP.z1 - OP.z0, 0x4A2F20, ocx, 0, ocz, { line: 0.02, cast: false }); mark(P, pitDeck, { floor: 0 });
+    box(S, OP.x1 - OP.x0, 0.03, 0.05, BRASS, ocx, OP.h - 0.03, OP.z1, { line: 0, cast: false });
+    box(S, 12.0, 0.55, 0.06, VELVET, 0, 0, OP.z1 + 0.06, { line: 0.006 });
+    const pitRail = solid(new THREE.CylinderGeometry(0.03, 0.03, 12.0, 8), BRASS, { line: 0.004 }); pitRail.rotation.z = Math.PI / 2; pitRail.position.set(0, 0.62, OP.z1 + 0.06); S.add(pitRail);
+    for (let x = -6; x <= 6.01; x += 1.0) cyl(S, 0.02, 0.02, 0.6, BRASS, x, 0, OP.z1 + 0.06, { line: 0, seg: 6 });
+    const pitLabel = plane(S, 1.8, 0.4, toon(0xffffff, { map: signTex('오케스트라', { bg: '#2B1C12', fg: '#F2D16B', size: 90 }) }), 0, 0.3, OP.z1 + 0.1); pitLabel.castShadow = false;
+    const podium = new THREE.Group(); podium.position.set(PODIUM[0], OP.h, PODIUM[1]); S.add(podium);
+    cyl(podium, 0.48, 0.5, 0.22, 0x5A3825, 0, 0, 0, { line: 0.012, seg: 22 }); cyl(podium, 0.49, 0.49, 0.03, BRASS, 0, 0.2, 0, { line: 0, seg: 22 });
+    const prail = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.02, 6, 24, Math.PI), toon(BRASS)); prail.rotation.x = -Math.PI / 2; prail.rotation.z = 0; prail.position.set(0, 1.12, 0.05); podium.add(prail);
+    [-0.45, 0.45].forEach((x) => cyl(podium, 0.015, 0.015, 0.9, BRASS, x, 0.22, 0.05, { line: 0, seg: 6 }));
+    mark(P, podium, { seat: 'orch-conductor' });
+    B.standLamps = { conductor: musicStand(P, S, PODIUM[0], OP.h, PODIUM[1] - 0.6, 0) };
+    B.orch = {};
+    ORCH_SEATS.forEach((o) => {
+      const st = P.seatById(o.id);
+      if (!o.stand) orchChair(P, S, st);
+      if (!['harp', 'timpani'].includes(o.part)) { const [x, z] = turnAt(o.x, o.z, o.yaw, 0, 0.75); B.standLamps[o.part] = musicStand(P, S, x, OP.h, z, o.yaw + Math.PI); }
+      const rest = (dx, dz, y, ry = 0, rx = 0, rz = 0) => { const [x, z] = turnAt(o.x, o.z, o.yaw, dx, dz); return [x, OP.h + y, z, o.yaw + ry, rx, rz]; };
+      if (o.part === 'violin') B.held.push({ seat: o.id, g: violinModel(S), rest: rest(0.32, -0.05, 0.5, 0, -Math.PI / 2, 0), hold: { d: 0.24, y: 0.98, side: -0.1, rz: 0.4, rx: -0.3, scale: 1.4, wiggle: 0.06 }, t: -9 });
+      if (o.part === 'flute') B.held.push({ seat: o.id, g: fluteModel(S), rest: rest(0, 0.75, 1.02, 0, 0, 0), hold: { d: 0.22, y: 1.05, rz: 0.12, scale: 1.4, wiggle: 0.03 }, t: -9 });
+      if (o.part === 'horn') B.held.push({ seat: o.id, g: hornModel(S), rest: rest(0.34, 0, 0.5, Math.PI / 2, -Math.PI / 2, 0), hold: { d: 0.26, y: 0.72, rz: 0, scale: 1.4, wiggle: 0.05 }, t: -9 });
+      if (o.part === 'cello') { const c = celloModel(S); const [x, z] = turnAt(o.x, o.z, o.yaw, 0, 0.38); c.position.set(x, OP.h, z); c.rotation.set(-0.25, o.yaw, 0, 'YXZ'); c.scale.setScalar(1.15); block(P, c); mark(P, c, { seat: o.id }); B.orch.cello = c; }
+      if (o.part === 'harp') { const hp = harpModel(S); const [x, z] = turnAt(o.x, o.z, o.yaw, 0.15, 0.55); hp.position.set(x, OP.h, z); hp.rotation.y = o.yaw + Math.PI / 2; hp.scale.setScalar(1.1); mark(P, hp, { seat: o.id }); B.orch.harp = hp; }
+      if (o.part === 'timpani') { const [x, z] = turnAt(o.x, o.z, o.yaw, 0, 0.7); const tp = timpaniPair(P, S, x, OP.h, z, o.yaw); mark(P, tp, { seat: o.id }); B.orch.timpani = tp; tp.userData.pots.forEach((pot) => { pot.userData.t = -9; }); }
+    });
+    B.held.push({ seat: 'orch-conductor', g: batonModel(S), rest: [PODIUM[0] + 0.15, OP.h + 1.05, PODIUM[1] - 0.55, 0, -Math.PI / 2, 0], hold: { d: 0.2, y: 0.95, side: -0.22, rz: -0.6, rx: -0.4, scale: 1.3, wiggle: 0.9 }, t: -9 });
+    B.held.forEach((it) => mark(P, it.g, { seat: it.seat }));
+    // 연주 안내: 빈 자리마다 빛나는 고리와 떠 있는 안내판
+    const OCOL = { violin: 0xF2A43A, flute: 0x7FE0EA, horn: 0xF2D16B, cello: 0xE8A0A8, harp: 0xFFF3C4, timpani: 0xD9654B, conductor: 0xFFFDF8 };
+    B.hints = [
+      ...BAND.map((b) => playHint(P, S, { id: b.id, x: b.x, z: b.z, y: h + (b.part === 'drums' ? 0.12 : 0), label: b.tip, color: COLORS[b.part], tagY: b.part === 'drums' ? 2.6 : 2.3 })),
+      ...ORCH_SEATS.map((o) => { const [x, z] = turnAt(o.x, o.z, o.yaw, o.part === 'harp' ? -0.75 : 0.75, -0.35); return playHint(P, S, { id: o.id, x, z, y: OP.h, label: o.tip, color: OCOL[o.part], tagY: 2.0 }); }),
+      playHint(P, S, { id: 'orch-conductor', x: PODIUM[0], z: PODIUM[1] + 0.95, y: 0, label: '지휘하기', color: OCOL.conductor, tagY: 2.3 }),
+    ];
+    // 객석 응원봉(앉으면 손에 들고, 합주하면 박에 맞춰 흔든다)
+    B.sticks = {};
+    P.seats.filter((st) => st.id.startsWith('aud-')).forEach((st, i) => {
+      const g = new THREE.Group(); g.visible = false; S.add(g);
+      const c = [0xFF8FB0, 0x7FE0EA, 0xF2D16B, 0x9B8CF2][i % 4];
+      cyl(g, 0.02, 0.02, 0.14, INKY, 0, 0, 0, { line: 0, seg: 6 });
+      const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.3, 10), new THREE.MeshBasicMaterial({ color: c })); tube.position.y = 0.29; g.add(tube);
+      const gl = glow(g, c, 0.7, 0, 0.32, 0); gl.material = gl.material.clone(); g.userData.glow = gl.material;
+      B.sticks[st.id] = g;
     });
     // 미러볼과 벽에 흩어지는 빛 점
-    const ball = new THREE.Group(); ball.position.set(0, 6.4, -1.4); S.add(ball);
+    const ball = new THREE.Group(); ball.position.set(0, 6.4, 2.0); S.add(ball);
     cyl(ball, 0.006, 0.006, H - 6.4, 0x8F857C, 0, 0.22, 0, { line: 0, seg: 4 });
     const mirror = new THREE.Mesh(new THREE.IcosahedronGeometry(0.24, 1), new THREE.MeshLambertMaterial({ color: 0xDDE3E8, emissive: 0x556070, flatShading: true })); ball.add(mirror);
     B.ball = ball;
@@ -1955,14 +2295,14 @@ function start() {
     ball.add(B.dots);
     // 댄스 플로어: 무대 앞 빛나는 바닥 칸(박에 맞춰 켜진다)
     const tileGeo = new THREE.PlaneGeometry(0.94, 0.94); tileGeo.rotateX(-Math.PI / 2);
-    for (let ix = 0; ix < 12; ix++) for (let iz = 0; iz < 4; iz++) {
+    for (let ix = 0; ix < 12; ix++) for (let iz = 0; iz < 3; iz++) {
       const mat = new THREE.MeshBasicMaterial({ color: 0x241a20 }); const t = new THREE.Mesh(tileGeo, mat);
-      t.position.set(-5.5 + ix, 0.013, -2.9 + iz); S.add(t); B.tiles.push({ mat, lit: 0, color: new THREE.Color(0xffffff) });
+      t.position.set(-5.5 + ix, 0.013, 1.0 + iz); S.add(t); B.tiles.push({ mat, lit: 0, color: new THREE.Color(0xffffff) });
     }
-    box(S, 12.2, 0.02, 0.08, BRASS, 0, 0, 0.62, { line: 0, cast: false }); box(S, 12.2, 0.02, 0.08, BRASS, 0, 0, -3.42, { line: 0, cast: false });
-    [-6.07, 6.07].forEach((x) => box(S, 0.08, 0.02, 4.1, BRASS, x, 0, -1.4, { line: 0, cast: false }));
+    box(S, 12.2, 0.02, 0.08, BRASS, 0, 0, 3.52, { line: 0, cast: false }); box(S, 12.2, 0.02, 0.08, BRASS, 0, 0, 0.48, { line: 0, cast: false });
+    [-6.07, 6.07].forEach((x) => box(S, 0.08, 0.02, 3.1, BRASS, x, 0, 2.0, { line: 0, cast: false }));
     // 관객석: 붉은 벨벳 극장 의자(무대를 본다), 줄 끝마다 놋쇠 글자
-    rugAt(P, '#5A1F26', '#3B1418', 23, 0, 4.0, 11.8, 6.6);
+    rugAt(P, '#5A1F26', '#3B1418', 23, 0, 6.65, 11.8, 6.0);
     P.seats.filter((st) => st.id.startsWith('aud-')).forEach((st) => {
       const g = new THREE.Group(); g.position.set(st.x, 0, st.z); g.rotation.y = st.yaw;
       cyl(g, 0.05, 0.07, 0.3, INKY, 0, 0, 0, { line: 0.006, seg: 8 });
@@ -1973,9 +2313,9 @@ function start() {
       mark(P, g, { seat: st.id }); S.add(g); st.mesh = g;
     });
     AUD_ROWS.forEach((z, r) => [-5.55, 5.55].forEach((x) => { const pl = plane(S, 0.24, 0.24, toon(0xffffff, { map: signTex('ABCD'[r], { w: 128, h: 128, bg: '#C9A15E', fg: '#2B1C12', size: 90 }) }), x, 0.6, z, { ry: x < 0 ? -Math.PI / 2 : Math.PI / 2 }); pl.castShadow = false; cyl(S, 0.02, 0.02, 0.48, BRASS, x, 0, z, { line: 0, seg: 6 }); }));
-    chandelier(P, 'B-1', -4.5, 4.0, H); chandelier(P, 'B-2', 4.5, 4.0, H);
+    chandelier(P, 'B-1', -4.5, 6.6, H); chandelier(P, 'B-2', 4.5, 6.6, H);
     // 맨 뒤 음향 콘솔
-    const desk = new THREE.Group(); desk.position.set(0, 0, 8.35); S.add(desk);
+    const desk = new THREE.Group(); desk.position.set(8.3, 0, 8.5); desk.rotation.y = -0.3; S.add(desk);
     box(desk, 2.6, 0.8, 0.9, INKY, 0, 0, 0, { line: 0.02 });
     const faders = canvasTex(512, 160, (g, w, hh) => { g.fillStyle = '#2E2A30'; g.fillRect(0, 0, w, hh); for (let i = 0; i < 24; i++) { const x = 12 + i * 20.5; g.fillStyle = '#111'; g.fillRect(x + 7, 50, 4, 100); g.fillStyle = '#DDE3E8'; g.fillRect(x + 2, 60 + ((i * 37) % 70), 14, 9); g.fillStyle = ['#7FE0EA', '#F2D16B', '#FF8FB0'][i % 3]; g.beginPath(); g.arc(x + 9, 22, 6, 0, Math.PI * 2); g.fill(); g.fillStyle = i % 4 ? '#5BD17A' : '#E4572E'; g.fillRect(x + 4, 36, 10, 5); } });
     const top = plane(desk, 2.5, 0.8, toon(0xffffff, { map: faders }), 0, 0.86, -0.02, { rx: -Math.PI / 2 + 0.25 }); top.castShadow = false;
@@ -2020,7 +2360,7 @@ function start() {
     plane(juke, 0.7, 0.4, new THREE.MeshBasicMaterial({ color: 0xFFF3C4 }), 0, 0.85, 0.305);
     plane(juke, 0.8, 0.3, toon(0xffffff, { map: grille }), 0, 0.35, 0.305);
     glow(juke, 0xffb0c8, 2.2, 0, 1.2, 0.5).material.opacity = 0.5;
-    block(P, juke);
+    block(P, juke); mark(P, juke, { hot: 'juke' });
     LISTEN.forEach((a) => velvetArm(P, a));
     const side = new THREE.Group(); side.position.set(10.9, 0, 2.9); S.add(side);
     cyl(side, 0.2, 0.22, 0.03, BRASS, 0, 0, 0, { line: 0.006 }); cyl(side, 0.025, 0.025, 0.5, BRASS, 0, 0.03, 0, { line: 0.005, seg: 8 }); cyl(side, 0.3, 0.3, 0.04, MARBLE, 0, 0.53, 0, { line: 0.01, seg: 20 });
@@ -2039,9 +2379,281 @@ function start() {
     poster(-12.6, -9.94, '사락 밴드\n첫 공연\n오늘 밤', '#6E2A33'); poster(-10.8, -9.94, '책 읽고\n노래하고', '#2F3B5A');
     poster(10.8, -9.94, '앙코르\n환영', '#3E6B58'); poster(12.6, -9.94, '누구나\n무대로', '#4A2F3A');
     palm(P, -13.1, -6.6); palm(P, 13.1, -8.9); palm(P, -13.1, 9.1); palm(P, 13.1, 9.1);
+    const dark = new THREE.Color(0x241a20);
+    const taken = (E) => (seat) => { const st = P.seatById(seat); return st && E.who[st.part]; };
+    P.music = {
+      stage: (now, E) => {
+        const live = E.live; const pl = E.players;
+        holdItems(B.held, taken(E), now);
+        updateHints(B.hints, taken(E), now);
+        // 객석 응원봉
+        const occ = {}; people.forEach((p) => { if (p.place === 'band' && p.seated && !p.hop) occ[p.seated] = p; });
+        const beat = live ? ((now - E.t0) / (E.songs[E.song].step * 4)) % 1 : 0;
+        Object.entries(B.sticks).forEach(([seat, g], n) => {
+          const p = occ[seat]; g.visible = Boolean(p); if (!p) return;
+          const yaw = p.doll.yaw.rotation.y;
+          g.position.set(p.x + Math.sin(yaw) * 0.18 + Math.cos(yaw) * 0.22, p.doll.root.position.y + 0.95, p.z + Math.cos(yaw) * 0.18 - Math.sin(yaw) * 0.22);
+          g.rotation.set(0, yaw, live && !reduceMotion ? Math.sin(beat * Math.PI * 2 + n) * 0.5 : 0.15, 'YXZ');
+          g.userData.glow.opacity = live ? 0.9 : 0.4;
+        });
+        drainHits(E, now, (e) => {
+          const beam = B.beams.find((b) => b.part === e.part); if (beam) beam.flash = e.part === 'drums' ? (['kick', 'snare', 'crash'].includes(e.hit) ? 1 : beam.flash) : 1;
+          if (e.part === 'drums') { const piece = B.kit[e.hit] || (e.hit === 'tom' ? B.kit.tom1 : null); if (piece) piece.userData.t = now; if (e.hit === 'crash') B.kit.ride.userData.t = now; }
+          B.held.forEach((it) => { const st = P.seatById(it.seat); if (st && st.part === e.part) it.t = now; if (it.seat === 'orch-conductor' && e.part === 'cello') it.t = now; });
+          if (e.part === 'timpani' && B.orch.timpani) B.orch.timpani.userData.pots.forEach((pot, i) => { if (i === (e.midi % 2) || e.roll) pot.userData.t = now; });
+          if (e.part === 'harp' && B.orch.harp) B.orch.harp.userData.t = now;
+          if (e.part === 'cello' && B.orch.cello) B.orch.cello.userData.t = now;
+          if (B.standLamps[e.part]) B.standLamps[e.part].opacity = 1;
+          if (e.part === 'drums' && ['kick', 'snare', 'crash'].includes(e.hit)) { const hue = Math.random(); for (let n = 0; n < (e.hit === 'crash' ? 28 : 11); n++) { const tile = B.tiles[Math.floor(Math.random() * B.tiles.length)]; tile.lit = 1; tile.color.setHSL((hue + Math.random() * 0.25) % 1, 0.85, 0.62); } B.punch = 1; }
+          else if (!pl.drums && ['bass', 'keys', 'timpani', 'harp'].includes(e.part) && Math.random() < 0.6) { const tile = B.tiles[Math.floor(Math.random() * B.tiles.length)]; tile.lit = 0.8; tile.color.setHSL(Math.random(), 0.7, 0.6); }
+        });
+        Object.entries(B.standLamps).forEach(([part, m]) => { const on = pl[part] || (part === 'conductor' && E.who.conductor); m.opacity = on ? Math.max(0.55, m.opacity - (1 / 60) * 1.5) : 0.25; });
+        if (reduceMotion) {
+          B.beams.forEach((b) => { b.mat.opacity = pl[b.part] ? 0.12 : 0; b.poolMat.opacity = pl[b.part] ? 0.35 : 0; b.lens.opacity = pl[b.part] ? 0.9 : 0; });
+          B.tiles.forEach((tile, n) => tile.mat.color.copy(live && n % 3 === 0 ? tile.color.setHSL((n * 0.07) % 1, 0.6, 0.45) : dark));
+          return;
+        }
+        Object.values(B.kit).forEach((g) => {
+          const k = Math.max(0, 1 - (now - g.userData.t) / 0.35); const b = g.userData.base;
+          if (g === B.kit.hat || g === B.kit.crash || g === B.kit.ride) g.rotation.x = b.rx + Math.sin((now - g.userData.t) * 30) * k * 0.18;
+          else g.scale.setScalar(b.s * (1 + k * 0.06));
+        });
+        if (B.orch.timpani) B.orch.timpani.userData.pots.forEach((pot) => { const k = Math.max(0, 1 - (now - pot.userData.t) / 0.3); pot.scale.set(1 + k * 0.05, 1 - k * 0.05, 1 + k * 0.05); });
+        if (B.orch.harp) { const k = Math.max(0, 1 - (now - (B.orch.harp.userData.t || -9)) / 0.4); B.orch.harp.userData.strings.forEach((sg, i) => { sg.position.z = Math.sin(now * 60 + i) * 0.006 * k; }); }
+        if (B.orch.cello && B.orch.cello.userData.bow) B.orch.cello.userData.bow.position.x = pl.cello ? Math.sin(now * 2.2) * 0.22 : 0;
+        B.beams.forEach((b) => {
+          b.flash = Math.max(0, b.flash - (1 / 60) * 5);
+          const on = pl[b.part] ? 1 : 0;
+          b.mat.opacity = lerp(b.mat.opacity, on * (0.07 + b.flash * 0.12), 0.25);
+          b.poolMat.opacity = lerp(b.poolMat.opacity, on * (0.3 + b.flash * 0.35), 0.25);
+          b.lens.opacity = lerp(b.lens.opacity, on * (0.6 + b.flash * 0.4), 0.25);
+        });
+        B.punch = Math.max(0, (B.punch || 0) - (1 / 60) * 4);
+        B.sweeps.forEach((sw) => { // 무빙 라이트: 객석 위를 휘젓는다
+          sw.g.rotation.set(0.55 + Math.sin(now * 0.7 + sw.phase) * 0.35, 0, sw.side * (0.25 + Math.sin(now * 0.9 + sw.phase) * 0.45), 'YXZ');
+          sw.mat.opacity = lerp(sw.mat.opacity, live ? 0.06 + B.punch * 0.08 : 0, 0.1);
+        });
+        B.tiles.forEach((tile) => { tile.lit = Math.max(0, tile.lit - (1 / 60) * 0.8); tile.mat.color.copy(dark).lerp(tile.color, live ? tile.lit : 0); });
+        B.foot.forEach((m, n) => { m.opacity = live ? 0.55 + Math.sin(now * 6 + n) * 0.25 + B.punch * 0.2 : 0.35; });
+        if (B.ball) { B.ball.rotation.y += live ? 0.006 : 0.0015; B.dots.material.opacity = lerp(B.dots.material.opacity, live ? 0.75 : 0, 0.05); }
+      },
+    };
     P.anim = (dt, t) => {
       B.juke.forEach((m, i) => m.color.setHSL((t * 0.08 + i * 0.22) % 1, 0.8, 0.7));
       B.record.rotation.y += dt * 3.5;
+    };
+  };
+
+  // ───────── 6층 음악 라운지 짓기 ─────────
+  const buildLounge = (P) => {
+    const S = P.scene;
+    const { w: W, d: D, h: H } = LOUNGE6; const hw = W / 2;
+    const JH = JAZZ_STAGE.h;
+    const L = P.lounge = { held: { jazz: [], acoustic: [] }, hints: { jazz: [], acoustic: [], lp: [], dj: [] } };
+    // 바닥: 짙은 호두나무 마루, 벽은 짙은 초록
+    const boards = canvasTex(2048, 1463, (g, w, hh) => {
+      const rand = seeded(421); const px = w / W;
+      g.fillStyle = '#2B1C12'; g.fillRect(0, 0, w, hh);
+      for (let x = 0; x < w; x += 0.2 * px) for (let y = -rand() * 2 * px; y < hh; y += 1.6 * px) { const v = (rand() - 0.5) * 16; g.fillStyle = `rgb(${84 + v},${56 + v},${38 + v})`; g.fillRect(x, y, 0.2 * px - 2, 1.6 * px - 2); }
+      g.strokeStyle = '#C9A15E'; g.lineWidth = 5; g.strokeRect(0.4 * px, 0.4 * px, w - 0.8 * px, hh - 0.8 * px);
+    });
+    const win = { r: 1.0, y0: 1.3, y1: 2.9 };
+    const walls = buildRoom(P, { floorTex: boards, wall: 0x2F3B33, side: 0x2A352E, sign: '음악 라운지', windowsAt: [5.0, 9.4], w: W, d: D, h: H, win });
+    dressRoom(P, walls, { w: W, d: D, h: H, windowsAt: [5.0, 9.4], win, pillars: [-12.9, 12.9], drape: EMERALD, sconces: [[-1, -7.0, 3.0], [-1, 6.0, 3.0], [1, -7.0, 3.0], [1, 4.5, 3.0]] });
+    P.hemi.intensity = 1.15; P.sun.intensity = 0.9;
+    // 가운데 길: 건반 무늬 융단과 네 갈래 길 안내 기둥
+    const keysRug = canvasTex(2048, 128, (g, w, hh) => {
+      g.fillStyle = '#FFFDF8'; g.fillRect(0, 0, w, hh); const n = 64; const kw = w / n;
+      g.strokeStyle = '#8F857C'; g.lineWidth = 2; for (let i = 1; i < n; i++) { g.beginPath(); g.moveTo(i * kw, 0); g.lineTo(i * kw, hh); g.stroke(); }
+      g.fillStyle = '#1E1A1C'; for (let i = 0; i < n - 1; i++) if ([0, 1, 3, 4, 5].includes(i % 7)) g.fillRect((i + 1) * kw - kw * 0.3, 0, kw * 0.6, hh * 0.6);
+      g.strokeStyle = '#C9A15E'; g.lineWidth = 6; g.strokeRect(3, 3, w - 6, hh - 6);
+    });
+    const runner = plane(S, 25, 1.5, toon(0xffffff, { map: keysRug }), 0.8, 0.012, -1.0, { rx: -Math.PI / 2 }); mark(P, runner, { floor: 0 });
+    const post = new THREE.Group(); post.position.set(0, 0, 1.45); S.add(post);
+    cyl(post, 0.12, 0.16, 0.06, BRASS, 0, 0, 0, { line: 0.004, seg: 14 }); cyl(post, 0.04, 0.04, 2.3, WALNUT, 0, 0.06, 0, { line: 0.006, seg: 8 });
+    [['↖ 재즈 바', -0.6, 2.05, '#3E6B58'], ['↗ LP 감상실', 0.6, 1.75, '#2F3B5A'], ['↙ 버스킹', -0.5, 1.45, '#8E3E3A'], ['↘ 라디오 DJ', 0.5, 1.15, '#4A2F3A']].forEach(([text, dx, y, bg]) => {
+      const sg = plane(post, 1.2, 0.26, toon(0xffffff, { map: signTex(text, { bg, fg: '#F2D16B', size: 80 }) }), dx * 0.5, y, 0.05, { ry: dx < 0 ? 0.25 : -0.25 }); sg.castShadow = false;
+      const back = plane(post, 1.2, 0.26, toon(0xffffff, { map: signTex(text, { bg, fg: '#F2D16B', size: 80 }) }), dx * 0.5, y, -0.05, { ry: Math.PI + (dx < 0 ? 0.25 : -0.25) }); back.castShadow = false;
+    });
+    block(P, post);
+    [[3.5, -2.6], [10.5, -2.6]].forEach(([x, z]) => { const t = new THREE.Group(); t.position.set(x, 0, z); S.add(t); cyl(t, 0.22, 0.26, 0.04, BRASS, 0, 0, 0, { line: 0.004 }); cyl(t, 0.03, 0.03, 1.05, BRASS, 0, 0.04, 0, { line: 0.004, seg: 8 }); cyl(t, 0.32, 0.32, 0.04, MARBLE, 0, 1.08, 0, { line: 0.008, seg: 20 }); cyl(t, 0.04, 0.035, 0.12, 0xD9654B, 0.08, 1.12, 0, { line: 0.004, seg: 10 }); block(P, t); });
+    palm(P, 13.1, -3.4); palm(P, 13.1, 1.4);
+    // 칸막이: 재즈 바와 LP실 사이 벽(양쪽에 LP 장), 앞 유리벽(아래 판벽, 위 놋쇠 띠), 문 위 간판
+    box(S, 1.6, 3.4, 5.75, WALNUT, 0, 0, -6.875, { line: 0.03 });
+    const glass = new THREE.MeshLambertMaterial({ color: 0xDDF0F7, transparent: true, opacity: 0.18, depthWrite: false });
+    const glassWall = (x0, z0, x1, z1, hgt = 3.0) => {
+      const len = Math.hypot(x1 - x0, z1 - z0); const g = new THREE.Group(); g.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2); g.rotation.y = -Math.atan2(z1 - z0, x1 - x0); S.add(g);
+      box(g, len, 0.9, 0.12, WALNUT, 0, 0, 0, { line: 0.012, cast: false });
+      const pane = new THREE.Mesh(new THREE.BoxGeometry(len, hgt - 0.9, 0.04), glass); pane.position.y = 0.9 + (hgt - 0.9) / 2; g.add(pane);
+      box(g, len, 0.06, 0.14, BRASS, 0, hgt, 0, { line: 0.006, cast: false });
+      for (let i = 0; i <= Math.round(len / 1.5); i++) box(g, 0.05, hgt - 0.9, 0.06, BRASS, -len / 2 + (i * len) / Math.round(len / 1.5), 0.9, 0, { line: 0, cast: false });
+      return g;
+    };
+    glassWall(-13.75, -4.0, -3.2, -4.0); glassWall(-1.9, -4.0, -0.8, -4.0); glassWall(0.8, -4.0, 6.2, -4.0); glassWall(8.2, -4.0, 13.75, -4.0);
+    const doorSign = (x, z, text, bg) => { const sg = plane(S, 2.0, 0.42, toon(0xffffff, { map: signTex(text, { bg, fg: '#F2D16B', size: 90 }) }), x, 3.25, z); sg.castShadow = false; box(S, 2.1, 0.06, 0.1, BRASS, x, 3.0, z - 0.03, { line: 0 }); };
+    doorSign(-2.55, -3.94, '재즈 바', '#3E6B58'); doorSign(7.2, -3.94, 'LP 감상실', '#2F3B5A');
+
+    // ── 뒤 왼쪽 재즈 바: 낮은 무대와 짙은 벨벳 막, 네온 JAZZ, 그랜드 피아노·브러시 드럼·콘트라베이스·색소폰
+    const jstage = box(S, JAZZ_STAGE.x1 - JAZZ_STAGE.x0, JH, JAZZ_STAGE.z1 + 10, 0x3B2618, (JAZZ_STAGE.x0 + JAZZ_STAGE.x1) / 2, 0, (JAZZ_STAGE.z1 - 10) / 2, { line: 0.02, cast: false }); mark(P, jstage, { floor: 0 });
+    box(S, JAZZ_STAGE.x1 - JAZZ_STAGE.x0, 0.04, 0.05, BRASS, (JAZZ_STAGE.x0 + JAZZ_STAGE.x1) / 2, JH - 0.04, JAZZ_STAGE.z1 + 0.01, { line: 0, cast: false });
+    for (let i = 0; i < 17; i++) box(S, 0.5, 4.2, 0.12, i % 2 ? 0x2F3B5A : 0x25304A, -11.0 + i * 0.49, JH, -9.82 + (i % 2) * 0.05, { line: 0, cast: false });
+    const jazzNeon = canvasTex(512, 200, (g, w, hh) => { g.clearRect(0, 0, w, hh); g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = 'italic 700 130px Georgia, serif'; g.shadowColor = '#7FE0EA'; g.shadowBlur = 28; g.fillStyle = '#D8FBFF'; g.fillText('Jazz', w / 2, hh / 2 + 6); });
+    L.neon = new THREE.MeshBasicMaterial({ map: jazzNeon, transparent: true }); const nn = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.0), L.neon); nn.position.set(-7.0, 3.6, -9.7); S.add(nn);
+    const piano = grandPiano(P, S, -9.0, JH, -8.4, Math.PI / 2); const pst = P.seatById('jazz-piano'); mark(P, piano, { seat: 'jazz-piano' }); pst.mesh = piano.userData.bench; L.piano = piano;
+    const kit = jazzKit(P, S, -6.2, JH, -8.75); mark(P, kit, { seat: 'jazz-drums' }); L.kit = kit.userData.parts;
+    const jthrone = new THREE.Group(); jthrone.position.set(-6.2, JH, -9.5); S.add(jthrone); cyl(jthrone, 0.02, 0.02, 0.44, CHROME, 0, 0, 0, { line: 0, seg: 6 }); cyl(jthrone, 0.19, 0.17, 0.07, INKY, 0, 0.43, 0, { line: 0.008, seg: 16 }); mark(P, jthrone, { seat: 'jazz-drums' }); P.seatById('jazz-drums').mesh = jthrone;
+    const ub = uprightBass(S); ub.position.set(-4.3, JH, -8.38); ub.rotation.set(-0.12, -0.2, 0.18, 'YXZ'); mark(P, ub, { seat: 'jazz-bass' }); L.bass = ub;
+    const saxStand = new THREE.Group(); saxStand.position.set(-5.6, JH, -7.3); S.add(saxStand); [0, 2.1, 4.2].forEach((a) => { const l = box(saxStand, 0.02, 0.02, 0.24, INKY, Math.sin(a) * 0.09, 0, Math.cos(a) * 0.09, { line: 0 }); l.rotation.y = a; }); cyl(saxStand, 0.012, 0.012, 0.3, INKY, 0, 0, 0, { line: 0, seg: 5 });
+    L.held.jazz.push({ seat: 'jazz-sax', g: saxModel(S), rest: [-5.6, JH + 0.48, -7.3, 0.4, 0, 0], hold: { d: 0.26, y: 0.72, rz: 0.25, scale: 1.45, wiggle: 0.05 }, t: -9 });
+    L.held.jazz.forEach((it) => mark(P, it.g, { seat: it.seat }));
+    // 무대 위 따뜻한 조명 둘(연주하면 켜진다)
+    L.jazzBeams = [[-8.2, -8.4], [-5.0, -8.2]].map(([x, z]) => {
+      const can = new THREE.Vector3(x, H - 0.4, z + 2.4); const spot = new THREE.Vector3(x, JH, z); const len = can.distanceTo(spot);
+      const geo = new THREE.ConeGeometry(1.2, len, 24, 1, true); geo.translate(0, -len / 2, 0);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xFFD49A, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+      const beam = new THREE.Mesh(geo, mat); beam.position.copy(can); beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), spot.clone().sub(can).normalize()); S.add(beam);
+      cyl(S, 0.1, 0.12, 0.24, INKY, can.x, can.y - 0.12, can.z, { line: 0.004, seg: 12 });
+      return mat;
+    });
+    // 둥근 탁자(초)와 의자, 오른쪽 벽 쪽 바
+    JAZZ_TABLES.forEach(([x, z]) => {
+      const t = new THREE.Group(); t.position.set(x, 0, z); S.add(t);
+      cyl(t, 0.25, 0.3, 0.04, BRASS, 0, 0, 0, { line: 0.004 }); cyl(t, 0.035, 0.035, 0.72, BRASS, 0, 0.04, 0, { line: 0.004, seg: 8 }); cyl(t, 0.42, 0.42, 0.04, 0x2B1C12, 0, 0.74, 0, { line: 0.008, seg: 24 });
+      const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.1, 12), new THREE.MeshLambertMaterial({ color: 0xC9604A, transparent: true, opacity: 0.7 })); jar.position.y = 0.83; t.add(jar); glow(t, 0xffc070, 0.55, 0, 0.88, 0);
+      cyl(t, 0.035, 0.03, 0.14, 0xE3A857, 0.2, 0.78, 0.1, { line: 0.004, seg: 10 });
+      block(P, t);
+    });
+    P.seats.filter((st) => /^jt\d/.test(st.id)).forEach((st) => orchChair(P, S, st, 0x3E6B58));
+    const jbar = new THREE.Group(); S.add(jbar);
+    box(jbar, 0.7, 1.05, 4.2, 0x3B2618, -1.55, 0, -7.4, { line: 0.02 }); box(jbar, 0.86, 0.06, 4.3, MARBLE, -1.55, 1.05, -7.4, { line: 0.008 });
+    const jrail = solid(new THREE.CylinderGeometry(0.025, 0.025, 4.0, 8), BRASS, { line: 0.004 }); jrail.rotation.x = Math.PI / 2; jrail.position.set(-1.93, 0.2, -7.4); jbar.add(jrail);
+    [1.6, 2.2].forEach((y) => { box(jbar, 0.3, 0.04, 5.0, BRASS, -0.95, y, -7.0, { line: 0 }); for (let i = 0; i < 12; i++) cyl(jbar, 0.05, 0.055, 0.26 + (i % 3) * 0.05, [0x8C5A3B, 0x3E6B58, 0xDDE9EC, 0xC9604A][i % 4], -0.95, y + 0.04, -9.2 + i * 0.4, { line: 0.004, seg: 10 }); });
+    block(P, jbar);
+    P.seats.filter((st) => st.id.startsWith('jbar-')).forEach((st, i) => { const g = new THREE.Group(); cyl(g, 0.2, 0.22, 0.03, BRASS, 0, 0, 0, { line: 0.006 }); cyl(g, 0.03, 0.03, 0.66, BRASS, 0, 0.03, 0, { line: 0.004, seg: 8 }); cyl(g, 0.21, 0.19, 0.09, i % 2 ? 0x3E6B58 : 0x8E3E3A, 0, 0.69, 0, { line: 0.01 }); g.position.set(st.x, 0, st.z); mark(P, g, { seat: st.id }); S.add(g); st.mesh = g; });
+    rugAt(P, '#2F3B5A', '#1E2638', 61, -7.4, -5.4, 9.0, 2.2);
+
+    // ── 뒤 오른쪽 LP 감상실: 나팔 스피커 둘, 턴테이블 장(진공관 앰프), 안락의자 셋, LP 장
+    rugAt(P, '#6E4A2A', '#4A2F20', 77, 7.2, -6.8, 8.6, 4.2);
+    const cab = new THREE.Group(); cab.position.set(7.2, 0, -9.3); S.add(cab);
+    box(cab, 2.0, 0.85, 0.85, WALNUT, 0, 0, 0, { line: 0.02 }); [-0.5, 0.5].forEach((x) => box(cab, 0.9, 0.7, 0.02, 0x5A3825, x, 0.07, 0.43, { line: 0.004 }));
+    L.lpTable = turntable(cab, -0.45, 0.85, 0.05);
+    L.tubes = [-0.05, 0.08, 0.21].map((dx) => { cyl(cab, 0.03, 0.03, 0.02, INKY, 0.45 + dx, 0.85, 0.1, { line: 0, seg: 8 }); const tb = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.12, 10), new THREE.MeshBasicMaterial({ color: 0xFFB060, transparent: true, opacity: 0.5 })); tb.position.set(0.45 + dx, 0.93, 0.1); cab.add(tb); return tb.material; });
+    box(cab, 0.5, 0.12, 0.3, INKY, 0.55, 0.85, -0.18, { line: 0.004 });
+    block(P, cab);
+    L.speakers = [[2.3, -8.9], [12.1, -8.9]].map(([x, z]) => {
+      const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = faceTo(x, z, 7.2, -6.6); S.add(g);
+      box(g, 0.9, 1.1, 0.7, WALNUT, 0, 0, 0, { line: 0.02 });
+      const cone = new THREE.Mesh(new THREE.CircleGeometry(0.3, 24), toon(0x3A2E26)); cone.position.set(0, 0.5, 0.355); g.add(cone);
+      const horn = solid(new THREE.CylinderGeometry(0.45, 0.06, 0.6, 22, 1, true), GOLD, { line: 0.006, mat: toon(GOLD, { side: THREE.DoubleSide }) }); horn.rotation.x = Math.PI / 2; horn.position.set(0, 1.45, 0.15); g.add(horn);
+      block(P, g); return g;
+    });
+    const lpWall = (x, z0, z1, ry) => { const g = new THREE.Group(); S.add(g); box(g, 0.5, 2.6, z1 - z0, WALNUT, x, 0, (z0 + z1) / 2, { line: 0.02, cast: false }); const sl = canvasTex(512, 256, (c, w, hh) => { const r = seeded(Math.round(x * 10)); c.fillStyle = '#2B1C12'; c.fillRect(0, 0, w, hh); for (let row = 0; row < 4; row++) for (let i = 0; i < 40; i++) { c.fillStyle = ['#D9654B', '#F2D16B', '#4F8F8A', '#9B8CF2', '#E8A0A8', '#FFF3C4', '#2F3B5A'][Math.floor(r() * 7)]; c.fillRect(i * 12.8 + 1, row * 64 + 8, 10.5, 52); } }); plane(g, z1 - z0 - 0.1, 2.3, toon(0xffffff, { map: sl }), x + (ry < 0 ? -0.26 : 0.26), 1.25, (z0 + z1) / 2, { ry }); block(P, g); };
+    lpWall(13.5, -9.5, -4.5, -Math.PI / 2); lpWall(1.05, -9.5, -4.5, Math.PI / 2);
+    LP_CHAIRS.forEach((x, i) => velvetArm(P, { id: `lp-${i + 1}`, x, z: -6.6, yaw: Math.PI, color: [0x8E3E3A, 0x3E6B58, 0xD8A24A][i] }));
+    [[5.9, -6.6], [8.5, -6.6]].forEach(([x, z]) => { const t = new THREE.Group(); t.position.set(x, 0, z); S.add(t); cyl(t, 0.2, 0.22, 0.5, WALNUT, 0, 0, 0, { line: 0.008, seg: 16 }); cyl(t, 0.08, 0.1, 0.03, BRASS, 0, 0.5, 0, { line: 0 }); cyl(t, 0.012, 0.012, 0.3, BRASS, 0, 0.53, 0, { line: 0, seg: 5 }); const sh = solid(new THREE.CylinderGeometry(0.1, 0.16, 0.16, 14, 1, true), 0xF2D16B, { line: 0.004, mat: toon(0xF2D16B, { side: THREE.DoubleSide }) }); sh.position.y = 0.88; t.add(sh); glow(t, 0xffd98a, 0.6, 0, 0.85, 0); block(P, t); });
+    const hush = plane(S, 2.4, 0.4, toon(0xffffff, { map: signTex('쉿, 음악 감상 중', { bg: '#2F3B5A', fg: '#FFF3C4', size: 80 }) }), 7.2, 2.0, -9.72); hush.castShadow = false;
+
+    // ── 앞 왼쪽 버스킹 마당: 둥근 깔개, 등불, 열린 기타 가방, 전구 줄, 화단 띠
+    const boho = canvasTex(512, 512, (g, w) => { g.translate(w / 2, w / 2); [['#C9604A', 250], ['#E8C07A', 228], ['#4F8F8A', 190], ['#F3EADB', 150], ['#C9604A', 110], ['#E8C07A', 60]].forEach(([c, r]) => { g.fillStyle = c; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill(); }); g.strokeStyle = '#2B1C12'; g.lineWidth = 3; for (let i = 0; i < 24; i++) { g.rotate(Math.PI / 12); g.beginPath(); g.moveTo(115, 0); g.lineTo(185, 0); g.stroke(); } });
+    const bRug = new THREE.Mesh(new THREE.CircleGeometry(3.3, 48), toon(0xffffff, { map: boho })); bRug.rotation.x = -Math.PI / 2; bRug.position.set(-7.0, 0.012, 6.3); bRug.receiveShadow = true; S.add(bRug); mark(P, bRug, { floor: 0 });
+    const lantern = new THREE.Group(); lantern.position.set(-7.0, 0, 6.5); S.add(lantern);
+    box(lantern, 0.3, 0.05, 0.3, INKY, 0, 0, 0, { line: 0.004 }); const lg = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.32, 0.24), new THREE.MeshLambertMaterial({ color: 0xFFE8B0, emissive: 0xFFB060, emissiveIntensity: 0.6, transparent: true, opacity: 0.8 })); lg.position.y = 0.21; lantern.add(lg); box(lantern, 0.3, 0.05, 0.3, INKY, 0, 0.37, 0, { line: 0.004 });
+    L.lanternGlow = glow(lantern, 0xffc070, 1.4, 0, 0.25, 0); L.lanternGlow.material = L.lanternGlow.material.clone(); block(P, lantern);
+    const caseG = new THREE.Group(); caseG.position.set(-7.0, 0, 7.05); caseG.rotation.y = 0.2; S.add(caseG); box(caseG, 0.9, 0.08, 0.36, INKY, 0, 0, 0, { line: 0.006 }); const felt = plane(caseG, 0.82, 0.3, toon(0x8E2B2E), 0, 0.085, 0, { rx: -Math.PI / 2 }); felt.castShadow = false; for (let i = 0; i < 6; i++) cyl(caseG, 0.025, 0.025, 0.006, GOLD, -0.3 + i * 0.11, 0.09, (i % 2) * 0.08 - 0.04, { line: 0, seg: 10 });
+    const lid = box(caseG, 0.9, 0.36, 0.04, INKY, 0, 0.08, -0.2, { line: 0.006 }); lid.rotation.x = -0.4;
+    const poles = [[-12.6, 3.0], [-1.6, 3.0], [-12.6, 9.3], [-1.6, 9.3]];
+    poles.forEach(([x, z]) => { cyl(S, 0.05, 0.06, 3.2, WALNUT, x, 0, z, { line: 0.006, seg: 8 }); });
+    L.bulbs = [];
+    [[0, 1], [2, 3], [0, 3], [1, 2]].forEach(([a, b]) => { const [x0, z0] = poles[a]; const [x1, z1] = poles[b]; for (let i = 1; i < 12; i++) { const k = i / 12; const sag = Math.sin(k * Math.PI) * 0.5; const bl = glow(S, [0xFFD98A, 0xFF8FB0, 0x7FE0EA][i % 3], 0.35, lerp(x0, x1, k), 3.15 - sag, lerp(z0, z1, k)); bl.material = bl.material.clone(); L.bulbs.push(bl.material); } });
+    [[-13.75, -9.2], [-4.8, -0.8]].forEach(([x0, x1]) => { const pl = new THREE.Group(); S.add(pl); box(pl, x1 - x0, 0.45, 0.4, 0x5A3825, (x0 + x1) / 2, 0, 2.35, { line: 0.012 }); for (let x = x0 + 0.3; x < x1; x += 0.45) { const b = solid(new THREE.IcosahedronGeometry(0.2, 1), [0x6E8B74, 0x7A9E7E, 0x5E7F67][Math.round(x * 3) % 3 < 0 ? 0 : Math.round(x * 3) % 3], { line: 0.008 }); b.position.set(x, 0.55, 2.35); pl.add(b); } block(P, pl); });
+    const busk = plane(S, 1.8, 0.45, toon(0xffffff, { map: signTex('버스킹 ♪', { bg: '#8E3E3A', fg: '#FFF3C4', size: 100 }) }), -7.0, 3.6, 9.72, { ry: Math.PI }); busk.castShadow = false;
+    // 연주 자리: 통기타·우쿨렐레는 높은 나무 의자, 카혼은 그 상자에 앉는다
+    ['busk-guitar', 'busk-uke'].forEach((id) => { const st = P.seatById(id); const g = new THREE.Group(); g.position.set(st.x, 0, st.z); g.rotation.y = st.yaw; [[-0.14, -0.14], [0.14, -0.14], [-0.14, 0.14], [0.14, 0.14]].forEach(([a, b]) => cyl(g, 0.02, 0.025, 0.6, 0xB98A5E, a, 0, b, { line: 0.004, seg: 6 })); cyl(g, 0.2, 0.2, 0.05, 0xB98A5E, 0, 0.58, 0, { line: 0.008, seg: 16 }); mark(P, g, { seat: id }); S.add(g); st.mesh = g; });
+    L.cajon = cajonBox(P, S, P.seatById('busk-cajon'));
+    const ag = acousticModel(S, 1, SPRUCE); const uk = acousticModel(S, 0.62, 0xD98C6C);
+    [[-9.3, 4.9], [-4.7, 4.9]].forEach(([x, z]) => { const g = new THREE.Group(); g.position.set(x, 0, z); [-1, 1].forEach((k) => { const l = box(g, 0.025, 0.35, 0.025, INKY, k * 0.09, 0, 0.05, { line: 0 }); l.rotation.z = -k * 0.2; }); box(g, 0.025, 0.5, 0.025, INKY, 0, 0, -0.06, { line: 0 }); S.add(g); });
+    L.held.acoustic.push({ seat: 'busk-guitar', g: ag, rest: [-9.3, 0.42, 4.9, 0.3, 0, 0.1], hold: { d: 0.28, y: 0.5, rz: -1.2, scale: 1.25 }, t: -9 });
+    L.held.acoustic.push({ seat: 'busk-uke', g: uk, rest: [-4.7, 0.32, 4.9, -0.3, 0, 0.1], restScale: 0.62, hold: { d: 0.26, y: 0.6, rz: -1.0, scale: 0.8 }, t: -9 });
+    L.held.acoustic.forEach((it) => mark(P, it.g, { seat: it.seat }));
+    P.seats.filter((st) => st.id.startsWith('busk-sit-')).forEach((st, i) => { const c = cyl(S, 0.36, 0.4, 0.16, [0xE8C07A, 0x4F8F8A, 0xD98C6C, 0x9B8CF2][i], st.x, 0.012, st.z, { line: 0.02, seg: 20 }); mark(P, c, { seat: st.id }); st.mesh = c; });
+
+    // ── 앞 오른쪽 라디오 DJ 부스: 유리 부스, ON AIR, 턴테이블 둘과 믹서, 스피커와 빈백
+    glassWall(4.0, 5.6, 6.4, 5.6, 2.8); glassWall(7.6, 5.6, 10.0, 5.6, 2.8); glassWall(4.0, 5.6, 4.0, 9.75, 2.8); glassWall(10.0, 5.6, 10.0, 9.75, 2.8);
+    [[7.0, 5.6, 6.1, 0.08], [7.0, 9.7, 6.1, 0.08]].forEach(([x, z, w, d]) => box(S, w, 0.08, d, BRASS, x, 2.8, z, { line: 0, cast: false })); [4.0, 10.0].forEach((x) => box(S, 0.08, 0.08, 4.15, BRASS, x, 2.8, 7.68, { line: 0, cast: false })); // 지붕 없이 놋쇠 테두리만(위에서 안이 보이게)
+    const floorDJ = plane(S, 6.0, 4.1, toon(0x2E2A30), 7.0, 0.013, 7.7, { rx: -Math.PI / 2 }); mark(P, floorDJ, { floor: 0 });
+    const onair = canvasTex(320, 96, (g, w, hh) => { g.fillStyle = '#3A1416'; g.fillRect(0, 0, w, hh); g.strokeStyle = '#FFFDF8'; g.lineWidth = 4; g.strokeRect(6, 6, w - 12, hh - 12); g.fillStyle = '#FFE8E0'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '700 58px sans-serif'; g.fillText('ON AIR', w / 2, hh / 2 + 3); });
+    L.onAir = new THREE.MeshBasicMaterial({ map: onair, color: 0x664444 }); const oa = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.42), L.onAir); oa.position.set(7.0, 3.25, 5.5); oa.rotation.y = Math.PI; S.add(oa);
+    const oaBack = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.42), L.onAir); oaBack.position.set(7.0, 3.25, 5.52); S.add(oaBack);
+    L.onGlow = glow(S, 0xff4040, 2.2, 7.0, 3.25, 5.3); L.onGlow.material = L.onGlow.material.clone(); L.onGlow.material.opacity = 0;
+    const desk = new THREE.Group(); desk.position.set(7.0, 0, 8.4); S.add(desk);
+    box(desk, 2.6, 0.9, 0.7, INKY, 0, 0, 0, { line: 0.02 }); box(desk, 2.7, 0.05, 0.78, WALNUT, 0, 0.9, 0, { line: 0.006 });
+    L.decks = [-0.8, 0.8].map((x) => turntable(desk, x, 0.95, 0, Math.PI));
+    const mixer = canvasTex(256, 128, (g, w, hh) => { g.fillStyle = '#3A3236'; g.fillRect(0, 0, w, hh); for (let i = 0; i < 8; i++) { g.fillStyle = ['#7FE0EA', '#F2D16B', '#FF8FB0', '#5BD17A'][i % 4]; g.beginPath(); g.arc(24 + i * 30, 30, 9, 0, Math.PI * 2); g.fill(); g.fillStyle = '#111'; g.fillRect(20 + i * 30, 56, 6, 56); g.fillStyle = '#DDE3E8'; g.fillRect(15 + i * 30, 66 + (i * 13) % 36, 16, 8); } });
+    box(desk, 0.5, 0.08, 0.4, INKY, 0, 0.95, 0, { line: 0.004 }); plane(desk, 0.46, 0.36, toon(0xffffff, { map: mixer }), 0, 1.035, 0, { rx: -Math.PI / 2, rz: Math.PI });
+    const micArm = new THREE.Group(); micArm.position.set(1.2, 0.95, 0.2); desk.add(micArm); const arm1 = box(micArm, 0.02, 0.6, 0.02, INKY, 0, 0, 0, { line: 0 }); arm1.rotation.x = -0.4; const mk = solid(new THREE.CylinderGeometry(0.04, 0.035, 0.14, 10), 0xA9B2BA, { line: 0.004 }); mk.position.set(0, 0.6, 0.25); mk.rotation.x = 1.2; micArm.add(mk);
+    const hp = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.02, 6, 16, Math.PI), toon(INKY)); hp.position.set(-1.15, 1.0, -0.1); desk.add(hp);
+    glow(desk, 0x7fe0ea, 0.7, -0.3, 1.1, -0.2);
+    block(P, desk); mark(P, desk, { seat: 'dj' });
+    L.led = new THREE.MeshBasicMaterial({ color: 0x7FE0EA });
+    [[4.0, 5.6, 10.0, 5.6]].forEach(() => { const strip = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.05, 0.05), L.led); strip.position.set(7.0, 2.75, 5.55); S.add(strip); const strip2 = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.05, 0.05), L.led); strip2.position.set(7.0, 0.05, 5.55); S.add(strip2); });
+    L.djSpeakers = [[3.5, 5.1], [10.5, 5.1]].map(([x, z]) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = Math.PI; S.add(g); box(g, 0.6, 1.3, 0.5, INKY, 0, 0, 0, { line: 0.012 }); [[0.4, 0.2], [0.95, 0.09]].forEach(([y, r]) => { const c = new THREE.Mesh(new THREE.CircleGeometry(r, 20), toon(0x3A3236)); c.position.set(0, y, 0.255); g.add(c); }); block(P, g); return g; });
+    P.seats.filter((st) => st.id.startsWith('dj-bag-')).forEach((st, i) => { const g = new THREE.Group(); g.position.set(st.x, 0, st.z); g.rotation.y = st.yaw; const b = solid(new THREE.SphereGeometry(0.45, 16, 12), [0xD9654B, 0x4F8F8A, 0xF2D16B][i], { line: 0.012 }); b.scale.set(1, 0.55, 1); b.position.y = 0.24; g.add(b); const backr = solid(new THREE.SphereGeometry(0.3, 12, 10), [0xD9654B, 0x4F8F8A, 0xF2D16B][i], { line: 0.01 }); backr.scale.set(1.3, 0.9, 0.6); backr.position.set(0, 0.5, -0.3); g.add(backr); mark(P, g, { seat: st.id }); S.add(g); st.mesh = g; });
+    const vinylArt = plane(S, 2.0, 1.1, toon(0xffffff, { map: canvasTex(400, 220, (g, w, hh) => { g.fillStyle = '#2B1C12'; g.fillRect(0, 0, w, hh); [70, 200, 330].forEach((x, i) => { g.fillStyle = '#1E1A1C'; g.beginPath(); g.arc(x, hh / 2, 58, 0, Math.PI * 2); g.fill(); g.fillStyle = ['#D9654B', '#F2D16B', '#7FE0EA'][i]; g.beginPath(); g.arc(x, hh / 2, 20, 0, Math.PI * 2); g.fill(); }); }) }), 7.0, 2.0, 9.73, { ry: Math.PI }); vinylArt.castShadow = false;
+
+    // 연주 안내(빈 자리마다 빛나는 고리와 떠 있는 안내판)
+    L.hints.jazz = [
+      playHint(P, S, { id: 'jazz-piano', x: -8.25, z: -8.4, y: JH, label: '피아노 치기', color: 0xFFF3C4, tagY: 2.2 }),
+      playHint(P, S, { id: 'jazz-drums', x: -6.2, z: -9.5, y: JH, label: '브러시 드럼', color: 0xE8A0A8, tagY: 2.5 }),
+      playHint(P, S, { id: 'jazz-bass', x: -4.4, z: -8.7, y: JH, label: '콘트라베이스', color: 0x9B8CF2, tagY: 2.6 }),
+      playHint(P, S, { id: 'jazz-sax', x: -5.0, z: -7.6, y: JH, label: '색소폰 불기', color: 0xF2D16B, tagY: 2.2 }),
+    ];
+    L.hints.acoustic = [
+      playHint(P, S, { id: 'busk-guitar', x: -8.5, z: 5.4, label: '통기타 치기', color: 0xF2A43A, tagY: 2.2 }),
+      playHint(P, S, { id: 'busk-cajon', x: -7.0, z: 5.0, label: '카혼 치기', color: 0xD9654B, tagY: 2.6 }),
+      playHint(P, S, { id: 'busk-uke', x: -5.5, z: 5.4, label: '우쿨렐레', color: 0x7FE0EA, tagY: 2.2 }),
+    ];
+    L.hints.lp = [playHint(P, S, { id: 'lp-2', x: 7.2, z: -7.55, label: 'LP 듣기', color: 0xFFD49A, tagY: 2.0 })];
+    L.hints.dj = [playHint(P, S, { id: 'dj', x: 7.0, z: 9.2, label: 'DJ 하기', color: 0xFF8FB0, tagY: 3.3 })];
+    // 칸마다 박에 맞춘 움직임(playMusic이 부른다)
+    const taken = (E) => (seat) => { const st = P.seatById(seat); return st && E.who[st.part]; };
+    const bounce = (g, now) => { const k = Math.max(0, 1 - (now - (g.userData.t ?? -9)) / 0.3); return k; };
+    P.music = {
+      jazz: (now, E) => {
+        holdItems(L.held.jazz, taken(E), now); updateHints(L.hints.jazz, taken(E), now);
+        drainHits(E, now, (e) => {
+          L.held.jazz.forEach((it) => { if (P.seatById(it.seat).part === e.part) it.t = now; });
+          if (e.part === 'jdrums') { const piece = { ride: L.kit.ride, brush: L.kit.snare, kick: L.kit.kick }[e.voice]; if (piece) piece.userData.t = now; }
+          if (e.part === 'upright') L.bass.userData.t = now;
+          if (e.part === 'piano') L.piano.userData.t = now;
+        });
+        L.jazzBeams.forEach((m) => { m.opacity = lerp(m.opacity, E.live ? 0.1 : 0, 0.05); });
+        L.neon.opacity = E.live ? 0.95 + (reduceMotion ? 0 : Math.sin(now * 13) * 0.05) : 0.7;
+        if (reduceMotion) return;
+        Object.values(L.kit).forEach((g) => { const k = bounce(g, now); if (g === L.kit.ride || g === L.kit.hat) g.rotation.x = g.userData.base.rx + Math.sin((now - g.userData.t) * 26) * k * 0.15; else g.scale.setScalar(1 + k * 0.05); });
+        const kb = bounce(L.bass, now); L.bass.userData.strings.forEach((sg, i) => { sg.position.x = [-0.02, -0.007, 0.007, 0.02][i] + Math.sin(now * 70 + i) * 0.004 * kb; });
+        L.piano.userData.lid.rotation.z = 0.55 + bounce(L.piano, now) * 0.02;
+      },
+      acoustic: (now, E) => {
+        holdItems(L.held.acoustic, taken(E), now); updateHints(L.hints.acoustic, taken(E), now);
+        drainHits(E, now, (e) => { L.held.acoustic.forEach((it) => { if (P.seatById(it.seat).part === e.part) it.t = now; }); if (e.part === 'cajon') L.cajon.userData.t = now; });
+        L.bulbs.forEach((m, i) => { m.opacity = E.live ? 0.7 + (reduceMotion ? 0 : Math.sin(now * 4 + i * 1.3) * 0.3) : 0.55; });
+        L.lanternGlow.material.opacity = 0.75 + (reduceMotion ? 0 : Math.sin(now * 9) * 0.1 + Math.sin(now * 23) * 0.05);
+        if (!reduceMotion) { const k = bounce(L.cajon, now); L.cajon.scale.set(1 + k * 0.04, 1 - k * 0.04, 1 + k * 0.04); }
+      },
+      lp: (now, E) => {
+        updateHints(L.hints.lp, taken(E), now);
+        drainHits(E, now, (e) => { if (e.voice === 'kick') L.speakers.forEach((g) => { g.userData.t = now; }); });
+        if (!reduceMotion) L.lpTable.userData.rec.rotation.y -= E.live ? 0.06 : 0;
+        L.tubes.forEach((m, i) => { m.opacity = E.live ? 0.85 + (reduceMotion ? 0 : Math.sin(now * 7 + i) * 0.1) : 0.35; });
+        if (!reduceMotion) L.speakers.forEach((g) => { const k = bounce(g, now); g.scale.set(1 + k * 0.02, 1 + k * 0.02, 1 + k * 0.02); });
+      },
+      dj: (now, E) => {
+        updateHints(L.hints.dj, taken(E), now);
+        drainHits(E, now, (e) => { if (e.voice === 'kick') { L.djSpeakers.forEach((g) => { g.userData.t = now; }); L.led.color.setHSL(Math.random(), 0.8, 0.6); } });
+        L.onAir.color.set(E.live ? 0xffffff : 0x664444); L.onGlow.material.opacity = E.live ? 0.55 : 0;
+        if (!E.live) L.led.color.lerp(new THREE.Color(0x7FE0EA), 0.05);
+        if (!reduceMotion) { L.decks.forEach((d, i) => { d.userData.rec.rotation.y -= E.live ? 0.08 + i * 0.01 : 0; }); L.djSpeakers.forEach((g) => { const k = bounce(g, now); g.scale.set(1 + k * 0.04, 1 + k * 0.04, 1 + k * 0.04); }); }
+      },
     };
   };
 
@@ -2852,6 +3464,7 @@ function start() {
   buildForum(forum);
   buildScribe(scribe);
   buildConcert(concert);
+  buildLounge(lounge);
   buildCave(cave);
   addHatch();
   addLifts();
@@ -3580,113 +4193,172 @@ function start() {
       if (inPool(P, person.x, person.z)) sfx('splash', sp, 0.45); else sfx('step', person.critter, sp);
     }
   };
-  // 밴드 합주: 5층 공연장 무대 자리에 앉거나 선 사람의 파트만 같은 박자에 맞춰 울린다(여기서 지은 곡, 다장조 4/4박 104bpm 8마디).
-  // 다른 사람이 치는 파트는 멀수록 작게 들린다. 효과음을 켜 두어야 들린다.
-  const BAND_STEP = 60 / 104 / 4; // 16분음표 한 칸(초)
-  const BAND_SONG = (() => {
-    const CH = { C: { root: 36, tri: [60, 64, 67] }, G: { root: 43, tri: [59, 62, 67] }, Am: { root: 45, tri: [60, 64, 69] }, F: { root: 41, tri: [60, 65, 69] } };
-    const PROG = ['C', 'G', 'Am', 'F', 'C', 'G', 'F', 'G'];
-    const MELODY = [ // [음, 8분음표 몇 개], 0은 쉼
-      [[64, 2], [67, 2], [72, 3], [71, 1]], [[71, 2], [67, 2], [62, 4]], [[64, 2], [69, 2], [72, 2], [71, 1], [69, 1]], [[65, 2], [69, 2], [67, 4]],
-      [[64, 2], [67, 2], [72, 2], [74, 2]], [[74, 3], [72, 1], [71, 4]], [[69, 2], [72, 2], [69, 2], [65, 2]], [[67, 6], [0, 2]],
-    ];
-    const GROOVE = [0, null, 0, 12, 0, 0, 7, 12]; // 베이스 8분음표: 근음에서 몇 반음
-    const steps = Array.from({ length: PROG.length * 16 }, () => []);
-    const at = (bar, k, e) => steps[bar * 16 + k].push(e);
-    PROG.forEach((name, bar) => {
-      const { root, tri } = CH[name]; const last = bar === PROG.length - 1;
+  // ───────── 합주: 5층 대공연장(밴드·오케스트라), 6층 라운지(재즈·어쿠스틱·LP·DJ) ─────────
+  // 자리마다 ens(악단)와 part(파트)를 단다. 앉거나 선 사람의 파트만 울리고, 같은 악단은 같은 박자로 함께 친다.
+  // 곡은 모두 여기서 지었다. 박은 각자 화면에서 센다(다른 사람 파트도 내 화면의 박에 맞춰 울린다). 효과음을 켜야 들린다.
+  const CH = {
+    C: { root: 36, tri: [60, 64, 67] }, G: { root: 43, tri: [59, 62, 67] }, Am: { root: 45, tri: [60, 64, 69] }, F: { root: 41, tri: [60, 65, 69] },
+    Dm: { root: 38, tri: [62, 65, 69] }, Em: { root: 40, tri: [59, 64, 67] }, D: { root: 38, tri: [62, 66, 69] },
+    Dm7: { root: 38, tri: [60, 65, 69, 72] }, G7: { root: 43, tri: [59, 65, 67, 71] }, C7M: { root: 36, tri: [59, 64, 67, 72] }, Em7: { root: 40, tri: [59, 62, 67, 71] }, A7: { root: 45, tri: [61, 67, 69, 73] }, F7M: { root: 41, tri: [60, 64, 69, 72] },
+  };
+  const songOf = (bars, fill) => { const steps = Array.from({ length: bars * 16 }, () => []); fill((bar, k, e) => steps[bar * 16 + k].push(e)); return steps; };
+  // 가락: [음, 8분음표 몇 개], 0은 쉼. swing이면 뒷박 8분음표를 16분음표 하나만큼 늦춘다
+  const tune = (at, part, MEL, { shift = 0, from = 0, to = 99, swing = false, level } = {}) => MEL.forEach((bar, b) => {
+    if (b < from || b > to) return;
+    let pos = 0; bar.forEach(([m, n]) => { if (m) at(b, swing && pos % 2 ? pos * 2 + 1 : pos * 2, { part, midi: m + shift, len: n * 2 * 0.94, level }); pos += n; });
+  });
+  const ORCH = ['violin', 'cello', 'flute', 'horn', 'harp', 'timpani'];
+  const MEL = {
+    pop: [[[64, 2], [67, 2], [72, 3], [71, 1]], [[71, 2], [67, 2], [62, 4]], [[64, 2], [69, 2], [72, 2], [71, 1], [69, 1]], [[65, 2], [69, 2], [67, 4]], [[64, 2], [67, 2], [72, 2], [74, 2]], [[74, 3], [72, 1], [71, 4]], [[69, 2], [72, 2], [69, 2], [65, 2]], [[67, 6], [0, 2]]],
+    ballad: [[[67, 4], [64, 2], [65, 2]], [[64, 4], [60, 4]], [[65, 2], [67, 2], [69, 4]], [[67, 6], [0, 2]], [[72, 4], [71, 2], [69, 2]], [[67, 4], [64, 4]], [[65, 2], [69, 2], [67, 2], [65, 2]], [[62, 6], [0, 2]]],
+    rock: [[[69, 1], [69, 1], [72, 2], [69, 1], [67, 1], [64, 2]], [[65, 2], [65, 1], [67, 1], [69, 4]], [[67, 1], [67, 1], [72, 2], [74, 2], [72, 2]], [[71, 4], [67, 2], [0, 2]], [[69, 1], [72, 1], [76, 2], [74, 1], [72, 1], [69, 2]], [[72, 2], [69, 2], [65, 4]], [[67, 2], [72, 2], [76, 2], [74, 2]], [[74, 6], [0, 2]]],
+    jazz: [[[69, 3], [72, 1], [74, 2], [72, 2]], [[71, 4], [67, 2], [65, 2]], [[64, 6], [0, 2]], [[67, 2], [69, 2], [71, 2], [72, 2]], [[74, 3], [71, 1], [67, 4]], [[69, 2], [73, 2], [76, 4]], [[77, 3], [74, 1], [72, 2], [69, 2]], [[71, 6], [0, 2]]],
+  };
+  // 5층 무대 곡: 밴드 다섯 파트와 오케스트라 여섯 파트. style에 따라 북·베이스·기타·건반이 달라진다
+  const stageSong = (name, bpm, prog, mel, style) => ({ name, step: 60 / bpm / 4, steps: songOf(prog.length, (at) => {
+    prog.forEach((cn, bar) => {
+      const { root, tri } = CH[cn]; const last = bar === prog.length - 1; const gr = root + 12;
       if (bar === 0) at(bar, 0, { part: 'drums', hit: 'crash' });
-      [0, 6, 8, ...(bar % 2 ? [10] : [])].forEach((k) => { if (!(last && k > 8)) at(bar, k, { part: 'drums', hit: 'kick' }); });
-      [4, 12].forEach((k) => { if (!(last && k === 12)) at(bar, k, { part: 'drums', hit: 'snare' }); });
-      for (let k = 0; k < 16; k += 2) if (!(last && k >= 8)) at(bar, k, { part: 'drums', hit: 'hat', open: k === 14, level: k % 4 ? 0.65 : 1 });
-      if (last) [[8, 'tom', 52], [10, 'tom', 48], [11, 'tom', 48], [12, 'floor', 41], [13, 'floor', 41], [14, 'snare'], [15, 'snare']].forEach(([k, hit, midi]) => at(bar, k, { part: 'drums', hit, midi }));
-      GROOVE.forEach((o, k) => { if (o !== null && !(last && k >= 6)) at(bar, k * 2, { part: 'bass', midi: root + o, len: 1.7 }); });
-      if (last) at(bar, 12, { part: 'bass', midi: root - 5, len: 3.5 });
-      const gr = root + 12;
-      if (last) { at(bar, 0, { part: 'guitar', midi: gr, len: 10 }); at(bar, 12, { part: 'guitar', midi: gr, len: 1.5 }); at(bar, 14, { part: 'guitar', midi: gr, len: 1.5 }); }
-      else [0, 3, 6, 8, 11, 14].forEach((k) => at(bar, k, { part: 'guitar', midi: gr, len: k === 0 || k === 8 ? 2.2 : 1.2 }));
-      [[0, 6], [6, 1.6], [8, 6], [14, 1.6]].forEach(([k, len]) => at(bar, k, { part: 'keys', chord: tri, len }));
-      let pos = 0; MELODY[bar].forEach(([midi, n]) => { if (midi) at(bar, pos * 2, { part: 'vocal', midi, len: n * 2 * 0.94 }); pos += n; });
-    });
-    return steps;
-  })();
-  const band = { on: false, t0: 0, next: 0, hits: [] };
-  const playBand = () => {
-    const B = PLACES.band && PLACES.band.band;
-    if (!B) return;
-    const now = performance.now() / 1000;
-    const who = {};
-    people.forEach((person) => { if (person.place !== 'band' || !person.seated || person.hop) return; const st = PLACES.band.seatById(person.seated); if (st && st.part) who[st.part] = person; });
-    // 기타·베이스: 선 사람이 손에 들고, 비면 거치대에
-    B.held.forEach((it) => {
-      const part = it.seat.slice(5); const p = who[part]; it.g.userData.strap.visible = Boolean(p);
-      if (p) {
-        const yaw = p.doll.yaw.rotation.y; const k = Math.max(0, 1 - (now - it.t) / 0.25);
-        it.g.position.set(p.x + Math.sin(yaw) * 0.32, p.doll.root.position.y + 0.62, p.z + Math.cos(yaw) * 0.32); it.g.scale.setScalar(1.25);
-        it.g.rotation.set(0, yaw, -1.05 + k * 0.12);
-      } else { it.g.position.set(...it.rest); it.g.rotation.set(0, 0.25, 0.12); it.g.scale.setScalar(1); }
-    });
-    (B.hints || []).forEach((hint, n) => {
-      const free = !who[hint.part]; hint.ring.visible = free; hint.tag.visible = free;
-      if (free && !reduceMotion) { const k = 0.5 + 0.5 * Math.sin(now * 3 + n); hint.ring.material.opacity = 0.35 + k * 0.45; hint.ring.scale.setScalar(1 + k * 0.12); hint.tag.position.y = hint.y0 + Math.sin(now * 2 + n) * 0.08; }
-    });
-    const live = me && me.place === 'band' && Object.keys(who).length > 0;
-    if (!live) band.on = false;
-    else {
-      if (!band.on) { band.on = true; band.t0 = now + 0.35; band.next = 0; band.hits.length = 0; }
-      while (band.t0 + band.next * BAND_STEP < now + 0.12) { // 0.12초 앞서 소리를 걸어 둔다(박이 흔들리지 않게)
-        const at = band.t0 + band.next * BAND_STEP; const step = band.next % BAND_SONG.length;
-        BAND_SONG[step].forEach((e) => {
-          const p = who[e.part]; if (!p) return;
-          if (sound && sound.on) sound.band(e.part === 'drums' ? e.hit : e.part, hear(p), { delay: Math.max(0, at - now), midi: e.midi, chord: e.chord, len: (e.len || 1) * BAND_STEP, level: e.level, open: e.open });
-          band.hits.push({ at, e });
-        });
-        if (step % 32 === 0) Object.values(who).forEach((p, i) => band.hits.push({ at: at + i * 0.15, pop: p }));
-        band.next += 1;
+      if (style === 'ballad') {
+        [0, 10].forEach((k) => at(bar, k, { part: 'drums', hit: 'kick', level: 0.8 }));
+        if (!last) at(bar, 8, { part: 'drums', hit: 'snare', level: 0.7 });
+        for (let k = 0; k < 16; k += 2) at(bar, k, { part: 'drums', hit: 'hat', level: 0.45 });
+        if (last) [12, 13, 14, 15].forEach((k, i) => at(bar, k, { part: 'drums', hit: i < 2 ? 'tom' : 'floor', midi: i < 2 ? 50 : 41, level: 0.7 }));
+        at(bar, 0, { part: 'bass', midi: root, len: 7.5 }); at(bar, 8, { part: 'bass', midi: root + 7, len: 7.5 });
+        [0, 4, 8, 12].forEach((k, i) => at(bar, k, { part: 'guitar', midi: [gr, gr + 7, gr + 12, gr + 7][i], len: 3.6, level: 0.55 }));
+        at(bar, 0, { part: 'keys', chord: tri, len: 7 }); at(bar, 8, { part: 'keys', chord: tri, len: 7 });
+        [2, 6, 10, 14].forEach((k, i) => at(bar, k, { part: 'keys', midi: tri[i % 3] + 12, len: 2, level: 0.6 }));
+      } else if (style === 'rock') {
+        [0, 6, 8, 10].forEach((k) => at(bar, k, { part: 'drums', hit: 'kick' }));
+        [4, 12].forEach((k) => { if (!(last && k === 12)) at(bar, k, { part: 'drums', hit: 'snare' }); });
+        for (let k = 0; k < 16; k += 2) at(bar, k, { part: 'drums', hit: 'hat', level: k % 4 ? 0.7 : 1, open: k === 14 });
+        if (bar % 2 === 0 && bar) at(bar, 0, { part: 'drums', hit: 'crash', level: 0.8 });
+        if (last) [12, 13, 14, 15].forEach((k, i) => at(bar, k, { part: 'drums', hit: i < 2 ? 'tom' : 'snare', midi: 48 }));
+        for (let k = 0; k < 16; k += 2) at(bar, k, { part: 'bass', midi: root, len: 1.6 });
+        for (let k = 0; k < 16; k += 2) at(bar, k, { part: 'guitar', midi: gr, len: k % 4 ? 0.9 : 1.4 });
+        [0, 8].forEach((k) => at(bar, k, { part: 'keys', chord: tri, len: 6, level: 0.8 }));
+      } else {
+        [0, 6, 8, ...(bar % 2 ? [10] : [])].forEach((k) => { if (!(last && k > 8)) at(bar, k, { part: 'drums', hit: 'kick' }); });
+        [4, 12].forEach((k) => { if (!(last && k === 12)) at(bar, k, { part: 'drums', hit: 'snare' }); });
+        for (let k = 0; k < 16; k += 2) if (!(last && k >= 8)) at(bar, k, { part: 'drums', hit: 'hat', open: k === 14, level: k % 4 ? 0.65 : 1 });
+        if (last) [[8, 'tom', 52], [10, 'tom', 48], [11, 'tom', 48], [12, 'floor', 41], [13, 'floor', 41], [14, 'snare'], [15, 'snare']].forEach(([k, hit, midi]) => at(bar, k, { part: 'drums', hit, midi }));
+        [0, null, 0, 12, 0, 0, 7, 12].forEach((o, k) => { if (o !== null && !(last && k >= 6)) at(bar, k * 2, { part: 'bass', midi: root + o, len: 1.7 }); });
+        if (last) { at(bar, 12, { part: 'bass', midi: root - 5, len: 3.5 }); at(bar, 0, { part: 'guitar', midi: gr, len: 10 }); at(bar, 12, { part: 'guitar', midi: gr, len: 1.5 }); at(bar, 14, { part: 'guitar', midi: gr, len: 1.5 }); }
+        else [0, 3, 6, 8, 11, 14].forEach((k) => at(bar, k, { part: 'guitar', midi: gr, len: k === 0 || k === 8 ? 2.2 : 1.2 }));
+        [[0, 6], [6, 1.6], [8, 6], [14, 1.6]].forEach(([k, len]) => at(bar, k, { part: 'keys', chord: tri, len }));
       }
-    }
-    // 친 순간에 맞춰 움직인다: 북이 울렁, 심벌이 흔들, 줄이 튕기고, 그 파트 조명이 번쩍
-    for (let i = band.hits.length - 1; i >= 0; i--) {
-      const h = band.hits[i]; if (h.at > now) continue;
-      band.hits.splice(i, 1);
-      if (h.pop) { popWord(h.pop, Math.random() < 0.5 ? '♪' : '♫'); continue; }
-      const e = h.e; const beam = B.beams.find((b) => b.part === e.part); if (beam) beam.flash = e.part === 'drums' ? (e.hit === 'kick' || e.hit === 'snare' || e.hit === 'crash' ? 1 : beam.flash) : 1;
-      if (e.part === 'drums') { const piece = B.kit[e.hit === 'hat' ? 'hat' : e.hit] || (e.hit === 'tom' ? B.kit.tom1 : null); if (piece) piece.userData.t = now; if (e.hit === 'snare' || e.hit === 'crash') B.kit.ride.userData.t = e.hit === 'crash' ? now : B.kit.ride.userData.t; }
-      const held = B.held.find((it) => it.seat === `band-${e.part}`); if (held) held.t = now;
-      if (e.part === 'drums' && (e.hit === 'kick' || e.hit === 'snare' || e.hit === 'crash')) { const hue = Math.random(); for (let n = 0; n < (e.hit === 'crash' ? 28 : 11); n++) { const tile = B.tiles[Math.floor(Math.random() * B.tiles.length)]; tile.lit = 1; tile.color.setHSL((hue + Math.random() * 0.25) % 1, 0.85, 0.62); } B.punch = 1; }
-      else if (!who.drums && (e.part === 'bass' || e.part === 'keys') && Math.random() < 0.6) { const tile = B.tiles[Math.floor(Math.random() * B.tiles.length)]; tile.lit = 0.8; tile.color.setHSL(Math.random(), 0.7, 0.6); }
-    }
-    const dark = new THREE.Color(0x241a20);
-    if (reduceMotion) {
-      B.beams.forEach((b) => { b.mat.opacity = who[b.part] ? 0.12 : 0; b.poolMat.opacity = who[b.part] ? 0.35 : 0; b.lens.opacity = who[b.part] ? 0.9 : 0; });
-      B.tiles.forEach((tile, n) => tile.mat.color.copy(live && n % 3 === 0 ? tile.color.setHSL((n * 0.07) % 1, 0.6, 0.45) : dark));
-      return;
-    }
-    Object.values(B.kit).forEach((g) => {
-      const k = Math.max(0, 1 - (now - g.userData.t) / 0.35); const b = g.userData.base;
-      if (g === B.kit.hat || g === B.kit.crash || g === B.kit.ride) g.rotation.x = b.rx + Math.sin((now - g.userData.t) * 30) * k * 0.18;
-      else g.scale.setScalar(b.s * (1 + k * 0.06));
+      // 오케스트라: 첼로는 근음을 길게, 바이올린은 위 화음 두 음, 호른은 가운데 화음, 하프는 8분음표 펼침화음, 팀파니는 첫 박
+      at(bar, 0, { part: 'cello', midi: root + 12, len: 15.5 });
+      if (style !== 'rock' || bar % 2 === 0) { at(bar, 0, { part: 'violin', chord: [tri[2] + 12], len: 7.6 }); at(bar, 8, { part: 'violin', chord: [tri[1] + 12], len: 7.6 }); }
+      at(bar, 0, { part: 'horn', chord: [tri[0], tri[1]], len: 15.5, level: 0.9 });
+      [tri[0], tri[1], tri[2], tri[0] + 12, tri[1] + 12, tri[2], tri[1], tri[0]].forEach((m, i) => at(bar, i * 2, { part: 'harp', midi: m, len: 3 }));
+      const tr = root < 41 ? root + 12 : root;
+      if (last) { at(bar, 0, { part: 'timpani', midi: tr }); at(bar, 8, { part: 'timpani', midi: tr, roll: true }); }
+      else { at(bar, 0, { part: 'timpani', midi: tr }); if (style !== 'ballad') at(bar, 8, { part: 'timpani', midi: tr + 7 > 53 ? tr - 5 : tr + 7, level: 0.75 }); }
+      if (bar < 4) at(bar, 12, { part: 'flute', midi: tri[2] + 24, len: 3, level: 0.7 });
     });
-    B.beams.forEach((b) => {
-      b.flash = Math.max(0, b.flash - (1 / 60) * 5);
-      const on = who[b.part] ? 1 : 0;
-      b.mat.opacity = lerp(b.mat.opacity, on * (0.07 + b.flash * 0.12), 0.25);
-      b.poolMat.opacity = lerp(b.poolMat.opacity, on * (0.3 + b.flash * 0.35), 0.25);
-      b.lens.opacity = lerp(b.lens.opacity, on * (0.6 + b.flash * 0.4), 0.25);
+    tune(at, 'vocal', mel); tune(at, 'flute', mel, { shift: 12, from: 4, to: 7, level: 0.9 });
+  }) });
+  const STAGE_SONGS = [
+    stageSong('신나는 팝', 104, ['C', 'G', 'Am', 'F', 'C', 'G', 'F', 'G'], MEL.pop, 'pop'),
+    stageSong('잔잔한 발라드', 76, ['C', 'Am', 'F', 'G', 'C', 'Am', 'Dm', 'G'], MEL.ballad, 'ballad'),
+    stageSong('달리는 록', 132, ['Am', 'F', 'C', 'G', 'Am', 'F', 'C', 'G'], MEL.rock, 'rock'),
+  ];
+  // 6층 재즈 바: ii-V-I 스윙. 피아노는 뒷박에 화음, 콘트라베이스는 4분음표로 걷고, 브러시와 라이드, 색소폰이 가락
+  const JAZZ = { name: '재즈', step: 60 / 96 / 4, steps: songOf(8, (at) => {
+    const prog = ['Dm7', 'G7', 'C7M', 'C7M', 'Em7', 'A7', 'Dm7', 'G7'];
+    prog.forEach((cn, bar) => {
+      const { root, tri } = CH[cn]; const next = CH[prog[(bar + 1) % prog.length]].root;
+      [[0, 2.5, 0.8], [7, 2, 0.7], [10, 4, 0.75]].forEach(([k, len, level]) => at(bar, k, { part: 'piano', chord: tri, len, level }));
+      [root, root + 7, root + 12, next + (next > root ? -1 : 1)].forEach((m, i) => at(bar, i * 4, { part: 'upright', midi: m, len: 3.6 }));
+      [[0, 1], [4, 0.8], [7, 0.6], [8, 1], [12, 0.8], [15, 0.6]].forEach(([k, level]) => at(bar, k, { part: 'jdrums', voice: 'ride', level }));
+      [4, 12].forEach((k) => at(bar, k, { part: 'jdrums', voice: 'brush' }));
+      [0, 8].forEach((k) => at(bar, k, { part: 'jdrums', voice: 'kick', level: 0.3 }));
     });
-    B.punch = Math.max(0, (B.punch || 0) - (1 / 60) * 4);
-    B.sweeps.forEach((sw) => { // 무빙 라이트: 관객석 위를 휘젓는다
-      sw.g.rotation.set(0.55 + Math.sin(now * 0.7 + sw.phase) * 0.35, 0, sw.side * (0.25 + Math.sin(now * 0.9 + sw.phase) * 0.45), 'YXZ');
-      sw.mat.opacity = lerp(sw.mat.opacity, live ? 0.06 + B.punch * 0.08 : 0, 0.1);
+    tune(at, 'sax', MEL.jazz, { swing: true });
+  }) };
+  // 6층 버스킹: 통기타는 내리고 올려 긁고, 우쿨렐레는 뒷박, 카혼은 쿵·탁
+  const FOLK = { name: '버스킹', step: 60 / 96 / 4, steps: songOf(8, (at) => {
+    const V = { G: [43, 55, 59, 62, 67], D: [50, 57, 62, 66], Em: [40, 52, 55, 59, 64], C: [48, 52, 55, 60, 64] };
+    ['G', 'D', 'Em', 'C', 'G', 'D', 'C', 'D'].forEach((cn, bar) => {
+      const v = V[cn];
+      [[0, false], [4, false], [6, true], [10, true], [12, false], [14, true]].forEach(([k, up]) => at(bar, k, { part: 'aguitar', chord: v, up, len: 3.4, level: up ? 0.75 : 1 }));
+      [2, 6, 10, 14].forEach((k) => at(bar, k, { part: 'uke', chord: v.slice(-3).map((m) => m + 12), len: 1.4 }));
+      [0, 7, 10].forEach((k) => at(bar, k, { part: 'cajon', voice: 'cajon' }));
+      [4, 12].forEach((k) => at(bar, k, { part: 'cajon', voice: 'slap' })); at(bar, 14, { part: 'cajon', voice: 'slap', level: 0.4 });
     });
-    B.tiles.forEach((tile) => { tile.lit = Math.max(0, tile.lit - (1 / 60) * 0.8); tile.mat.color.copy(dark).lerp(tile.color, live ? tile.lit : 0); });
-    B.foot.forEach((m, n) => { m.opacity = live ? 0.55 + Math.sin(now * 6 + n) * 0.25 + B.punch * 0.2 : 0.35; });
-    if (B.ball) { B.ball.rotation.y += live ? 0.006 : 0.0015; B.dots.material.opacity = lerp(B.dots.material.opacity, live ? 0.75 : 0, 0.05); }
-    // 박에 맞춰 고개 까딱
-    if (live) {
-      const beat = ((now - band.t0) / (BAND_STEP * 4)) % 1;
-      Object.values(who).forEach((p) => { p.doll.root.position.y += Math.abs(Math.sin(beat * Math.PI)) * 0.05; p.doll.root.rotation.z = Math.sin(beat * Math.PI * 2) * 0.05; });
-    }
+  }) };
+  // 6층 LP 감상실: 느린 로파이(전자 피아노 화음, 낮은 베이스, 부드러운 북, 판 잡음)
+  const LOFI = { name: 'LP', step: 60 / 78 / 4, steps: songOf(4, (at) => {
+    ['F7M', 'Em7', 'Dm7', 'C7M'].forEach((cn, bar) => {
+      const { root, tri } = CH[cn];
+      at(bar, 0, { part: 'lp', voice: 'rhodes', chord: tri, len: 9 }); at(bar, 10, { part: 'lp', voice: 'rhodes', chord: tri.slice(1), len: 5, level: 0.7 });
+      at(bar, 0, { part: 'lp', voice: 'sub', midi: root, len: 6 }); at(bar, 7, { part: 'lp', voice: 'sub', midi: root, len: 3 });
+      [0, 7, 10].forEach((k) => at(bar, k, { part: 'lp', voice: 'kick', level: 0.45 }));
+      [4, 12].forEach((k) => at(bar, k, { part: 'lp', voice: 'snare', level: 0.32 }));
+      for (let k = 0; k < 16; k += 2) at(bar, k + (k % 4 ? 1 : 0) > 15 ? 15 : k + (k % 4 ? 1 : 0), { part: 'lp', voice: 'hat', level: 0.25 });
+      at(bar, 0, { part: 'lp', voice: 'crackle', len: 16 });
+    });
+  }) };
+  // 6층 라디오 DJ 부스: 하우스(네 박 북, 박수, 열린 하이햇, 낮은 베이스, 짧은 화음)
+  const HOUSE = { name: 'DJ', step: 60 / 120 / 4, steps: songOf(4, (at) => {
+    ['Am', 'F', 'C', 'G'].forEach((cn, bar) => {
+      const { root, tri } = CH[cn];
+      [0, 4, 8, 12].forEach((k) => at(bar, k, { part: 'dj', voice: 'kick', level: 0.9 }));
+      [4, 12].forEach((k) => at(bar, k, { part: 'dj', voice: 'clap' }));
+      [2, 6, 10, 14].forEach((k) => at(bar, k, { part: 'dj', voice: 'hat', open: true, level: 0.6 }));
+      [0, 3, 6, 10, 13].forEach((k) => at(bar, k, { part: 'dj', voice: 'sub', midi: root + (k === 10 ? 12 : 0), len: 2 }));
+      [3, 11].forEach((k) => at(bar, k, { part: 'dj', voice: 'stab', chord: tri, len: 1.5 }));
+    });
+  }) };
+  const ENS = {
+    stage: { place: 'band', songs: STAGE_SONGS, auto: { by: 'conductor', parts: ORCH } },
+    jazz: { place: 'lounge', zone: (x, z) => x < -0.8 && z < -4.0, songs: [JAZZ] },
+    acoustic: { place: 'lounge', zone: (x, z) => x < -0.8 && z > 2.0, songs: [FOLK] },
+    lp: { place: 'lounge', zone: (x, z) => x > 0.8 && z < -4.0, songs: [LOFI] },
+    dj: { place: 'lounge', zone: (x, z) => x > 0.8 && z > 2.0, songs: [HOUSE] },
+  };
+  Object.values(ENS).forEach((E) => Object.assign(E, { song: 0, on: false, t0: 0, next: 0, hits: [], live: false, players: {}, who: {} }));
+  const pickSong = (id) => { const E = ENS[id]; E.song = (E.song + 1) % E.songs.length; E.on = false; return E.songs[E.song].name; };
+  // 친 순간이 된 것들을 꺼내 fn에 넘긴다(소리는 미리 걸어 두고, 움직임은 그 순간에)
+  const drainHits = (E, now, fn) => { for (let i = E.hits.length - 1; i >= 0; i--) { const h = E.hits[i]; if (h.at > now) continue; E.hits.splice(i, 1); if (h.pop) popWord(h.pop, Math.random() < 0.5 ? '♪' : '♫'); else fn(h.e); } };
+  const playMusic = () => {
+    const now = performance.now() / 1000;
+    const who = {}; Object.keys(ENS).forEach((k) => { who[k] = {}; });
+    people.forEach((person) => {
+      if (!person.seated || person.hop) return;
+      const st = PLACES[person.place] && PLACES[person.place].seatById(person.seated);
+      if (st && st.ens && ENS[st.ens] && ENS[st.ens].place === person.place) who[st.ens][st.part] = person;
+    });
+    Object.entries(ENS).forEach(([id, E]) => {
+      const W = who[id]; const players = { ...W };
+      if (E.auto && W[E.auto.by]) E.auto.parts.forEach((p) => { if (!players[p]) players[p] = W[E.auto.by]; }); // 지휘자가 서면 빈 파트는 오케스트라가 알아서
+      const live = Boolean(me && me.place === E.place && Object.keys(players).length);
+      const song = E.songs[E.song];
+      if (!live) E.on = false;
+      else {
+        if (!E.on) { E.on = true; E.t0 = now + 0.35; E.next = 0; E.hits.length = 0; }
+        const swell = W[E.auto && E.auto.by] ? 1.12 : 1;
+        while (E.t0 + E.next * song.step < now + 0.12) { // 0.12초 앞서 소리를 걸어 둔다(박이 흔들리지 않게)
+          const at = E.t0 + E.next * song.step; const step = E.next % song.steps.length;
+          song.steps[step].forEach((e) => {
+            const p = players[e.part]; if (!p) return;
+            if (sound && sound.on) {
+              const sp = hear(p); if (E.zone && !E.zone(me.x, me.z)) { sp.gain *= 0.12; sp.soft = true; } // 다른 칸막이 안 음악은 작고 먹먹하게
+              sound.band(e.voice || e.hit || e.part, sp, { delay: Math.max(0, at - now), midi: e.midi, chord: e.chord, len: (e.len || 1) * song.step, level: (e.level ?? 1) * (ORCH.includes(e.part) ? swell : 1), open: e.open, up: e.up, roll: e.roll });
+            }
+            E.hits.push({ at, e });
+          });
+          if (step % 32 === 0) Object.values(W).forEach((p, i) => E.hits.push({ at: at + i * 0.15, pop: p }));
+          E.next += 1;
+        }
+        // 박에 맞춰 고개 까딱
+        if (!reduceMotion) { const beat = ((now - E.t0) / (song.step * 4)) % 1; Object.values(W).forEach((p) => { p.doll.root.position.y += Math.abs(Math.sin(beat * Math.PI)) * 0.05; p.doll.root.rotation.z = Math.sin(beat * Math.PI * 2) * 0.05; }); }
+      }
+      E.live = live; E.players = players; E.who = W;
+      const P = PLACES[E.place];
+      if (P && P.music && P.music[id]) P.music[id](now, E);
+    });
   };
   const pops = [];
   const popWord = (person, word) => {
@@ -3876,6 +4548,7 @@ function start() {
   let travelling = false;
   let climbing = null;
   let bandHinted = false;
+  let loungeHinted = false;
   const goPlace = (portal) => {
     if (travelling) return;
     if (portal.climb) { // 사다리: 먼저 타고 올라간다(다 오르면 climbing이 아래 길로 다시 부른다)
@@ -3905,7 +4578,8 @@ function start() {
       root.querySelector('.lib-place').textContent = to.label;
       label(me); renderPeople(); sendSpot(true);
       setMusic(music);
-      if (to.id === 'band' && !bandHinted) { bandHinted = true; setTimeout(() => say('무대 위 빛나는 자리를 누르면 그 악기를 연주해요 ♪ 여럿이 오르면 합주가 돼요'), 700); }
+      if (to.id === 'band' && !bandHinted) { bandHinted = true; setTimeout(() => say('빛나는 자리를 누르면 연주해요 ♪ 지휘대에 서면 오케스트라가 따라 연주하고, 주크박스로 곡을 바꿔요'), 700); }
+      if (to.id === 'lounge' && !loungeHinted) { loungeHinted = true; setTimeout(() => say('재즈 바·LP 감상실·버스킹·DJ 부스, 칸마다 다른 음악이 흘러요 ♪ 빛나는 자리를 눌러 보세요'), 700); }
       setTimeout(() => { fade.classList.remove('on'); travelling = false; }, 120);
     }, 420);
   };
@@ -4092,6 +4766,11 @@ function start() {
     popWord(person, ACT_WORD[act]);
     sfx('act', act, hear(person));
     if (act === 'flip') spawnBits(PLACES[person.place], person.x, person.y + 1.1, person.z, { count: 5, spread: 0.9, up: 1.2, life: 1.2, paper: true });
+    if (act === 'bow' && person.place === 'band' && person.seated && person.seated.startsWith('aud-')) { // 객석에서 인사하면 박수와 환호, 꽃가루
+      if (sound && sound.on) sound.band('applause', hear(person), {});
+      popWord(person, ENS.stage.live ? '앙코르!' : '짝짝짝');
+      [0xF2D16B, 0xFF8FB0, 0x7FE0EA].forEach((color) => spawnBits(PLACES.band, person.x, person.y + 1.2, person.z, { count: 4, color, spread: 1.0, up: 1.6, size: 0.16, life: 1.3 }));
+    }
   };
   const act = (name) => { if (!me) return; wake(); play(me, name); post(root.dataset.act, { act: name }).catch(() => {}); };
   const jump = () => {
@@ -4412,6 +5091,7 @@ function start() {
     scribe: { dawn: { writing: 0.3, piano: 0.22, grass: 0.12 }, day: { writing: 0.32, piano: 0.24, keyboard: 0.1 }, dusk: { writing: 0.3, piano: 0.24, city: 0.08 }, night: { writing: 0.28, rain: 0.2, piano: 0.2 } },
     forum: { dawn: { piano: 0.34, noise: 0.14 }, day: { piano: 0.36, noise: 0.16, writing: 0.18 }, dusk: { piano: 0.36, noise: 0.18, city: 0.1 }, night: { piano: 0.32, noise: 0.2, crickets: 0.12 } },
     cafe: { dawn: { piano: 0.38, noise: 0.1, writing: 0.12 }, day: { piano: 0.4, noise: 0.18, city: 0.1, writing: 0.14 }, dusk: { piano: 0.4, noise: 0.15, city: 0.16 }, night: { piano: 0.36, noise: 0.12, rain: 0.18 } },
+    lounge: { dawn: { noise: 0.1 }, day: { noise: 0.12, city: 0.06 }, dusk: { noise: 0.12, city: 0.1 }, night: { noise: 0.1, rain: 0.1 } },
     band: { dawn: { noise: 0.12, city: 0.08 }, day: { noise: 0.14, city: 0.1 }, dusk: { noise: 0.14, city: 0.14 }, night: { noise: 0.12, city: 0.12, rain: 0.1 } },
     roof: { dawn: { grass: 0.45, piano: 0.25 }, day: { grass: 0.5, city: 0.2, piano: 0.22 }, dusk: { city: 0.3, grass: 0.3, piano: 0.25 }, night: { crickets: 0.45, city: 0.18, piano: 0.2 } },
   };
@@ -4610,7 +5290,7 @@ function start() {
               path = null; clearGoal();
               const todo = pending; pending = null;
               if (todo && todo.seat) sit(todo.seat);
-              if (todo && todo.hot) openCard(current.hots[todo.hot].card);
+              if (todo && todo.hot) { const h = current.hots[todo.hot]; if (h.run) h.run(); else openCard(h.card); }
               if (todo && todo.portal) goPlace(todo.portal);
             }
           } else {
@@ -4739,7 +5419,7 @@ function start() {
     (roof.ripples || []).forEach((r) => { r.t += dt; const k5 = r.t / 1.3; r.m.scale.setScalar(1 + k5 * 4 * r.size); r.m.material.opacity = Math.max(0, 0.8 * (1 - k5)); });
     if (roof.ripples) for (let i = roof.ripples.length - 1; i >= 0; i--) if (roof.ripples[i].t >= 1.3) { const r = roof.ripples[i]; r.m.parent?.remove(r.m); r.m.material.dispose(); roof.ripples.splice(i, 1); }
     if (current === roof && !reduceMotion) people.forEach((person) => { if (person.place === 'roof' && !seatOf(person) && inPool(roof, person.x, person.z) && !person.walking && Math.random() < dt * 0.7) ripple(roof, person.x, person.z, 0.6); }); // 물에 가만히 있어도 살랑
-    playBand();
+    playMusic();
     if (goalPin.g.visible) goalPin.pin.position.y = 0.5 + Math.abs(Math.sin(t * 5)) * 0.18;
     // 서고의 작은 움직임: 별이 흔들리고, 먼지가 떠오르고, 종이새가 난다
     if (current === hall && !reduceMotion) {

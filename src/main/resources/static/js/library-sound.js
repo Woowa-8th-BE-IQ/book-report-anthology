@@ -101,6 +101,17 @@
     head.connect(filter).connect(g).connect(d);
     osc.start(t); osc.stop(t + len + 0.12);
   };
+  // 길게 내는 소리(현·관): 천천히 차오르고, 떨림을 주고, 끝에서 사그라든다
+  const swell = (d, t, freq, len, { level = 0.06, wave = 'sawtooth', cutoff = 1500, attack = 0.1, vib = 0.006, detune = 0, q = 0.8 } = {}) => {
+    const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = cutoff; filter.Q.value = q;
+    const g = ctx.createGain(); const end = t + Math.max(attack + 0.05, len);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(level, t + attack);
+    g.gain.setValueAtTime(level, Math.max(t + attack, end - 0.12)); g.gain.exponentialRampToValueAtTime(0.0001, end + 0.25);
+    filter.connect(g).connect(d);
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 5.2 + Math.random() * 0.6; const depth = ctx.createGain(); depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(freq * vib, t + Math.min(0.4, len)); lfo.connect(depth);
+    (detune ? [-detune, detune] : [0]).forEach((k) => { const osc = ctx.createOscillator(); osc.type = wave; osc.frequency.setValueAtTime(freq * (1 + k), t); depth.connect(osc.frequency); osc.connect(filter); osc.start(t); osc.stop(end + 0.3); });
+    lfo.start(t); lfo.stop(end + 0.3);
+  };
   // 노래(우~ 아~): 톱니파 둘에 떨림을 주고 모음 공명(포먼트) 둘로 거른다
   const sing = (d, t, freq, len, level) => {
     const vib = ctx.createOscillator(); vib.frequency.value = 5.4; const depth = ctx.createGain(); depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(freq * 0.012, t + Math.min(0.35, len)); vib.connect(depth);
@@ -298,6 +309,31 @@
         else if (part === 'guitar') { const f = hz(o.midi); [1, 1.4983, 2].forEach((k, i) => pluck(d, t + i * 0.007, { type: 'sawtooth', freq: f * k * (1 + (i - 1) * 0.004), level: 0.05 * lv, len, cutoff: 1900, open: 4200, drive: true })); }
         else if (part === 'keys') (o.chord || [o.midi]).forEach((m) => { const f = hz(m); tone(d, t, { type: 'triangle', freq: f, level: 0.05 * lv, attack: 0.004, decay: len }); tone(d, t, { freq: f * 2, level: 0.016 * lv, attack: 0.003, decay: len * 0.4 }); });
         else if (part === 'vocal') sing(d, t, hz(o.midi), len, 0.11 * lv);
+        // 오케스트라: 활로 켜는 현, 숨으로 부는 관, 뜯는 하프, 북채로 치는 팀파니
+        else if (part === 'violin') (o.chord || [o.midi]).forEach((m) => swell(d, t, hz(m), len, { level: 0.05 * lv, wave: 'sawtooth', cutoff: 2600, attack: 0.14, vib: 0.008, detune: 0.004 }));
+        else if (part === 'cello') swell(d, t, hz(o.midi), len, { level: 0.09 * lv, wave: 'sawtooth', cutoff: 950, attack: 0.16, vib: 0.006, detune: 0.003 });
+        else if (part === 'flute') { swell(d, t, hz(o.midi), len, { level: 0.07 * lv, wave: 'sine', cutoff: 5000, attack: 0.06, vib: 0.01 }); burst(d, t, { type: 'bandpass', freq: hz(o.midi) * 2, q: 3, level: 0.02 * lv, attack: 0.03, decay: Math.min(0.4, len) }); }
+        else if (part === 'horn') (o.chord || [o.midi]).forEach((m) => swell(d, t, hz(m), len, { level: 0.045 * lv, wave: 'sawtooth', cutoff: 780, attack: 0.1, vib: 0.003, detune: 0.002 }));
+        else if (part === 'harp') { const f = hz(o.midi); tone(d, t, { type: 'triangle', freq: f, level: 0.08 * lv, attack: 0.002, decay: Math.max(0.9, len) }); tone(d, t, { freq: f * 2, level: 0.025 * lv, attack: 0.002, decay: 0.5 }); }
+        else if (part === 'timpani') { const f = hz(o.midi || 43); const roll = o.roll ? 6 : 1; for (let i = 0; i < roll; i++) { const at = t + i * 0.055; const lvl = (o.roll ? 0.18 + i * 0.03 : 0.42) * lv; tone(d, at, { freq: f * 1.04, to: f, glide: 0.05, level: lvl, attack: 0.003, decay: 0.9 }); tone(d, at, { freq: f * 1.5, level: lvl * 0.3, attack: 0.003, decay: 0.4 }); burst(d, at, { type: 'lowpass', freq: 900, level: 0.05 * lv, attack: 0.001, decay: 0.05 }); } }
+        // 재즈: 그랜드 피아노, 콘트라베이스, 색소폰, 라이드 심벌, 브러시
+        else if (part === 'piano') (o.chord || [o.midi]).forEach((m, i) => { const f = hz(m); tone(d, t + i * 0.008, { type: 'triangle', freq: f, level: 0.055 * lv, attack: 0.003, decay: len + 0.4 }); tone(d, t + i * 0.008, { freq: f * 2, level: 0.02 * lv, attack: 0.002, decay: 0.35 }); tone(d, t + i * 0.008, { freq: f * 3, level: 0.008 * lv, attack: 0.002, decay: 0.15 }); });
+        else if (part === 'upright') { const f = hz(o.midi); pluck(d, t, { type: 'triangle', freq: f, level: 0.3 * lv, len: Math.max(0.25, len), cutoff: 420, open: 1100 }); burst(d, t, { type: 'bandpass', freq: 300, q: 2, level: 0.05 * lv, attack: 0.002, decay: 0.04 }); }
+        else if (part === 'sax') { swell(d, t, hz(o.midi), len, { level: 0.07 * lv, wave: 'sawtooth', cutoff: 1500, attack: 0.05, vib: 0.012, detune: 0.003, q: 3 }); burst(d, t, { type: 'bandpass', freq: 2400, q: 1.5, level: 0.025 * lv, attack: 0.02, decay: 0.1 }); }
+        else if (part === 'ride') { burst(d, t, { type: 'highpass', freq: 5200, level: 0.07 * lv, attack: 0.001, decay: 0.35 }); tone(d, t, { freq: 3100, level: 0.012 * lv, attack: 0.001, decay: 0.4 }); }
+        else if (part === 'brush') burst(d, t, { type: 'bandpass', freq: 3200, q: 0.7, level: 0.09 * lv, attack: 0.05, decay: 0.16 });
+        // 어쿠스틱: 통기타(줄을 차례로 긁는다), 우쿨렐레, 카혼
+        else if (part === 'aguitar' || part === 'uke') { const notes = o.chord || [o.midi]; const order = o.up ? [...notes].reverse() : notes; const uke = part === 'uke'; order.forEach((m, i) => pluck(d, t + i * (uke ? 0.012 : 0.018), { type: uke ? 'triangle' : 'sawtooth', freq: hz(m), level: (uke ? 0.06 : 0.04) * lv, len, cutoff: uke ? 2400 : 1700, open: uke ? 4200 : 3600 })); }
+        else if (part === 'cajon') { tone(d, t, { freq: 110, to: 60, glide: 0.06, level: 0.45 * lv, attack: 0.002, decay: 0.22 }); burst(d, t, { type: 'lowpass', freq: 700, level: 0.08 * lv, attack: 0.001, decay: 0.05 }); }
+        else if (part === 'slap') { burst(d, t, { type: 'bandpass', freq: 1900, q: 0.9, level: 0.24 * lv, attack: 0.001, decay: 0.09 }); tone(d, t, { freq: 320, to: 210, level: 0.1 * lv, attack: 0.001, decay: 0.06 }); }
+        // 로파이·DJ: 전자 피아노(떨림), 판 잡음, 박수, 낮은 베이스, 짧은 화음
+        else if (part === 'rhodes') (o.chord || [o.midi]).forEach((m) => { const f = hz(m); tone(d, t, { freq: f, level: 0.05 * lv, attack: 0.006, decay: len + 0.3 }); tone(d, t, { type: 'triangle', freq: f * 2.001, level: 0.012 * lv, attack: 0.004, decay: 0.5 }); });
+        else if (part === 'crackle') for (let i = 0; i < 14; i++) burst(d, t + Math.random() * len, { type: 'highpass', freq: 2500 + Math.random() * 3000, level: 0.03 * lv * Math.random(), attack: 0.001, decay: 0.008 });
+        else if (part === 'clap') for (let i = 0; i < 3; i++) burst(d, t + i * 0.012, { type: 'bandpass', freq: 1500, q: 1, level: 0.16 * lv, attack: 0.001, decay: i === 2 ? 0.14 : 0.02 });
+        else if (part === 'sub') pluck(d, t, { type: 'sine', freq: hz(o.midi), level: 0.32 * lv, len, cutoff: 300, open: 400 });
+        else if (part === 'stab') (o.chord || [o.midi]).forEach((m) => pluck(d, t, { type: 'sawtooth', freq: hz(m), level: 0.028 * lv, len, cutoff: 1100, open: 3000 }));
+        // 객석: 박수와 환호
+        else if (part === 'applause') { for (let i = 0; i < 16; i++) burst(d, t + Math.random() * 0.9, { type: 'bandpass', freq: 1200 + Math.random() * 1400, q: 1, level: 0.06 * lv, attack: 0.001, decay: 0.03 }); burst(d, t, { type: 'bandpass', freq: 900, q: 0.5, level: 0.05 * lv, attack: 0.15, decay: 0.8 }); }
       });
     },
     /** 물 첨벙: 헤엄칠 때와 튜브에 올라탈 때 */
