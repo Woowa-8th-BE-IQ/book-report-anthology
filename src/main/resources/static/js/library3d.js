@@ -479,13 +479,13 @@ function start() {
   // 5층 공연장 사락 밴드: 28m×20m 음악 층. 뒤에 붉은 막이 드리운 큰 무대(드럼·건반·기타·보컬·베이스, 서거나 앉으면 그 파트를 친다),
   // 무대 앞 빛나는 댄스 플로어와 미러볼, 가운데 붉은 벨벳 관객석 네 줄, 맨 뒤 음향 콘솔, 왼쪽 벨벳 부스, 오른쪽 LP 벽과 주크박스·감상 의자
   const CONCERT = { w: 28, d: 20, h: 7.6 };
-  const BSTAGE = { x0: -7.5, x1: 7.5, z0: -10, z1: -4.6, h: 0.5, stair: [6.2, 7.4] }; // 무대와 양옆 앞 계단(|x| 6.2~7.4)
+  const BSTAGE = { x0: -9.5, x1: 9.5, z0: -10, z1: -3.6, h: 0.5, stair: [8.2, 9.4] }; // 무대와 양옆 앞 계단(|x| 8.2~9.4)
   const BAND = [
-    { id: 'band-drums', part: 'drums', kind: 'stool', x: 0, z: -8.25, top: BSTAGE.h + 0.52, from: [1.4, -8.7], tip: '드럼 치기' },
-    { id: 'band-keys', part: 'keys', kind: 'stand', x: -3.4, z: -7.7, top: BSTAGE.h, from: [-4.55, -7.9], tip: '건반 치기' },
-    { id: 'band-guitar', part: 'guitar', kind: 'stand', x: -1.8, z: -5.95, top: BSTAGE.h, from: [-2.75, -5.3], tip: '기타 치기' },
-    { id: 'band-vocal', part: 'vocal', kind: 'stand', x: 0, z: -5.8, top: BSTAGE.h, from: [0.85, -5.2], tip: '노래하기' },
-    { id: 'band-bass', part: 'bass', kind: 'stand', x: 1.9, z: -5.95, top: BSTAGE.h, from: [2.85, -5.3], tip: '베이스 치기' },
+    { id: 'band-drums', part: 'drums', kind: 'stool', x: 0, z: -9.05, top: BSTAGE.h + 0.66, from: [1.8, -9.35], tip: '드럼 치기', label: '드럼' },
+    { id: 'band-keys', part: 'keys', kind: 'stand', x: -5.4, z: -8.0, top: BSTAGE.h, from: [-6.6, -8.3], tip: '건반 치기', label: '건반' },
+    { id: 'band-guitar', part: 'guitar', kind: 'stand', x: -2.9, z: -5.4, top: BSTAGE.h, from: [-3.9, -4.6], tip: '기타 치기', label: '기타' },
+    { id: 'band-vocal', part: 'vocal', kind: 'stand', x: 0, z: -4.95, top: BSTAGE.h, from: [1.0, -4.35], tip: '노래하기', label: '보컬' },
+    { id: 'band-bass', part: 'bass', kind: 'stand', x: 2.9, z: -5.4, top: BSTAGE.h, from: [3.9, -4.6], tip: '베이스 치기', label: '베이스' },
   ];
   const AUD_ROWS = [1.6, 3.2, 4.8, 6.4]; // 관객석 줄 z(무대를 본다)
   const AUD_XS = [-4.85, -3.65, -2.45, -1.25, 1.25, 2.45, 3.65, 4.85];
@@ -513,10 +513,10 @@ function start() {
         blocks: [
           { r: [-BSTAGE.stair[0], BSTAGE.z1 - 0.05, BSTAGE.stair[0], BSTAGE.z1 + 0.05] }, // 무대 앞턱(계단으로만 오른다)
           { r: [BSTAGE.x0 - 0.05, -10, BSTAGE.x0 + 0.05, BSTAGE.z1 + 1.0] }, { r: [BSTAGE.x1 - 0.05, -10, BSTAGE.x1 + 0.05, BSTAGE.z1 + 1.0] }, // 무대 옆턱과 계단 난간
-          { c: [0, -7.35, 0.85] }, { r: [-4.08, -7.35, -2.72, -6.95] }, { c: [0, -5.4, 0.12] }, // 드럼 세트, 건반, 마이크
-          { c: [-1.8, -5.95, 0.25] }, { c: [1.9, -5.95, 0.25] }, { c: [-2.95, -6.8, 0.2] }, { c: [3.05, -6.8, 0.2] }, // 기타·베이스 서는 곳과 거치대
-          { r: [-2.5, -9.75, -1.7, -9.1] }, { r: [2.15, -9.75, 3.05, -8.95] }, { c: [-6.8, -7.0, 0.45] }, { c: [6.8, -7.0, 0.45] }, // 앰프, 큰 스피커
-          { c: [-7.95, -4.6, 0.25] }, { c: [7.95, -4.6, 0.25] }, // 무대 금빛 기둥
+          { c: [0, -8.0, 1.15] }, { r: [-6.25, -7.7, -4.55, -7.15] }, { c: [0, -4.5, 0.15] }, // 드럼 세트, 건반, 마이크
+          { c: [-2.9, -5.4, 0.25] }, { c: [2.9, -5.4, 0.25] }, { c: [-4.2, -6.5, 0.24] }, { c: [4.2, -6.5, 0.24] }, // 기타·베이스 서는 곳과 거치대
+          { r: [-3.75, -9.75, -2.65, -9.1] }, { r: [3.0, -9.75, 4.3, -8.9] }, { c: [-8.7, -7.4, 0.55] }, { c: [8.7, -7.4, 0.55] }, // 앰프, 큰 스피커
+          { c: [-9.95, -3.6, 0.25] }, { c: [9.95, -3.6, 0.25] }, // 무대 금빛 기둥
           ...AUD_ROWS.flatMap((z) => [{ r: [-5.35, z - 0.32, -0.75, z + 0.32] }, { r: [0.75, z - 0.32, 5.35, z + 0.32] }]), // 관객석
           { r: [-1.3, 7.9, 1.3, 8.8] }, // 음향 콘솔
           ...VIP.map((v) => boxAt(v.x, v.z, v.yaw, 2.3, 0.95)), ...VIP.map((v) => ({ r: [v.x + 1.6, v.z - 0.55, v.x + 2.2, v.z + 0.55] })), { r: [-8.65, 2.3, -8.55, 4.9] }, { r: [-8.65, 6.1, -8.55, 8.7] }, // 벨벳 부스와 낮은 탁자, 줄 울타리
@@ -1771,32 +1771,32 @@ function start() {
     // 무대: 단, 앞 놋쇠 띠와 발 조명, 양옆 앞 계단과 난간, 붉은 깔개
     const deck = box(S, BSTAGE.x1 - BSTAGE.x0, h, z1 + 10, 0x2B1C12, 0, 0, (z1 - 10) / 2, { line: 0.03, cast: false }); mark(P, deck, { floor: 0 });
     box(S, BSTAGE.x1 - BSTAGE.x0, 0.06, 0.06, BRASS, 0, h - 0.06, z1 + 0.02, { line: 0.006, cast: false });
-    for (let x = -5.85; x <= 5.86; x += 0.65) { const bulb = glow(S, 0xffd98a, 0.5, x, h + 0.04, z1 + 0.05); bulb.material = bulb.material.clone(); B.foot.push(bulb.material); cyl(S, 0.05, 0.06, 0.05, BRASS, x, h - 0.02, z1 + 0.05, { line: 0, seg: 8 }); }
+    for (let x = -8.05; x <= 8.06; x += 0.7) { const bulb = glow(S, 0xffd98a, 0.5, x, h + 0.04, z1 + 0.05); bulb.material = bulb.material.clone(); B.foot.push(bulb.material); cyl(S, 0.05, 0.06, 0.05, BRASS, x, h - 0.02, z1 + 0.05, { line: 0, seg: 8 }); }
     [-1, 1].forEach((k) => {
-      for (let i = 0; i < 3; i++) { const st = box(S, 1.2, h * (3 - i) / 3, 0.34, 0x3B2618, k * 6.8, 0, z1 + 0.17 + i * 0.33, { line: 0.015 }); mark(P, st, { floor: 0 }); }
-      [z1 + 0.05, z1 + 0.95].forEach((z) => cyl(S, 0.025, 0.025, h + 0.85, BRASS, k * 7.45, 0, z, { line: 0.004, seg: 8 }));
-      const rail = solid(new THREE.CylinderGeometry(0.02, 0.02, 1.15, 8), BRASS, { line: 0.004 }); rail.rotation.x = Math.PI / 2 + 0.42; rail.position.set(k * 7.45, h + 0.62, z1 + 0.5); S.add(rail);
+      for (let i = 0; i < 3; i++) { const st = box(S, 1.2, h * (3 - i) / 3, 0.34, 0x3B2618, k * 8.8, 0, z1 + 0.17 + i * 0.33, { line: 0.015 }); mark(P, st, { floor: 0 }); }
+      [z1 + 0.05, z1 + 0.95].forEach((z) => cyl(S, 0.025, 0.025, h + 0.85, BRASS, k * 9.45, 0, z, { line: 0.004, seg: 8 }));
+      const rail = solid(new THREE.CylinderGeometry(0.02, 0.02, 1.15, 8), BRASS, { line: 0.004 }); rail.rotation.x = Math.PI / 2 + 0.42; rail.position.set(k * 9.45, h + 0.62, z1 + 0.5); S.add(rail);
     });
-    rugAt(P, '#7A2E2A', '#4A1C1A', 91, 0, -7.2, 6.4, 3.4).position.y = h + 0.012;
+    rugAt(P, '#7A2E2A', '#4A1C1A', 91, 0, -6.9, 10.0, 4.8).position.y = h + 0.012;
     // 붉은 벨벳 막: 뒤 주름막, 양옆 묶은 막, 위 가리개(금빛 술), 금빛 기둥과 네온 간판
-    for (let i = 0; i < 32; i++) { const x = -7.6 + i * 0.49; box(S, 0.5, 6.4, 0.14, i % 2 ? VELVET : shadeOf(VELVET, 0.78), x, h, -9.82 + (i % 2) * 0.06, { line: 0, cast: false }); }
+    for (let i = 0; i < 40; i++) { const x = -9.6 + i * 0.49; box(S, 0.5, 6.4, 0.14, i % 2 ? VELVET : shadeOf(VELVET, 0.78), x, h, -9.82 + (i % 2) * 0.06, { line: 0, cast: false }); }
     [-1, 1].forEach((k) => {
-      for (let i = 0; i < 6; i++) { const pleat = box(S, 0.14, 6.1, 0.34, i % 2 ? VELVET : shadeOf(VELVET, 0.78), k * (7.62 + (i % 2) * 0.05), h, -5.0 - i * 0.3, { line: 0, cast: false }); pleat.rotation.z = k * 0.03; }
-      const tie = solid(new THREE.TorusGeometry(0.28, 0.04, 6, 16), GOLD, { line: 0.004 }); tie.rotation.y = Math.PI / 2; tie.position.set(k * 7.6, h + 2.2, -5.75); S.add(tie);
-      box(S, 0.42, H - 0.3, 0.42, GOLD, k * 7.95, 0, -4.6, { line: 0.02 });
+      for (let i = 0; i < 6; i++) { const pleat = box(S, 0.14, 6.1, 0.34, i % 2 ? VELVET : shadeOf(VELVET, 0.78), k * (9.62 + (i % 2) * 0.05), h, -4.0 - i * 0.3, { line: 0, cast: false }); pleat.rotation.z = k * 0.03; }
+      const tie = solid(new THREE.TorusGeometry(0.28, 0.04, 6, 16), GOLD, { line: 0.004 }); tie.rotation.y = Math.PI / 2; tie.position.set(k * 9.6, h + 2.2, -4.75); S.add(tie);
+      box(S, 0.42, H - 0.3, 0.42, GOLD, k * 9.95, 0, -3.6, { line: 0.02 });
     });
-    box(S, 16.3, 0.4, 0.42, GOLD, 0, H - 0.7, -4.6, { line: 0.02 });
-    box(S, 15.4, 0.9, 0.18, VELVET, 0, H - 1.6, -4.72, { line: 0.012, cast: false });
-    box(S, 15.4, 0.08, 0.2, GOLD, 0, H - 1.68, -4.72, { line: 0.004, cast: false });
-    for (let x = -7.4; x <= 7.41; x += 0.37) cyl(S, 0.025, 0.04, 0.16, GOLD, x, H - 1.84, -4.63, { line: 0, seg: 6 });
+    box(S, 20.3, 0.4, 0.42, GOLD, 0, H - 0.7, -3.6, { line: 0.02 });
+    box(S, 19.4, 0.9, 0.18, VELVET, 0, H - 1.6, -3.72, { line: 0.012, cast: false });
+    box(S, 19.4, 0.08, 0.2, GOLD, 0, H - 1.68, -3.72, { line: 0.004, cast: false });
+    for (let x = -9.4; x <= 9.41; x += 0.37) cyl(S, 0.025, 0.04, 0.16, GOLD, x, H - 1.84, -3.63, { line: 0, seg: 6 });
     const neon = canvasTex(1024, 256, (g, w, hh) => {
       g.fillStyle = '#1E1418'; g.fillRect(0, 0, w, hh); g.textAlign = 'center'; g.textBaseline = 'middle';
       g.font = '700 150px "Gaegu", sans-serif'; g.shadowColor = '#FF8FB0'; g.shadowBlur = 30; g.fillStyle = '#FFD1DE'; g.fillText('♪ 사락 밴드 ♪', w / 2, hh / 2 + 6);
     });
-    const sign = plane(S, 4.4, 1.1, new THREE.MeshBasicMaterial({ map: neon }), 0, H - 1.15, -4.6 + 0.23); sign.castShadow = false;
-    glow(S, 0xff8fb0, 3.6, 0, H - 1.15, -4.2).material.opacity = 0.35;
+    const sign = plane(S, 4.4, 1.1, new THREE.MeshBasicMaterial({ map: neon }), 0, H - 1.15, -3.6 + 0.23); sign.castShadow = false;
+    glow(S, 0xff8fb0, 3.6, 0, H - 1.15, -3.2).material.opacity = 0.35;
     // 드럼 세트(관객 쪽 +z)
-    const kit = new THREE.Group(); kit.position.set(0, h + 0.12, -7.35); S.add(kit);
+    const kit = new THREE.Group(); kit.position.set(0, h + 0.12, -8.0); kit.scale.setScalar(1.35); S.add(kit);
     const drum = (r, len, x, y, z, rx = 0, head = 0xF3EADB, shell = SHELL) => {
       const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.x = rx; kit.add(g);
       cyl(g, r, r, len, shell, 0, -len / 2, 0, { line: 0.012, seg: 22 });
@@ -1827,14 +1827,14 @@ function start() {
     const crash = cymbal(0.25, -0.6, 1.22, -0.3, 0.32); const ride = cymbal(0.28, 0.82, 1.08, -0.25, -0.25);
     B.kit = { kick, snare, tom1, tom2, floor, hat, crash, ride };
     Object.values(B.kit).forEach((g) => { g.userData.base = { rx: g.rotation.x, s: g.scale.x }; g.userData.t = -9; });
-    block(P, kit);
-    box(S, 2.6, 0.12, 2.4, 0x3B2618, 0, h, -7.7, { line: 0.012, cast: false }); // 드럼 단
-    const throne = new THREE.Group(); throne.position.set(0, h + 0.12, -8.25);
+    block(P, kit); mark(P, kit, { seat: 'band-drums' });
+    box(S, 3.6, 0.12, 3.2, 0x3B2618, 0, h, -8.4, { line: 0.012, cast: false }); // 드럼 단
+    const throne = new THREE.Group(); throne.position.set(0, h + 0.12, -9.05); throne.scale.setScalar(1.3);
     cyl(throne, 0.02, 0.02, 0.38, CHROME, 0, 0, 0, { line: 0.004, seg: 6 });
     cyl(throne, 0.2, 0.18, 0.08, INKY, 0, 0.34, 0, { line: 0.01, seg: 18 });
     mark(P, throne, { seat: 'band-drums' }); S.add(throne); P.seatById('band-drums').mesh = throne;
     // 건반(X자 받침)
-    const keysG = new THREE.Group(); keysG.position.set(-3.4, h, -7.15); S.add(keysG);
+    const keysG = new THREE.Group(); keysG.position.set(-5.4, h, -7.42); keysG.scale.setScalar(1.25); S.add(keysG);
     [-0.12, 0.12].forEach((zz) => [0.62, -0.62].forEach((rz) => { const pv = new THREE.Group(); pv.position.set(0, 0.36, zz); pv.rotation.z = rz; keysG.add(pv); box(pv, 0.04, 0.84, 0.04, INKY, 0, -0.42, 0, { line: 0.004 }); }));
     box(keysG, 1.3, 0.1, 0.36, INKY, 0, 0.7, 0, { line: 0.012 });
     [-1, 1].forEach((k) => box(keysG, 0.05, 0.14, 0.38, WALNUT, k * 0.67, 0.68, 0, { line: 0.006 }));
@@ -1865,12 +1865,12 @@ function start() {
       S.add(g); return g;
     };
     const stand = (x, z) => { const g = new THREE.Group(); g.position.set(x, h, z); [-1, 1].forEach((k) => { const l = box(g, 0.025, 0.4, 0.025, INKY, k * 0.1, 0, 0.05, { line: 0 }); l.rotation.z = -k * 0.2; }); box(g, 0.025, 0.55, 0.025, INKY, 0, 0, -0.06, { line: 0 }); box(g, 0.26, 0.04, 0.12, INKY, 0, 0.18, 0, { line: 0.003 }); S.add(g); };
-    stand(-2.95, -6.8); stand(3.05, -6.8);
-    B.held.push({ seat: 'band-guitar', g: axe(0xD9654B, 0.44, 0xFFFDF8), rest: [-2.95, h + 0.42, -6.8], t: -9 });
-    B.held.push({ seat: 'band-bass', g: axe(0x2F5D5A, 0.62, 0xF2D16B), rest: [3.05, h + 0.42, -6.8], t: -9 });
+    stand(-4.2, -6.5); stand(4.2, -6.5);
+    B.held.push({ seat: 'band-guitar', g: axe(0xD9654B, 0.44, 0xFFFDF8), rest: [-4.2, h + 0.42, -6.5], t: -9 });
+    B.held.push({ seat: 'band-bass', g: axe(0x2F5D5A, 0.62, 0xF2D16B), rest: [4.2, h + 0.42, -6.5], t: -9 });
     B.held.forEach((it) => mark(P, it.g, { seat: it.seat }));
     // 마이크
-    const mic = new THREE.Group(); mic.position.set(0, h, -5.4); S.add(mic);
+    const mic = new THREE.Group(); mic.position.set(0, h, -4.5); mic.scale.setScalar(1.15); S.add(mic);
     cyl(mic, 0.14, 0.15, 0.03, INKY, 0, 0, 0, { line: 0.006, seg: 18 }); cyl(mic, 0.012, 0.012, 1.12, CHROME, 0, 0.03, 0, { line: 0.003, seg: 6 });
     const head = new THREE.Group(); head.position.set(0, 1.15, 0); head.rotation.x = -0.5; mic.add(head);
     cyl(head, 0.022, 0.03, 0.14, INKY, 0, -0.14, 0, { line: 0.004, seg: 10 });
@@ -1886,26 +1886,26 @@ function start() {
       for (let i = 0; i < 5; i++) { const knob = cyl(g, 0.016, 0.016, 0.02, BRASS, -w / 2 + 0.12 + i * 0.09, hh - 0.09, d / 2 + 0.01, { line: 0, seg: 8 }); knob.rotation.x = Math.PI / 2; }
       block(P, g); return g;
     };
-    amp(-2.1, h, -9.42, 0.7, 0.62, 0.34);
-    amp(2.6, h, -9.35, 0.85, 0.95, 0.5); amp(2.6, h + 0.95, -9.35, 0.85, 0.24, 0.46);
+    amp(-3.2, h, -9.4, 0.95, 0.85, 0.45);
+    amp(3.65, h, -9.32, 1.15, 1.25, 0.65); amp(3.65, h + 1.25, -9.32, 1.15, 0.32, 0.6);
     [-1, 1].forEach((k) => {
-      const g = new THREE.Group(); g.position.set(k * 6.8, h, -7.0); g.rotation.y = -k * 0.35; S.add(g);
+      const g = new THREE.Group(); g.position.set(k * 8.7, h, -7.4); g.rotation.y = -k * 0.35; g.scale.setScalar(1.15); S.add(g);
       [[0, 1.2, 0.8], [1.2, 1.2, 0.8], [2.4, 0.9, 0.7]].forEach(([y, hh, ww]) => {
         box(g, ww, hh, 0.7, INKY, 0, y, 0, { line: 0.015 });
         [[0.36, 0.26], [0.86, 0.12]].forEach(([fy, r]) => { const cy = y + fy * hh; const c = new THREE.Mesh(new THREE.CircleGeometry(r * (hh / 1.2), 20), toon(0x3A3236)); c.position.set(0, cy, 0.355); g.add(c); const rim = new THREE.Mesh(new THREE.RingGeometry(r * (hh / 1.2), r * (hh / 1.2) + 0.02, 20), toon(CHROME)); rim.position.set(0, cy, 0.356); g.add(rim); });
       });
       block(P, g);
     });
-    [[-1.0, 0.25], [1.4, -0.25]].forEach(([x, ry]) => { const w2 = new THREE.Group(); w2.position.set(x, h, -4.95); w2.rotation.y = ry; const b = box(w2, 0.42, 0.24, 0.34, INKY, 0, 0, 0, { line: 0.008 }); b.rotation.x = -0.35; S.add(w2); });
-    [[[-2.1, -9.2], [-2.2, -7.6], [-1.8, -6.2]], [[2.6, -9.05], [2.4, -7.6], [1.9, -6.2]], [[0, -5.4], [-0.6, -6.0], [-1.2, -8.4], [-2.0, -9.2]]].forEach((pts) => {
+    [[-1.3, 0.25], [1.5, -0.25]].forEach(([x, ry]) => { const w2 = new THREE.Group(); w2.position.set(x, h, -3.95); w2.rotation.y = ry; const b = box(w2, 0.42, 0.24, 0.34, INKY, 0, 0, 0, { line: 0.008 }); b.rotation.x = -0.35; S.add(w2); });
+    [[[-3.2, -9.15], [-3.4, -7.4], [-2.9, -5.6]], [[3.65, -8.95], [3.5, -7.4], [2.9, -5.6]], [[0, -4.5], [-0.9, -5.4], [-1.9, -8.6], [-3.0, -9.2]]].forEach((pts) => {
       const curve = new THREE.CatmullRomCurve3(pts.map(([x, z]) => new THREE.Vector3(x, h + 0.012, z)));
       S.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.012, 5), toon(0x1E1A1C)));
     });
     // 조명 트러스: 파트마다 색 조명(빛줄기·무대 위 동그란 빛), 양 끝에서 휘젓는 무빙 라이트
-    const TY = 5.4; const TZ = -5.3;
-    [TY, TY + 0.34].forEach((y) => { const bar = solid(new THREE.CylinderGeometry(0.035, 0.035, 14.4, 8), 0x8F857C, { line: 0.004 }); bar.rotation.z = Math.PI / 2; bar.position.set(0, y, TZ); S.add(bar); });
-    for (let i = 0; i <= 40; i++) { const r = box(S, 0.015, 0.36, 0.015, 0x8F857C, -7.0 + i * 0.35, TY, TZ, { line: 0, cast: false }); r.rotation.z = i % 2 ? 0.8 : -0.8; }
-    [-6.6, 6.6].forEach((x) => cyl(S, 0.01, 0.01, H - TY - 0.34, 0x8F857C, x, TY + 0.34, TZ, { line: 0, seg: 4 }));
+    const TY = 5.6; const TZ = -4.7;
+    [TY, TY + 0.34].forEach((y) => { const bar = solid(new THREE.CylinderGeometry(0.035, 0.035, 18.4, 8), 0x8F857C, { line: 0.004 }); bar.rotation.z = Math.PI / 2; bar.position.set(0, y, TZ); S.add(bar); });
+    for (let i = 0; i <= 52; i++) { const r = box(S, 0.015, 0.36, 0.015, 0x8F857C, -9.1 + i * 0.35, TY, TZ, { line: 0, cast: false }); r.rotation.z = i % 2 ? 0.8 : -0.8; }
+    [-8.6, 8.6].forEach((x) => cyl(S, 0.01, 0.01, H - TY - 0.34, 0x8F857C, x, TY + 0.34, TZ, { line: 0, seg: 4 }));
     const COLORS = { keys: 0x7FE0EA, guitar: 0xF2A43A, drums: 0xE8A0A8, vocal: 0xFFF3C4, bass: 0x9B8CF2 };
     const beamMat = (c) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
     BAND.forEach((b) => {
@@ -1913,7 +1913,7 @@ function start() {
       const body = new THREE.Group(); body.position.copy(can); S.add(body);
       cyl(body, 0.1, 0.12, 0.26, INKY, 0, -0.26, 0, { line: 0.006, seg: 12 });
       const len = can.distanceTo(spot);
-      const geo = new THREE.ConeGeometry(0.85, len, 24, 1, true); geo.translate(0, -len / 2, 0);
+      const geo = new THREE.ConeGeometry(1.05, len, 24, 1, true); geo.translate(0, -len / 2, 0);
       const mat = beamMat(COLORS[b.part]);
       const beam = new THREE.Mesh(geo, mat); beam.position.copy(can);
       beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), spot.clone().sub(can).normalize()); S.add(beam);
@@ -1922,15 +1922,29 @@ function start() {
       const lens = glow(body, COLORS[b.part], 0.45, 0, -0.28, 0); lens.material = lens.material.clone(); lens.material.opacity = 0;
       B.beams.push({ part: b.part, mat, poolMat, lens: lens.material, flash: 0 });
     });
-    [[-6.9, 0xFF8FB0], [-5.6, 0x7FE0EA], [5.6, 0xF2D16B], [6.9, 0x9B8CF2]].forEach(([x, c], i) => {
+    [[-8.9, 0xFF8FB0], [-7.4, 0x7FE0EA], [7.4, 0xF2D16B], [8.9, 0x9B8CF2]].forEach(([x, c], i) => {
       const g = new THREE.Group(); g.position.set(x, TY - 0.1, TZ); S.add(g);
       cyl(g, 0.12, 0.12, 0.2, INKY, 0, -0.2, 0, { line: 0.006, seg: 12 });
       const len = 9; const geo = new THREE.ConeGeometry(0.6, len, 18, 1, true); geo.translate(0, -len / 2, 0);
       const mat = beamMat(c); const beam = new THREE.Mesh(geo, mat); g.add(beam);
       B.sweeps.push({ g, mat, phase: i * 1.3, side: x < 0 ? 1 : -1 });
     });
+    // 연주 안내: 빈 악기 자리마다 빛나는 바닥 고리와 떠 있는 '♪ 드럼 치기' 안내판(누가 치면 사라진다)
+    B.hints = BAND.map((b) => {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.62, 40), new THREE.MeshBasicMaterial({ color: COLORS[b.part], transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2; ring.position.set(b.x, b.top - (b.kind === 'stool' ? 0.66 : 0) + 0.03 + (b.kind === 'stool' ? 0.12 : 0), b.z); S.add(ring);
+      const tex = canvasTex(320, 96, (g, w, hh) => {
+        g.fillStyle = 'rgba(30,20,24,.88)'; g.beginPath(); g.roundRect(4, 4, w - 8, hh - 8, 40); g.fill();
+        g.strokeStyle = `#${new THREE.Color(COLORS[b.part]).getHexString()}`; g.lineWidth = 6; g.stroke();
+        g.fillStyle = '#FFF3C4'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '700 46px "Gaegu", sans-serif'; g.fillText(`♪ ${b.tip}`, w / 2, hh / 2 + 2);
+      });
+      const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); tag.scale.set(1.6, 0.48, 1);
+      const y0 = h + (b.part === 'drums' ? 2.7 : 2.3); tag.position.set(b.x, y0, b.z); tag.renderOrder = 5; S.add(tag);
+      mark(P, ring, { seat: b.id });
+      return { part: b.part, ring, tag, y0 };
+    });
     // 미러볼과 벽에 흩어지는 빛 점
-    const ball = new THREE.Group(); ball.position.set(0, 6.4, -2.6); S.add(ball);
+    const ball = new THREE.Group(); ball.position.set(0, 6.4, -1.4); S.add(ball);
     cyl(ball, 0.006, 0.006, H - 6.4, 0x8F857C, 0, 0.22, 0, { line: 0, seg: 4 });
     const mirror = new THREE.Mesh(new THREE.IcosahedronGeometry(0.24, 1), new THREE.MeshLambertMaterial({ color: 0xDDE3E8, emissive: 0x556070, flatShading: true })); ball.add(mirror);
     B.ball = ball;
@@ -1943,10 +1957,10 @@ function start() {
     const tileGeo = new THREE.PlaneGeometry(0.94, 0.94); tileGeo.rotateX(-Math.PI / 2);
     for (let ix = 0; ix < 12; ix++) for (let iz = 0; iz < 4; iz++) {
       const mat = new THREE.MeshBasicMaterial({ color: 0x241a20 }); const t = new THREE.Mesh(tileGeo, mat);
-      t.position.set(-5.5 + ix, 0.013, -3.9 + iz); S.add(t); B.tiles.push({ mat, lit: 0, color: new THREE.Color(0xffffff) });
+      t.position.set(-5.5 + ix, 0.013, -2.9 + iz); S.add(t); B.tiles.push({ mat, lit: 0, color: new THREE.Color(0xffffff) });
     }
-    box(S, 12.2, 0.02, 0.08, BRASS, 0, 0, -0.38, { line: 0, cast: false }); box(S, 12.2, 0.02, 0.08, BRASS, 0, 0, -4.42, { line: 0, cast: false });
-    [-6.07, 6.07].forEach((x) => box(S, 0.08, 0.02, 4.1, BRASS, x, 0, -2.4, { line: 0, cast: false }));
+    box(S, 12.2, 0.02, 0.08, BRASS, 0, 0, 0.62, { line: 0, cast: false }); box(S, 12.2, 0.02, 0.08, BRASS, 0, 0, -3.42, { line: 0, cast: false });
+    [-6.07, 6.07].forEach((x) => box(S, 0.08, 0.02, 4.1, BRASS, x, 0, -1.4, { line: 0, cast: false }));
     // 관객석: 붉은 벨벳 극장 의자(무대를 본다), 줄 끝마다 놋쇠 글자
     rugAt(P, '#5A1F26', '#3B1418', 23, 0, 4.0, 11.8, 6.6);
     P.seats.filter((st) => st.id.startsWith('aud-')).forEach((st) => {
@@ -3612,6 +3626,10 @@ function start() {
         it.g.rotation.set(0, yaw, -1.05 + k * 0.12);
       } else { it.g.position.set(...it.rest); it.g.rotation.set(0, 0.25, 0.12); it.g.scale.setScalar(1); }
     });
+    (B.hints || []).forEach((hint, n) => {
+      const free = !who[hint.part]; hint.ring.visible = free; hint.tag.visible = free;
+      if (free && !reduceMotion) { const k = 0.5 + 0.5 * Math.sin(now * 3 + n); hint.ring.material.opacity = 0.35 + k * 0.45; hint.ring.scale.setScalar(1 + k * 0.12); hint.tag.position.y = hint.y0 + Math.sin(now * 2 + n) * 0.08; }
+    });
     const live = me && me.place === 'band' && Object.keys(who).length > 0;
     if (!live) band.on = false;
     else {
@@ -3857,6 +3875,7 @@ function start() {
   const fade = root.querySelector('.lib-fade');
   let travelling = false;
   let climbing = null;
+  let bandHinted = false;
   const goPlace = (portal) => {
     if (travelling) return;
     if (portal.climb) { // 사다리: 먼저 타고 올라간다(다 오르면 climbing이 아래 길로 다시 부른다)
@@ -3886,6 +3905,7 @@ function start() {
       root.querySelector('.lib-place').textContent = to.label;
       label(me); renderPeople(); sendSpot(true);
       setMusic(music);
+      if (to.id === 'band' && !bandHinted) { bandHinted = true; setTimeout(() => say('무대 위 빛나는 자리를 누르면 그 악기를 연주해요 ♪ 여럿이 오르면 합주가 돼요'), 700); }
       setTimeout(() => { fade.classList.remove('on'); travelling = false; }, 120);
     }, 420);
   };
